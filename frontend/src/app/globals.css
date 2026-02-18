@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/* Estilos customizados */
+body {
+  min-height: 100vh;
+  background-color: #0B132B;
+  color: #f1f1f1;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-cinzel), serif;
+}
+
+/* Animação suave no mapa */
+svg path {
+  transition: all 0.2s ease;
+}
+
+svg path:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
