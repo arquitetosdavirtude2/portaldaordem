@@ -1,0 +1,14 @@
+import os
+import sys
+
+# Adiciona o diretório atual ao path do Python
+sys.path.insert(0, os.path.dirname(__file__))
+
+# Importa a aplicação FastAPI
+from main import app
+
+# Importa a2wsgi para converter ASGI (FastAPI) para WSGI (Passenger)
+from a2wsgi import ASGIMiddleware
+
+# Cria a aplicação WSGI
+application = ASGIMiddleware(app)
