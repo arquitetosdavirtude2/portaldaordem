@@ -21,10 +21,13 @@ env/
 node_modules/
 .next/
 .next.zip
-out/
 build/
 dist/
 *.zip
+
+# Logs de build
+build_log.txt
+build_output.txt
 
 # === Logs ===
 *.log
