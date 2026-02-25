@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from database import engine, Base, SessionLocal
 from models import Estado, Admin, Usuario, usuario_estados
 
