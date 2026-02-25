@@ -15,6 +15,7 @@ env/
 # === Variáveis de ambiente (NUNCA subir ao git!) ===
 .env
 .env.local
+frontend/.env.local
 .env.*.local
 
 # === Node / Next.js ===

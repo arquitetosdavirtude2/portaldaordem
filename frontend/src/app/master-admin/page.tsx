@@ -20,7 +20,8 @@ export default function MasterAdminLogin() {
             const data = await res.json();
 
             if (data.success) {
-                localStorage.setItem('acesso', JSON.stringify({ tipo: 'master' }));
+                // Usa chave separada 'admin_session' para não interferir com login normal ('acesso')
+                localStorage.setItem('admin_session', JSON.stringify({ tipo: 'superadmin' }));
                 router.push('/admin/users');
             } else {
                 setErro(data.message);

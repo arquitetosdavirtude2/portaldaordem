@@ -58,7 +58,7 @@ export default function LoginPage() {
         <div className="min-h-screen flex flex-col items-center justify-center bg-masonic-blue relative overflow-hidden font-serif text-gray-100 selection:bg-masonic-gold selection:text-masonic-blue">
 
             {/* Background Texture/Overlay */}
-            <div className="absolute inset-0 bg-[url('/texture-noise.png')] opacity-5 pointer-events-none"></div>
+            <div className="absolute inset-0 opacity-5 pointer-events-none"></div>
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-masonic-gold/5 rounded-full blur-[120px] -mr-40 -mt-40 pointer-events-none animate-pulse duration-[5000ms]"></div>
             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[100px] -ml-20 -mb-20 pointer-events-none"></div>
 
