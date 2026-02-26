@@ -51,14 +51,14 @@ export default function AdminUsersPage() {
     const [msg, setMsg] = useState('');
 
     useEffect(() => {
-        const access = localStorage.getItem('admin_session');
+        const access = localStorage.getItem('acesso');
         if (!access) {
             router.push('/master-admin');
             return;
         }
         const userObj = JSON.parse(access);
-        if (userObj.tipo !== 'superadmin') {
-            router.push('/master-admin');
+        if (userObj.tipo !== 'master') {
+            router.push('/login');
             return;
         }
         fetchData();
@@ -238,7 +238,7 @@ export default function AdminUsersPage() {
         <div className="min-h-screen bg-masonic-blue text-gray-100 font-serif relative overflow-hidden selection:bg-masonic-gold selection:text-masonic-blue">
 
             {/* Background Texture/Overlay */}
-            <div className="absolute inset-0 opacity-5 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-[url('/texture-noise.png')] opacity-5 pointer-events-none"></div>
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-masonic-gold/5 rounded-full blur-[100px] -mr-20 -mt-20 pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[100px] -ml-20 -mb-20 pointer-events-none"></div>
 
@@ -257,7 +257,7 @@ export default function AdminUsersPage() {
                         {/* 'Voltar ao Painel' removed as per user request to avoid redirect loops */}
                         <button
                             onClick={() => {
-                                localStorage.removeItem('admin_session');
+                                localStorage.removeItem('acesso');
                                 router.push('/master-admin');
                             }}
                             className="px-6 py-2 bg-red-900/20 border border-red-500/30 text-red-400 rounded hover:bg-red-900/40 transition-all text-xs uppercase tracking-widest hover:text-red-300 hover:shadow-[0_0_15px_rgba(220,38,38,0.2)]"
