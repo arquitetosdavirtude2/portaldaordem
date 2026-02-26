@@ -3,7 +3,7 @@ const nextConfig = {
     output: 'export', // Gera pasta out/ com HTML/CSS/JS estático para cPanel
     swcMinify: false, // Force disable SWC minification
     images: {
-        unoptimized: true, // Necessário com output: 'export' — desabilita Image Optimization API
+        unoptimized: true,
     },
     eslint: {
         ignoreDuringBuilds: true,
