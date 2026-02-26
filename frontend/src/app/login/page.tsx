@@ -53,16 +53,11 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#0f1a3a] to-black relative overflow-hidden font-serif text-gray-100 selection:bg-masonic-gold selection:text-masonic-blue">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[radial-gradient(circle_at_center,_#1c3879_0%,_#0a1536_40%,_#000000_100%)] relative overflow-hidden font-serif">
 
-            {/* Background Texture/Overlay */}
-            <div className="absolute inset-0 opacity-10 bg-[url('/texture-noise.png')] pointer-events-none mix-blend-overlay"></div>
-            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-900/10 rounded-full blur-[150px] pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-masonic-gold/5 rounded-full blur-[150px] pointer-events-none"></div>
-
-            {/* Watermark/Symbol Container */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.05]">
-                <div className="relative w-[700px] h-[700px]">
+            {/* Fundo Marca D'água */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
+                <div className="relative w-[800px] h-[800px]">
                     <Image
                         src="/logo-gomb.png"
                         alt="Watermark"
@@ -72,12 +67,12 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* Login Box */}
-            <div className="z-10 bg-[#121c33]/80 backdrop-blur-md border border-white/5 p-8 sm:p-10 rounded-xl shadow-2xl w-full max-w-[420px] relative">
+            {/* Container Principal do Login */}
+            <div className="z-10 bg-[#151f38] border border-[#2a3a5f] p-8 sm:p-10 shadow-[0_0_80px_rgba(0,0,0,0.8)] rounded-xl w-full max-w-[400px] relative">
 
-                {/* Header / Logo Place */}
-                <div className="flex flex-col items-center mb-6">
-                    <div className="w-20 h-20 mb-4 relative drop-shadow-md">
+                {/* Cabeçalho */}
+                <div className="flex flex-col items-center mb-5">
+                    <div className="w-20 h-20 mb-3 relative drop-shadow-md">
                         <Image
                             src="/logo-gomb.png"
                             alt="GOMB Logo"
@@ -86,44 +81,46 @@ export default function LoginPage() {
                             priority
                         />
                     </div>
-                    <h1 className="text-2xl font-bold text-masonic-gold text-center tracking-[0.2em] uppercase mb-1 drop-shadow-sm font-serif">
+                    <h1 className="text-2xl font-bold text-[#d4af37] text-center tracking-[0.15em] uppercase mb-1 drop-shadow-xl font-serif">
                         GOMB
                     </h1>
-                    <p className="text-[9px] text-gray-400 uppercase tracking-[0.3em] text-center border-t border-masonic-gold/20 pt-2 px-2">
+                    <p className="text-[7.5px] text-[#b38e2d] uppercase tracking-[0.25em] text-center px-2">
                         Grande Oriente Maçônico do Brasil
                     </p>
                 </div>
 
-                {/* Acesso Federal Badge */}
+                {/* Badge Acesso Federal */}
                 <div className="flex justify-center mb-8">
-                    <span className="bg-[#1a284e] text-[#6b8cff] border border-[#2d4077] text-[10px] px-6 py-1.5 font-bold uppercase tracking-widest rounded-sm shadow-inner">
+                    <span className="bg-[#1a2f6c] text-[#739aff] text-[9px] px-4 py-1.5 font-bold uppercase tracking-widest rounded-sm shadow-inner">
                         Acesso Federal
                     </span>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-5">
+                    {/* Input Usuário */}
                     <div className="space-y-1">
-                        <label className="block text-masonic-gold text-[10px] uppercase tracking-widest font-bold ml-1">
+                        <label className="block text-[#d4af37] text-[9px] uppercase tracking-widest font-bold ml-1">
                             Usuário / Email
                         </label>
                         <input
                             type="text"
                             value={identificacao}
                             onChange={(e) => setIdentificacao(e.target.value)}
-                            className="w-full bg-[#0a1122]/80 border border-white/5 rounded-md text-gray-200 p-2.5 px-4 focus:outline-none focus:border-masonic-gold/50 transition-all text-sm font-sans placeholder-gray-600"
+                            className="w-full bg-[#0d1426] border border-[#1d2b48] rounded-[4px] text-gray-300 p-2.5 text-center focus:outline-none focus:border-[#d4af37]/50 transition-all text-sm font-sans placeholder-[#3b4c6b]"
                             placeholder="Digite seu usuário"
                         />
                     </div>
 
+                    {/* Input Senha */}
                     <div className="space-y-1">
-                        <label className="block text-masonic-gold text-[10px] uppercase tracking-widest font-bold ml-1">
+                        <label className="block text-[#d4af37] text-[9px] uppercase tracking-widest font-bold ml-1">
                             Palavra de Passe
                         </label>
                         <input
                             type="password"
                             value={senha}
                             onChange={(e) => setSenha(e.target.value)}
-                            className="w-full bg-[#0a1122]/80 border border-white/5 rounded-md text-gray-200 p-2.5 px-4 focus:outline-none focus:border-masonic-gold/50 transition-all text-sm font-sans placeholder-gray-600 tracking-widest"
+                            className="w-full bg-[#0d1426] border border-[#1d2b48] rounded-[4px] text-gray-300 p-2.5 text-center focus:outline-none focus:border-[#d4af37]/50 transition-all text-sm font-sans placeholder-[#3b4c6b] tracking-[0.3em]"
                             placeholder="••••••••"
                         />
                     </div>
@@ -134,17 +131,20 @@ export default function LoginPage() {
                         </div>
                     )}
 
-                    <button
-                        type="submit"
-                        disabled={carregando}
-                        className="w-full bg-[#c28f11] hover:bg-[#a87a0b] text-white font-bold py-3 rounded-md shadow-md transform active:scale-[0.98] transition-all uppercase tracking-widest text-xs mt-2 disabled:opacity-50"
-                    >
-                        {carregando ? "Carregando..." : "Adentrar"}
-                    </button>
+                    {/* Botão Adentrar */}
+                    <div className="pt-2">
+                        <button
+                            type="submit"
+                            disabled={carregando}
+                            className="w-full bg-[#d48c00] hover:bg-[#b07400] text-black font-extrabold py-2.5 rounded-[4px] shadow-lg transform active:scale-[0.98] transition-all uppercase tracking-[0.15em] text-[11px] disabled:opacity-50"
+                        >
+                            {carregando ? "Carregando..." : "Adentrar"}
+                        </button>
+                    </div>
                 </form>
 
-                <div className="mt-6 text-center">
-                    <p className="text-[9px] text-[#5c6a91] uppercase tracking-[0.2em]">
+                <div className="mt-8 text-center">
+                    <p className="text-[8px] text-[#4a5f87] uppercase tracking-[0.2em] font-sans">
                         Sistema Interno de Gestão
                     </p>
                 </div>
