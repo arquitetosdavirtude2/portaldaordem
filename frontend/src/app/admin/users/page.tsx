@@ -437,7 +437,7 @@ export default function AdminUsersPage() {
                                                     <div className="text-xs text-gray-500 font-mono bg-black/30 inline-block px-2 py-0.5 rounded border border-white/5">{u.login}</div>
                                                 </td>
                                                 <td className="p-4">
-                                                    {u.role === 'Grão-Mestrado Federal' || u.role === 'admin' ? (
+                                                    {u.role && u.role.includes('Federal') || u.role === 'admin' ? (
                                                         <span className="bg-masonic-gold/20 text-masonic-gold px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-masonic-gold/30 font-bold shadow-[0_0_10px_rgba(234,179,8,0.2)]">
                                                             👑 Grão-Mestrado Federal
                                                         </span>
@@ -448,7 +448,7 @@ export default function AdminUsersPage() {
                                                     )}
                                                 </td>
                                                 <td className="p-4">
-                                                    {u.role === 'Grão-Mestrado Federal' || u.role === 'admin' ? (
+                                                    {u.role && u.role.includes('Federal') || u.role === 'admin' ? (
                                                         <span className="text-gray-400 text-xs italic">Acesso Universal</span>
                                                     ) : (
                                                         <div className="flex flex-wrap gap-1 max-w-xs">
