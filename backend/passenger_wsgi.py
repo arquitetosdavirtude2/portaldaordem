@@ -19,18 +19,28 @@ log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
 # --- APP FastAPI (para /api/) ---
 api_app = None
-try:
-    from dotenv import load_dotenv
-    load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
-    log(f"[startup] DATABASE_URL = {os.getenv('DATABASE_URL', 'NAO DEFINIDA')[:60]}")
-    
-    from main import app as fastapi_app
-    from a2wsgi import ASGIMiddleware
-    api_app = ASGIMiddleware(fastapi_app)
-    log("[startup] FastAPI carregado com sucesso")
-except Exception as e:
-    log(f"[ERRO] FastAPI nao carregou: {str(e)}")
-    log(traceback.format_exc())
+asgi_initialized = False
+
+def get_api_app():
+    global api_app, asgi_initialized
+    if not asgi_initialized:
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+            
+            from main import app as fastapi_app
+            from a2wsgi import ASGIMiddleware
+            
+            # Instancia o adaptador ASGI -> WSGI somente AQUI dentro do worker forked
+            api_app = ASGIMiddleware(fastapi_app)
+            log("[startup] FastAPI/ASGI Middleware carregado c/ sucesso dentro do worker process")
+        except Exception as e:
+            log(f"[ERRO] FastAPI/ASGI nao carregou no worker: {str(e)}")
+            log(traceback.format_exc())
+        finally:
+            asgi_initialized = True
+            
+    return api_app
 
 def serve_static(environ, start_response):
     """Serve arquivos estáticos do frontend/out/"""
@@ -74,6 +84,12 @@ def application(environ, start_response):
     path = environ.get('PATH_INFO', '/')
     method = environ.get('REQUEST_METHOD', 'GET')
     
+    # Correção crítica para cPanel/Passenger: Headers com string vazia travam requisições HTTP para o a2wsgi (loop infinito)
+    if environ.get('CONTENT_LENGTH') == '':
+        environ['CONTENT_LENGTH'] = '0'
+    if environ.get('HTTP_CONTENT_LENGTH') == '':
+        environ['HTTP_CONTENT_LENGTH'] = '0'
+    
     if path.startswith('/api/'):
         log(f"[API] Req WSGI Recebida: {method} {path}")
         
@@ -85,8 +101,9 @@ def application(environ, start_response):
             ])
             return [msg]
             
-        if api_app:
-            return api_app(environ, start_response)
+        app_instance = get_api_app()
+        if app_instance:
+            return app_instance(environ, start_response)
         else:
             msg = b'{"erro": "Backend API indisponivel. Verifique passenger_error.log"}'
             start_response('503 Service Unavailable', [
