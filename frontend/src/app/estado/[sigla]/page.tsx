@@ -67,7 +67,7 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
 
     const carregarPessoas = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pessoas/${sigla}`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${sigla}`);
             if (response.ok) {
                 const data = await response.json();
                 if (Array.isArray(data)) {
@@ -159,8 +159,8 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
                                         'border-gray-500/50 text-gray-300'
                                     }`}>
                                     {
-                                        (acesso?.tipo === 'admin' || acesso?.tipo === 'grao_mestre') ? '👑 Grão Mestrado' :
-                                            acesso?.tipo === 'master' ? '🔑 Mestre Instalado' :
+                                        (acesso?.tipo === 'admin' || acesso?.tipo === 'grao_mestre') ? '👑 Grão-Mestrado Federal' :
+                                            acesso?.tipo === 'master' ? '🔑 Grão-Mestrado Estadual' :
                                                 '👤 Secretaria Estadual'
                                     }
                                 </span>
@@ -187,7 +187,7 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
 
                     {/* Content Area - Transparent */}
                     <div className="p-8">
-                        {/* Formulário de Cadastro (só Grão Mestre / Admin) */}
+                        {/* Formulário de Cadastro (só Grão-Mestrado Federal) */}
                         {(acesso?.tipo === 'admin' || acesso?.tipo === 'grao_mestre') && (
                             <div className="mb-10">
                                 <FormCadastro

@@ -77,7 +77,7 @@ export default function AdminUsersPage() {
 
     const fetchData = async () => {
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
             console.log("Fetching from:", apiUrl);
 
             // Fetch users
@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
         setLoading(true);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
             const payload = {
                 nome,
@@ -208,7 +208,7 @@ export default function AdminUsersPage() {
         if (!confirm('Tem certeza? Isso apagará o acesso deste usuário.')) return;
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
             const res = await fetch(`${apiUrl}/api/admin/users/${id}`, {
                 method: 'DELETE'
             });
@@ -250,7 +250,7 @@ export default function AdminUsersPage() {
                             Gestão de Usuários
                         </h1>
                         <p className="text-gray-400 text-xs uppercase tracking-[0.15em] mt-2">
-                            Cadastro de Grão-Mestrados e Mestres Estaduais
+                            Cadastro de Grão-Mestrados Federais e Estaduais
                         </p>
                     </div>
                     <div className="flex gap-4 mt-4 md:mt-0">
@@ -330,8 +330,8 @@ export default function AdminUsersPage() {
                                     onChange={e => setRole(e.target.value)}
                                     className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer"
                                 >
-                                    <option value="mestre">Mestre (Gestão Estadual)</option>
-                                    <option value="admin">Grão-Mestrado (Acesso Total)</option>
+                                    <option value="mestre">Grão-Mestrado Estadual</option>
+                                    <option value="admin">Grão-Mestrado Federal</option>
                                 </select>
                             </div>
 
@@ -390,7 +390,7 @@ export default function AdminUsersPage() {
 
                             {role === 'admin' && (
                                 <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20 text-center">
-                                    <p className="text-blue-300 text-xs leading-relaxed">👑 Usuários <strong>Grão-Mestrado</strong> possuem acesso irrestrito a todos os Orientes.</p>
+                                    <p className="text-blue-300 text-xs leading-relaxed">👑 Usuários <strong>Grão-Mestrado Federal</strong> possuem acesso irrestrito a todos os Orientes.</p>
                                 </div>
                             )}
 
@@ -439,11 +439,11 @@ export default function AdminUsersPage() {
                                                 <td className="p-4">
                                                     {u.role === 'admin' ? (
                                                         <span className="bg-masonic-gold/20 text-masonic-gold px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-masonic-gold/30 font-bold shadow-[0_0_10px_rgba(234,179,8,0.2)]">
-                                                            👑 Grão-Mestrado
+                                                            👑 Grão-Mestrado Federal
                                                         </span>
                                                     ) : (
                                                         <span className="bg-blue-900/30 text-blue-300 px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-blue-500/30 font-bold">
-                                                            ⚒️ Mestre
+                                                            👑 Grão-Mestrado Estadual
                                                         </span>
                                                     )}
                                                 </td>

@@ -78,7 +78,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-8">
                     <div className="text-right hidden md:block">
                         <p className="text-sm text-masonic-gold/80 font-bold tracking-wider uppercase">
-                            Ir∴ {(user.role === 'master' || user.tipo === 'master' || user.role === 'mestre') ? 'Mestre Instalado' : `Secretário`}
+                            Ir∴ {(user.role === 'master' || user.tipo === 'master' || user.role === 'mestre') ? 'Grão-Mestrado' : `Secretário`}
                         </p>
                         <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">
                             {user.estado ? `Oriente de ${user.estado}` : 'Administração Federal'}
@@ -102,7 +102,7 @@ export default function Dashboard() {
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-32 bg-masonic-gold/5 blur-3xl rounded-full -z-10"></div>
 
                     <h2 className="text-4xl md:text-5xl font-bold text-masonic-gold mb-6 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-serif uppercase tracking-wider">
-                        Bem-vindo, {(user.role === 'master' || user.tipo === 'master' || user.role === 'mestre') ? 'Mestre' : `Irmão`}
+                        Bem-vindo, {(user.role === 'master' || user.tipo === 'master' || user.role === 'mestre') ? 'Grão-Mestrado' : `Irmão`}
                     </h2>
                     <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base font-light tracking-wide leading-relaxed">
                         Selecione abaixo a ferramenta de trabalho para hoje. <br />
