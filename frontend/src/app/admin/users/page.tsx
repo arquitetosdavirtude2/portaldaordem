@@ -77,7 +77,7 @@ export default function AdminUsersPage() {
 
     const fetchData = async () => {
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
             console.log("Fetching from:", apiUrl);
 
             // Fetch users
