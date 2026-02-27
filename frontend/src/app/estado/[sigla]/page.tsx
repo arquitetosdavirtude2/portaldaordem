@@ -27,10 +27,9 @@ const nomeEstados: Record<string, string> = {
     SP: 'São Paulo', SE: 'Sergipe', TO: 'Tocantins'
 };
 
-export default function EstadoPage() {
-    const params = useParams();
+export default function EstadoPage({ params }: { params: { sigla: string } }) {
     const router = useRouter();
-    const sigla = params.sigla as string;
+    const sigla = params.sigla;
 
     const [pessoas, setPessoas] = useState<Pessoa[]>([]);
     const [acesso, setAcesso] = useState<Acesso | null>(null);
