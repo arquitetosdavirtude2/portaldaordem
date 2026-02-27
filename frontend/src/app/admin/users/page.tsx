@@ -41,7 +41,7 @@ export default function AdminUsersPage() {
     const [nome, setNome] = useState('');
     const [login, setLogin] = useState('');
     const [senha, setSenha] = useState('');
-    const [role, setRole] = useState('Grão-Mestrado Estadual'); // 'Grão-Mestrado Estadual' or 'Grão-Mestrado Federal' 
+    const [role, setRole] = useState('mestre'); // 'mestre' or 'admin' 
     const [selectedEstados, setSelectedEstados] = useState<number[]>([]);
 
     // Dropdown state
@@ -140,7 +140,7 @@ export default function AdminUsersPage() {
         setNome('');
         setLogin('');
         setSenha('');
-        setRole('Grão-Mestrado Estadual');
+        setRole('mestre');
         setSelectedEstados([]);
     };
 
@@ -148,7 +148,7 @@ export default function AdminUsersPage() {
         e.preventDefault();
         setMsg('');
 
-        if (selectedEstados.length === 0 && role !== 'Grão-Mestrado Federal') {
+        if (selectedEstados.length === 0 && role !== 'admin') {
             setMsg('⚠️ Selecione pelo menos um estado.');
             return;
         }
@@ -330,13 +330,13 @@ export default function AdminUsersPage() {
                                     onChange={e => setRole(e.target.value)}
                                     className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer"
                                 >
-                                    <option value="Grão-Mestrado Estadual">Grão-Mestrado Estadual</option>
-                                    <option value="Grão-Mestrado Federal">Grão-Mestrado Federal</option>
+                                    <option value="mestre">Grão-Mestrado Estadual</option>
+                                    <option value="admin">Grão-Mestrado Federal</option>
                                 </select>
                             </div>
 
                             {/* Custom Multi-Select Dropdown */}
-                            {role === 'Grão-Mestrado Estadual' && (
+                            {role === 'mestre' && (
                                 <div className="space-y-1 relative" ref={dropdownRef}>
                                     <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Estados Permitidos</label>
                                     <button
@@ -388,7 +388,7 @@ export default function AdminUsersPage() {
                                 </div>
                             )}
 
-                            {role === 'Grão-Mestrado Federal' && (
+                            {role === 'admin' && (
                                 <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20 text-center">
                                     <p className="text-blue-300 text-xs leading-relaxed">👑 Usuários <strong>Grão-Mestrado Federal</strong> possuem acesso irrestrito a todos os Orientes.</p>
                                 </div>
@@ -437,7 +437,7 @@ export default function AdminUsersPage() {
                                                     <div className="text-xs text-gray-500 font-mono bg-black/30 inline-block px-2 py-0.5 rounded border border-white/5">{u.login}</div>
                                                 </td>
                                                 <td className="p-4">
-                                                    {u.role && u.role.includes('Federal') || u.role === 'admin' ? (
+                                                    {u.role === 'admin' ? (
                                                         <span className="bg-masonic-gold/20 text-masonic-gold px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-masonic-gold/30 font-bold shadow-[0_0_10px_rgba(234,179,8,0.2)]">
                                                             👑 Grão-Mestrado Federal
                                                         </span>
@@ -448,7 +448,7 @@ export default function AdminUsersPage() {
                                                     )}
                                                 </td>
                                                 <td className="p-4">
-                                                    {u.role && u.role.includes('Federal') || u.role === 'admin' ? (
+                                                    {u.role === 'admin' ? (
                                                         <span className="text-gray-400 text-xs italic">Acesso Universal</span>
                                                     ) : (
                                                         <div className="flex flex-wrap gap-1 max-w-xs">

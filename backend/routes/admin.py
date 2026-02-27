@@ -11,8 +11,8 @@ class UserCreate(BaseModel):
     nome: str
     login: str
     senha: str
-    role: str = "Grão-Mestrado Estadual" # Grão-Mestrado Federal, Grão-Mestrado Estadual
-    estado_ids: List[int] = [] # List of IDs
+    role: str = Field(default="mestre", description="mestre, admin")
+    estado_ids: Optional[List[int]] = [] # List of IDs
 
 class UserResponse(BaseModel):
     id: int
@@ -35,7 +35,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         role=user.role
     )
     
-    if user.role == 'Grão-Mestrado Estadual' and user.estado_ids:
+    if user.role == "mestre" and user.estado_ids:
         states = db.query(Estado).filter(Estado.id.in_(user.estado_ids)).all()
         new_user.estados = states
     
@@ -86,10 +86,12 @@ def update_user(user_id: int, user_update: UserCreate, db: Session = Depends(get
     if user_update.senha:
         db_user.senha = user_update.senha
         
-    if user_update.role == 'Grão-Mestrado Estadual' and user_update.estado_ids:
+    if user_update.role == "mestre" and user_update.estado_ids is not None:
+        # Recreate state associations
         states = db.query(Estado).filter(Estado.id.in_(user_update.estado_ids)).all()
         db_user.estados = states
-    elif user_update.role == 'Grão-Mestrado Federal':
+    elif user_update.role == "admin":
+        # clear any existing state records if upgrading to admin
         db_user.estados = [] # Admin has implicit access, clear explicit links
         
     db.commit()
