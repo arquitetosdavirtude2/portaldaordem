@@ -72,8 +72,19 @@ def serve_static(environ, start_response):
 def application(environ, start_response):
     """Router principal: /api/ vai para FastAPI, o resto serve estático."""
     path = environ.get('PATH_INFO', '/')
+    method = environ.get('REQUEST_METHOD', 'GET')
     
     if path.startswith('/api/'):
+        log(f"[API] Req WSGI Recebida: {method} {path}")
+        
+        if path == '/api/ping-wsgi':
+            msg = b'{"status": "WSGI Direto Funciona!"}'
+            start_response('200 OK', [
+                ('Content-Type', 'application/json'),
+                ('Content-Length', str(len(msg))),
+            ])
+            return [msg]
+            
         if api_app:
             return api_app(environ, start_response)
         else:

@@ -9,6 +9,8 @@ load_dotenv()
 
 # Usar variável de ambiente ou SQLite local para testes
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database.db")
+if "@localhost/" in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("@localhost/", "@127.0.0.1/")
 
 # Configura engine com parâmetros específicos por banco
 connect_args = {}

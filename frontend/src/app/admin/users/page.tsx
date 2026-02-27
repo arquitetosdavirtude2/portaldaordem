@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
         setLoading(true);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
 
             const payload = {
                 nome,
@@ -208,7 +208,7 @@ export default function AdminUsersPage() {
         if (!confirm('Tem certeza? Isso apagará o acesso deste usuário.')) return;
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
             const res = await fetch(`${apiUrl}/api/admin/users/${id}`, {
                 method: 'DELETE'
             });
