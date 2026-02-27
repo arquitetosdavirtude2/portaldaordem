@@ -12,14 +12,15 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database.db")
 
 # No cPanel, conexões TCP locais muitas vezes sofrem timeout silencioso (SYN drop)
-# Forçamos o uso do socket UNIX nativo do MySQL quando rodando em produção.
+# Forçamos o uso do socket UNIX nativo do MySQL quando rodando em produção (Linux).
 if "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in DATABASE_URL):
     DATABASE_URL = DATABASE_URL.replace("@127.0.0.1", "@localhost")
-    if "unix_socket=" not in DATABASE_URL:
-        if "?" in DATABASE_URL:
-            DATABASE_URL += "&unix_socket=/var/lib/mysql/mysql.sock"
-        else:
-            DATABASE_URL += "?unix_socket=/var/lib/mysql/mysql.sock"
+    if os.name != 'nt':  # Aplica socket apenas se NÃO estiver no Windows
+        if "unix_socket=" not in DATABASE_URL:
+            if "?" in DATABASE_URL:
+                DATABASE_URL += "&unix_socket=/var/lib/mysql/mysql.sock"
+            else:
+                DATABASE_URL += "?unix_socket=/var/lib/mysql/mysql.sock"
 
 # Configura engine com parâmetros específicos por banco
 connect_args = {}
