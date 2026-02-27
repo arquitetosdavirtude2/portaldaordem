@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 import os
 from dotenv import load_dotenv
 
@@ -31,11 +32,7 @@ elif "mysql" in DATABASE_URL:
 engine = create_engine(
     DATABASE_URL,
     connect_args=connect_args,
-    pool_pre_ping=True,      # Verifica conexão antes de usar
-    pool_recycle=1800,        # Recicla conexões a cada 30min
-    pool_timeout=10,          # Espera no máximo 10s para obter conexão do pool
-    pool_size=5,              # Máximo 5 conexões simultâneas
-    max_overflow=2,           # Permite até 2 extras em pico
+    poolclass=NullPool,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
