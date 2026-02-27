@@ -12,9 +12,8 @@ def log(msg):
     with open(log_path, 'a') as f:
         f.write(msg + "\n")
 
-# Caminho absoluto para os arquivos estáticos do frontend (out/)
-STATIC_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'out')
-STATIC_DIR = os.path.abspath(STATIC_DIR)
+# Caminho absoluto para os arquivos estáticos do frontend em public_html
+STATIC_DIR = '/home1/portald3/public_html/portaldaordem'
 log(f"[startup] STATIC_DIR = {STATIC_DIR}")
 log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
