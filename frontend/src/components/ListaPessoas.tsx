@@ -35,7 +35,7 @@ export default function ListaPessoas({
     const handleMudarStatus = async (pessoa: Pessoa, novoStatus: string) => {
         try {
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/pessoas/${pessoa.id}`,
+                `${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${pessoa.id}`,
                 {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -58,7 +58,7 @@ export default function ListaPessoas({
 
         try {
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/pessoas/${pessoaId}`,
+                `${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${pessoaId}`,
                 { method: 'DELETE' }
             );
 

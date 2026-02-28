@@ -25,7 +25,7 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
 
     const carregarPessoas = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pessoas/${sigla}`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${sigla}`);
             if (response.ok) {
                 const data = await response.json();
                 setPessoas(Array.isArray(data) ? data : []);

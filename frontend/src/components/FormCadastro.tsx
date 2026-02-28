@@ -50,7 +50,7 @@ export default function FormCadastro({ estadoSigla, onPessoaCriada }: FormCadast
     setMensagem('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pessoas`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
