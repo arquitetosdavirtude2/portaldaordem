@@ -78,8 +78,9 @@ export default function ListaPessoas({
         return cores[status as keyof typeof cores] || 'bg-gray-100 text-gray-800';
     };
 
-    const podeEditar = tipoAcesso === 'master' || tipoAcesso === 'mestre' || tipoAcesso === 'admin' || tipoAcesso === 'grao_mestre';
-    const podeDeletar = tipoAcesso === 'admin' || tipoAcesso === 'grao_mestre';
+    const roleStr = String(tipoAcesso).toLowerCase();
+    const podeEditar = ['master', 'mestre', 'admin', 'grao_mestre', 'estadual'].includes(roleStr);
+    const podeDeletar = ['admin', 'grao_mestre', 'master'].includes(roleStr);
 
     return (
         <div className="bg-black/20 backdrop-blur-md rounded-xl border border-white/5 overflow-hidden">

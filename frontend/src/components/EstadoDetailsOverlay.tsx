@@ -72,9 +72,9 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                             <span className="font-bold text-white">{sigla}</span>
                             <span>•</span>
                             <span>
-                                {userRole === 'admin' || userRole === 'grao_mestre'
+                                {['admin', 'grao_mestre', 'master'].includes(String(userRole).toLowerCase())
                                     ? '👑 Acesso Total'
-                                    : (userRole === 'master' || userRole === 'mestre')
+                                    : ['mestre', 'estadual'].includes(String(userRole).toLowerCase())
                                         ? '⚒️ Gestão de Loja'
                                         : '🔑 Acesso Visualização'}
                             </span>
@@ -95,7 +95,7 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                 <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1 bg-black/20">
 
                     {/* Control Bar - Only for Admins */}
-                    {(userRole === 'admin' || userRole === 'grao_mestre') && (
+                    {['admin', 'grao_mestre', 'master', 'mestre', 'estadual'].includes(String(userRole).toLowerCase()) && (
                         <div className="mb-6 flex justify-end">
                             <button
                                 onClick={() => setShowForm(!showForm)}
@@ -110,7 +110,7 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                     )}
 
                     {/* Form Cadastro (Collapsible) */}
-                    {showForm && (userRole === 'admin' || userRole === 'grao_mestre') && (
+                    {showForm && ['admin', 'grao_mestre', 'master', 'mestre', 'estadual'].includes(String(userRole).toLowerCase()) && (
                         <div className="mb-8 animate-in slide-in-from-top-4 fade-in duration-300">
                             <FormCadastro
                                 estadoSigla={sigla}
