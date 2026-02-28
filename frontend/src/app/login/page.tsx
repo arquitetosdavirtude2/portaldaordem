@@ -15,7 +15,7 @@ export default function LoginPage() {
     useEffect(() => {
         const access = localStorage.getItem('acesso');
         if (access) {
-            router.push('/dashboard');
+            router.replace('/dashboard');
         }
     }, [router]);
 

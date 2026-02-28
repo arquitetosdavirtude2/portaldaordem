@@ -134,7 +134,8 @@ export default function MapaBrasil() {
                 <div className="inline-flex items-center gap-4 px-6 py-2 bg-black/40 backdrop-blur-sm rounded-full border border-white/10 shadow-lg pointer-events-auto">
                     <button onClick={() => {
                         // All logged users can go to Dashboard since it handles permissions
-                        router.push('/dashboard');
+                        // Use replace to avoid pushing duplicate entries to browser history (fixing back button loops)
+                        router.replace('/dashboard');
                     }} className="text-xs text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2 group">
                         <span className="group-hover:-translate-x-1 transition-transform">←</span>
                         Voltar ao Painel
