@@ -249,7 +249,9 @@ export default function AdminUsersPage() {
                         <h1 className="text-3xl text-masonic-gold font-bold uppercase tracking-[0.2em] drop-shadow-md">
                             Gestão de Usuários
                         </h1>
-                        CADASTRO DE GRÃO-MESTRADOS FEDERAIS E ESTADUAIS
+                        <p className="text-gray-400 text-xs uppercase tracking-[0.15em] mt-2">
+                            CADASTRO DE GRÃO-MESTRADOS FEDERAIS E ESTADUAIS
+                        </p>
                     </div>
                     <div className="flex gap-4 mt-4 md:mt-0">
                         {/* 'Voltar ao Painel' removed as per user request to avoid redirect loops */}
