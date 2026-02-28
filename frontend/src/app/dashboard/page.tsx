@@ -16,14 +16,9 @@ export default function Dashboard() {
             const userObj = JSON.parse(access);
             setUser(userObj);
 
-            // IMMEDIATE REDIRECT FOR MASTER:
-            // The user considers the dashboard menu a "modal" and wants the Globe immediately.
-            const userRole = userObj.role || userObj.tipo;
-            if (userRole === 'master' || userRole === 'mestre') {
-                window.location.href = '/mapa';
-            }
-        }
-    }, [router]);
+            // Remove immediate redirect since it causes a loop when the user tries to click 'Voltar ao painel'
+            // The cards below can be clicked instead.
+        }, [router]);
 
     const handleLogout = () => {
         localStorage.removeItem('acesso');
