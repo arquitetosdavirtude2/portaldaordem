@@ -21,6 +21,8 @@ export default function MapaBrasil() {
     const [estadoSelecionado, setEstadoSelecionado] = useState<string | null>(null);
     const [estadoHover, setEstadoHover] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'master' | 'mestre' | 'estadual' | 'admin' | 'grao_mestre' | null>(null);
+    const [userEstados, setUserEstados] = useState<string[]>([]);
+    const [showPermissionWarning, setShowPermissionWarning] = useState(false);
 
     // Load user role on mount
     useEffect(() => {
@@ -28,20 +30,25 @@ export default function MapaBrasil() {
             const access = localStorage.getItem('acesso');
             if (access) {
                 const user = JSON.parse(access);
-                // Backend sends 'tipo': 'leitor' for regular users, and real role in 'role'.
-                // Master Admin has 'tipo': 'master' and no role.
                 const realRole = user.role || user.tipo || 'master';
                 setUserRole(realRole);
+                setUserEstados(user.estados || (user.estado ? [user.estado] : []));
             } else {
-                // Fallback or handle not logged in
                 setUserRole('master');
             }
         }
     }, []);
 
     const handleClickEstado = (sigla: string) => {
-        // Instead of routing, we set the selected state to show the overlay
-        setEstadoSelecionado(sigla);
+        // Only Master/Admin or users with explicit permission can select the state
+        if (userRole === 'master' || userRole === 'admin' || userRole === 'mestre' && userEstados.includes(sigla)) {
+            setEstadoSelecionado(sigla);
+            setShowPermissionWarning(false);
+        } else {
+            // Flash a warning or just ignore the click
+            setShowPermissionWarning(true);
+            setTimeout(() => setShowPermissionWarning(false), 2000);
+        }
     };
 
     const handleCloseOverlay = () => {
@@ -109,25 +116,25 @@ export default function MapaBrasil() {
 
                 {/* Instruction Text - Moved Up */}
                 {!estadoSelecionado && (
-                    <p className="text-[10px] text-gray-400 font-light uppercase tracking-[0.3em] animate-pulse">
-                        Selecione um Oriente no Globo
-                    </p>
+                    <div className="flex flex-col items-center">
+                        <p className="text-[10px] text-gray-400 font-light uppercase tracking-[0.3em] animate-pulse">
+                            Selecione um Oriente no Globo
+                        </p>
+                        {showPermissionWarning && (
+                            <p className="text-[10px] text-red-500 font-bold uppercase tracking-[0.2em] mt-2 animate-bounce">
+                                ⚠️ Acesso Restrito: Sem permissão para este Oriente
+                            </p>
+                        )}
+                    </div>
                 )}
 
                 <div className="inline-flex items-center gap-4 px-6 py-2 bg-black/40 backdrop-blur-sm rounded-full border border-white/10 shadow-lg pointer-events-auto">
                     <button onClick={() => {
-                        const access = localStorage.getItem('acesso');
-                        const usr = access ? JSON.parse(access) : null;
-                        if (usr && (usr.tipo === 'master' || usr.tipo === 'mestre')) {
-                            localStorage.removeItem('acesso');
-                            router.push('/login');
-                        } else {
-                            router.push('/dashboard');
-                        }
+                        // All logged users can go to Dashboard since it handles permissions
+                        router.push('/dashboard');
                     }} className="text-xs text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2 group">
                         <span className="group-hover:-translate-x-1 transition-transform">←</span>
-                        {/* Fix Hydration Error: Only show specific text if we know the role, default to generic */}
-                        {(userRole === 'master' || userRole === 'mestre') ? 'Sair do Sistema' : 'Voltar ao Painel'}
+                        Voltar ao Painel
                     </button>
                     {!estadoSelecionado && (
                         <>
