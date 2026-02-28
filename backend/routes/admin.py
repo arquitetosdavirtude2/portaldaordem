@@ -12,7 +12,14 @@ class UserCreate(BaseModel):
     nome: str
     login: str
     senha: str
-    role: str = Field(default="Grão-Mestrado Estadual", description="Grão-Mestrado Federal, Grão-Mestrado Estadual")
+    role: str = Field(default="mestre", description="mestre, admin")
+    estado_ids: Optional[List[int]] = [] # List of IDs
+
+class UserUpdate(BaseModel):
+    nome: Optional[str] = None
+    login: Optional[str] = None
+    senha: Optional[str] = None
+    role: Optional[str] = Field(None, description="mestre, admin")
     estado_ids: Optional[List[int]] = [] # List of IDs
 
 class UserResponse(BaseModel):
@@ -36,7 +43,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         role=user.role
     )
     
-    if user.role == "Grão-Mestrado Estadual" and user.estado_ids:
+    if user.role == "mestre" and user.estado_ids:
         states = db.query(Estado).filter(Estado.id.in_(user.estado_ids)).all()
         new_user.estados = states
     
@@ -67,19 +74,23 @@ def list_users(db: Session = Depends(get_db)):
     return response
 
 @router.put("/users/{user_id}", response_model=UserResponse)
-def update_user(user_id: int, user_update: UserCreate, db: Session = Depends(get_db)):
+def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
     db_user = db.query(Usuario).filter(Usuario.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
     # Check if new login exists (and is not self)
-    existing = db.query(Usuario).filter(Usuario.login == user_update.login, Usuario.id != user_id).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Login já existe")
+    if user_update.login is not None and user_update.login != db_user.login:
+        existing = db.query(Usuario).filter(Usuario.login == user_update.login).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Login já existe")
     
-    db_user.nome = user_update.nome
-    db_user.login = user_update.login
-    db_user.role = user_update.role
+    if user_update.nome is not None:
+        db_user.nome = user_update.nome
+    if user_update.login is not None:
+        db_user.login = user_update.login
+    if user_update.role is not None:
+        db_user.role = user_update.role
     
     # Only update password if provided (simple logic for now, frontend sends current PW if not changed or we handle empty)
     # Actually, UserCreate requires password. Frontend must send new or keep old. 
@@ -87,12 +98,12 @@ def update_user(user_id: int, user_update: UserCreate, db: Session = Depends(get
     if user_update.senha:
         db_user.senha = user_update.senha
         
-    if user_update.role == "Grão-Mestrado Estadual" and user_update.estado_ids is not None:
+    if user_update.role == "mestre" and user_update.estado_ids is not None:
         # Recreate state associations
         states = db.query(Estado).filter(Estado.id.in_(user_update.estado_ids)).all()
         db_user.estados = states
-    elif user_update.role == "Grão-Mestrado Federal":
-        # clear any existing state records if upgrading to Grão-Mestrado Federal
+    elif user_update.role == "admin":
+        # clear any existing state records if upgrading to admin
         db_user.estados = [] # Admin has implicit access, clear explicit links
         
     db.commit()
