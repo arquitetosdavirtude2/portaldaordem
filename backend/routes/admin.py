@@ -92,7 +92,7 @@ def update_user(user_id: int, user_update: UserCreate, db: Session = Depends(get
         states = db.query(Estado).filter(Estado.id.in_(user_update.estado_ids)).all()
         db_user.estados = states
     elif user_update.role == "Grão-Mestrado Federal":
-        # clear any existing state records if upgrading to admin
+        # clear any existing state records if upgrading to Grão-Mestrado Federal
         db_user.estados = [] # Admin has implicit access, clear explicit links
         
     db.commit()
