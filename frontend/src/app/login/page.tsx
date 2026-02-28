@@ -34,10 +34,14 @@ export default function LoginPage() {
             const data = await response.json();
 
             if (data.success) {
+                // Ensure dirty caches don't retain 'master' permissions for standard users
+                const userRole = data.role === 'admin' ? 'admin' : (data.role || 'mestre');
+                const userTipo = data.tipo || 'leitor';
+
                 localStorage.setItem('acesso', JSON.stringify({
                     login: identificacao,
-                    tipo: data.tipo,
-                    role: data.role,
+                    tipo: userTipo,
+                    role: userRole,
                     estado: data.allowed_states && data.allowed_states.length > 0 ? data.allowed_states[0] : 'BR',
                     allowed_states: data.allowed_states
                 }));
