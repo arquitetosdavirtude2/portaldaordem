@@ -18,7 +18,8 @@ export default function Dashboard() {
 
             // Remove immediate redirect since it causes a loop when the user tries to click 'Voltar ao painel'
             // The cards below can be clicked instead.
-        }, [router]);
+        }
+    }, [router]);
 
     const handleLogout = () => {
         localStorage.removeItem('acesso');
