@@ -5,7 +5,11 @@ const nextConfig = {
     swcMinify: false,
     eslint: { ignoreDuringBuilds: true },
     images: { unoptimized: true },
-    trailingSlash: true
+    trailingSlash: true,
+    experimental: {
+        cpus: 1,
+        workerThreads: false
+    }
 };
 
 if (isBuild) {
