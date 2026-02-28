@@ -2,7 +2,9 @@ const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
 
-const dev = process.env.NODE_ENV !== 'production';
+// FORÇAR MODO PRODUÇÃO: CPanel muitas vezes injeta NODE_ENV="development",
+// o que faz o Next.js ignorar o build e tentar compilar on-the-fly, falhando ou rodando código antigo.
+const dev = false;
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
