@@ -13,7 +13,7 @@ def log(msg):
         f.write(msg + "\n")
 
 # Caminho absoluto para os arquivos estáticos do frontend em public_html
-STATIC_DIR = '/home1/portald3/public_html/portaldaordem'
+STATIC_DIR = '/home1/portald3/public_html/portaldaordem/frontend/out'
 log(f"[startup] STATIC_DIR = {STATIC_DIR}")
 log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
