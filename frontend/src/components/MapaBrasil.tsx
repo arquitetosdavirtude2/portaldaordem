@@ -32,7 +32,8 @@ export default function MapaBrasil() {
                 const user = JSON.parse(access);
                 const realRole = user.role || user.tipo || 'master';
                 setUserRole(realRole);
-                setUserEstados(user.estados || (user.estado ? [user.estado] : []));
+                const statesAllowed = user.allowed_states || user.estados || (user.estado ? [user.estado] : []);
+                setUserEstados(statesAllowed);
             } else {
                 setUserRole('master');
             }
@@ -41,7 +42,7 @@ export default function MapaBrasil() {
 
     const handleClickEstado = (sigla: string) => {
         // Only Master/Admin or users with explicit permission can select the state
-        if (userRole === 'master' || userRole === 'admin' || userRole === 'mestre' && userEstados.includes(sigla)) {
+        if (userRole === 'master' || userRole === 'admin' || (userRole === 'mestre' && userEstados.includes(sigla))) {
             setEstadoSelecionado(sigla);
             setShowPermissionWarning(false);
         } else {
