@@ -13,7 +13,7 @@ const nextConfig = {
 };
 
 if (isBuild) {
-    nextConfig.output = 'export';
+    // nextConfig.output = 'export';
 } else {
     // Apenas no ambiente local de desenvolvimento (npm run dev)
     nextConfig.rewrites = async () => {
