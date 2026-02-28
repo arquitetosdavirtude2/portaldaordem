@@ -11,13 +11,18 @@ export default function LoginPage() {
     const [senha, setSenha] = useState('');
     const [erro, setErro] = useState('');
     const [carregando, setCarregando] = useState(false);
+    const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
     useEffect(() => {
         const access = localStorage.getItem('acesso');
         if (access) {
-            router.push('/dashboard');
+            // Use window.location.replace to completely nuke the history state 
+            // and avoid the SPA back-button trap
+            window.location.replace('/dashboard');
+        } else {
+            setHasCheckedAuth(true);
         }
-    }, [router]);
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,14 +39,18 @@ export default function LoginPage() {
             const data = await response.json();
 
             if (data.success) {
+                // Ensure dirty caches don't retain 'master' permissions for standard users
+                const userRole = data.role === 'admin' ? 'admin' : (data.role || 'mestre');
+                const userTipo = data.tipo || 'leitor';
+
                 localStorage.setItem('acesso', JSON.stringify({
                     login: identificacao,
-                    tipo: data.tipo,
-                    role: data.role,
-                    estado: data.allowed_states && data.allowed_states.length > 0 ? data.allowed_states[0] : 'BR',
-                    allowed_states: data.allowed_states
+                    tipo: userTipo,
+                    role: userRole,
+                    estado: Array.isArray(data.allowed_states) && data.allowed_states.length > 0 ? data.allowed_states[0] : 'BR',
+                    allowed_states: Array.isArray(data.allowed_states) ? data.allowed_states : []
                 }));
-                router.push('/dashboard');
+                window.location.href = '/dashboard';
             } else {
                 setErro(data.message || 'Credenciais inválidas.');
             }
@@ -51,6 +60,10 @@ export default function LoginPage() {
             setCarregando(false);
         }
     };
+
+    if (!hasCheckedAuth) {
+        return <div className="min-h-screen bg-[#0a1536]" />; // Blank screen prevents flicker
+    }
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-[radial-gradient(circle_at_center,_#1c3879_0%,_#0a1536_40%,_#000000_100%)] relative overflow-hidden font-serif">

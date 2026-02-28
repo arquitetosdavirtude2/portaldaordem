@@ -32,21 +32,20 @@ export default function MapaBrasil() {
                 const user = JSON.parse(access);
                 const realRole = user.role || user.tipo || 'master';
                 setUserRole(realRole);
-                setUserEstados(user.estados || (user.estado ? [user.estado] : []));
+                const statesAllowed = user.allowed_states || user.estados || (user.estado ? [user.estado] : []);
+                setUserEstados(statesAllowed);
             } else {
-                setUserRole('master');
+                // Not logged in -> redirect to login immediately
+                router.replace('/login');
             }
         }
-    }, []);
+    }, [router]);
 
     const handleClickEstado = (sigla: string) => {
-        // Only Master/Admin/Grao Mestre or users with explicit permission can select the state
-        if (
-            userRole === 'master' ||
-            userRole === 'admin' ||
-            userRole === 'grao_mestre' ||
-            ((userRole === 'mestre' || userRole === 'estadual') && userEstados.includes(sigla))
-        ) {
+        // Only Master/Admin or users with explicit permission can select the state (case-insensitive and trimmed)
+        const isMestreWithAccess = ['mestre', 'estadual'].includes(String(userRole).toLowerCase()) && userEstados.some(s => s.trim().toUpperCase() === sigla.trim().toUpperCase());
+
+        if (['master', 'admin', 'grao_mestre'].includes(String(userRole).toLowerCase()) || isMestreWithAccess) {
             setEstadoSelecionado(sigla);
             setShowPermissionWarning(false);
         } else {
@@ -136,7 +135,8 @@ export default function MapaBrasil() {
                 <div className="inline-flex items-center gap-4 px-6 py-2 bg-black/40 backdrop-blur-sm rounded-full border border-white/10 shadow-lg pointer-events-auto">
                     <button onClick={() => {
                         // All logged users can go to Dashboard since it handles permissions
-                        router.push('/dashboard');
+                        // Use replace to avoid pushing duplicate entries to browser history (fixing back button loops)
+                        router.replace('/dashboard');
                     }} className="text-xs text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2 group">
                         <span className="group-hover:-translate-x-1 transition-transform">←</span>
                         Voltar ao Painel
