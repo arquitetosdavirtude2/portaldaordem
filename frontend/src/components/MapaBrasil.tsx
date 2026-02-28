@@ -40,8 +40,13 @@ export default function MapaBrasil() {
     }, []);
 
     const handleClickEstado = (sigla: string) => {
-        // Only Master/Admin or users with explicit permission can select the state
-        if (userRole === 'master' || userRole === 'admin' || userRole === 'mestre' && userEstados.includes(sigla)) {
+        // Only Master/Admin/Grao Mestre or users with explicit permission can select the state
+        if (
+            userRole === 'master' ||
+            userRole === 'admin' ||
+            userRole === 'grao_mestre' ||
+            ((userRole === 'mestre' || userRole === 'estadual') && userEstados.includes(sigla))
+        ) {
             setEstadoSelecionado(sigla);
             setShowPermissionWarning(false);
         } else {
