@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Adiciona a barra no final caso aponte para um diretório válido dento de out/,
+# mas o usuário não digitou a barra na URL (evita que Apache redirecione para /out/nome/)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/out%{REQUEST_URI} -d
+RewriteRule ^(.*[^/])$ /$1/ [L,R=301]
+
+# Redireciona internamente de forma invisível todas as requisições para a pasta out/
+RewriteCond %{REQUEST_URI} !^/out/
+RewriteRule ^(.*)$ out/$1 [L]
+
+# Configura regras estritas para lidar com erros 404 (puxa da pasta out)
+ErrorDocument 404 /out/404.html
+</IfModule>
