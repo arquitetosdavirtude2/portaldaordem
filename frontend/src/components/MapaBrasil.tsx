@@ -35,10 +35,11 @@ export default function MapaBrasil() {
                 const statesAllowed = user.allowed_states || user.estados || (user.estado ? [user.estado] : []);
                 setUserEstados(statesAllowed);
             } else {
-                setUserRole('master');
+                // Not logged in -> redirect to login immediately
+                router.replace('/login');
             }
         }
-    }, []);
+    }, [router]);
 
     const handleClickEstado = (sigla: string) => {
         // Only Master/Admin or users with explicit permission can select the state (case-insensitive and trimmed)
