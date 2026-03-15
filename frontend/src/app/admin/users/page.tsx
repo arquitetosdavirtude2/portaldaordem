@@ -9,6 +9,16 @@ interface User {
     login: string;
     role: string;
     estados: string[];
+    loja_id: number | null;
+    loja_nome: string | null;
+}
+
+interface Loja {
+    id: number;
+    nome: string;
+    numero: string;
+    estado_id: number;
+    estado_sigla: string;
 }
 
 interface Estado {
@@ -35,14 +45,16 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     // Initialize with static data so it's NEVER empty
     const [estados, setEstados] = useState<Estado[]>(ESTADOS_STATIC);
+    const [lojas, setLojas] = useState<Loja[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Form state
     const [nome, setNome] = useState('');
     const [login, setLogin] = useState('');
     const [senha, setSenha] = useState('');
-    const [role, setRole] = useState('mestre'); // 'mestre' or 'admin'
+    const [role, setRole] = useState('mestre'); // 'mestre', 'admin' or 'loja'
     const [selectedEstados, setSelectedEstados] = useState<number[]>([]);
+    const [selectedLoja, setSelectedLoja] = useState<number | null>(null);
 
     // Dropdown state
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -84,6 +96,12 @@ export default function AdminUsersPage() {
             const usersRes = await fetch(`${apiUrl}/api/admin/users`);
             if (usersRes.ok) {
                 setUsers(await usersRes.json());
+            }
+
+            // Fetch lojas
+            const lojasRes = await fetch(`${apiUrl}/api/lojas`);
+            if (lojasRes.ok) {
+                setLojas(await lojasRes.json());
             }
 
             // Try to fetch states from API to get any updates, but we already have static
@@ -130,6 +148,7 @@ export default function AdminUsersPage() {
             .filter(e => user.estados.includes(e.sigla))
             .map(e => e.id);
         setSelectedEstados(userStateIds);
+        setSelectedLoja(user.loja_id);
 
         // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -142,14 +161,20 @@ export default function AdminUsersPage() {
         setSenha('');
         setRole('mestre');
         setSelectedEstados([]);
+        setSelectedLoja(null);
     };
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setMsg('');
 
-        if (selectedEstados.length === 0 && role !== 'admin') {
+        if (selectedEstados.length === 0 && role === 'mestre') {
             setMsg('⚠️ Selecione pelo menos um estado.');
+            return;
+        }
+
+        if (role === 'loja' && !selectedLoja) {
+            setMsg('⚠️ Selecione uma loja.');
             return;
         }
 
@@ -169,7 +194,8 @@ export default function AdminUsersPage() {
                 login,
                 senha, // Send empty string if not changed. Backend checks `if user_update.senha:`
                 role,
-                estado_ids: selectedEstados
+                estado_ids: selectedEstados,
+                loja_id: role === 'loja' ? selectedLoja : null
             };
 
             let method = 'POST';
@@ -256,6 +282,12 @@ export default function AdminUsersPage() {
                     <div className="flex gap-4 mt-4 md:mt-0">
                         {/* 'Voltar ao Painel' removed as per user request to avoid redirect loops */}
                         <button
+                            onClick={() => router.push('/admin/lojas')}
+                            className="px-6 py-2 bg-yellow-900/20 border border-yellow-500/30 text-yellow-400 rounded hover:bg-yellow-900/40 transition-all text-xs uppercase tracking-widest hover:text-yellow-300 hover:shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                        >
+                            Gestão de Lojas
+                        </button>
+                        <button
                             onClick={() => {
                                 localStorage.removeItem('acesso');
                                 router.push('/master-admin');
@@ -332,8 +364,28 @@ export default function AdminUsersPage() {
                                 >
                                     <option value="mestre">Grão-Mestrado Estadual</option>
                                     <option value="admin">Grão-Mestrado Federal</option>
+                                    <option value="loja">Venerável Mestre / Loja</option>
                                 </select>
                             </div>
+
+                            {/* Loja Select */}
+                            {role === 'loja' && (
+                                <div className="space-y-1">
+                                    <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Loja</label>
+                                    <select
+                                        value={selectedLoja || ''}
+                                        onChange={e => setSelectedLoja(Number(e.target.value))}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer"
+                                    >
+                                        <option value="" disabled>Selecione uma Loja...</option>
+                                        {lojas.map(loja => (
+                                            <option key={loja.id} value={loja.id}>
+                                                Loja {loja.nome} N° {loja.numero} ({loja.estado_sigla})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
                             {/* Custom Multi-Select Dropdown */}
                             {role === 'mestre' && (
@@ -441,6 +493,10 @@ export default function AdminUsersPage() {
                                                         <span className="bg-masonic-gold/20 text-masonic-gold px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-masonic-gold/30 font-bold shadow-[0_0_10px_rgba(234,179,8,0.2)]">
                                                             👑 Grão-Mestrado Federal
                                                         </span>
+                                                    ) : u.role === 'loja' ? (
+                                                        <span className="bg-green-900/30 text-green-300 px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-green-500/30 font-bold">
+                                                            🏛️ Venerável Mestre / Loja
+                                                        </span>
                                                     ) : (
                                                         <span className="bg-blue-900/30 text-blue-300 px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-blue-500/30 font-bold">
                                                             ⚒️ Grão-Mestrado Estadual
@@ -450,6 +506,8 @@ export default function AdminUsersPage() {
                                                 <td className="p-4">
                                                     {u.role === 'admin' ? (
                                                         <span className="text-gray-400 text-xs italic">Acesso Universal</span>
+                                                    ) : u.role === 'loja' ? (
+                                                        <span className="text-green-400 text-xs font-bold">{u.loja_nome || 'Desconhecida'}</span>
                                                     ) : (
                                                         <div className="flex flex-wrap gap-1 max-w-xs">
                                                             {u.estados && u.estados.length > 0 ? u.estados.map(sigla => (

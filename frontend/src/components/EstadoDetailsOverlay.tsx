@@ -9,6 +9,22 @@ interface Pessoa {
     nome: string;
     telefone: string;
     status: string;
+    loja_id?: number | null;
+    loja_nome?: string | null;
+}
+
+interface Loja {
+    id: number;
+    nome: string;
+    numero: string;
+    estado_id: number;
+    estado_sigla: string;
+}
+
+interface Acesso {
+    tipo: string;
+    role?: string;
+    loja_id?: number | null;
 }
 
 interface EstadoDetailsOverlayProps {
@@ -20,27 +36,48 @@ interface EstadoDetailsOverlayProps {
 
 export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onClose }: EstadoDetailsOverlayProps) {
     const [pessoas, setPessoas] = useState<Pessoa[]>([]);
+    const [lojas, setLojas] = useState<Loja[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    
+    // We mock the `acesso` based on userRole if it is passed this way
+    const [acesso, setAcesso] = useState<Acesso>({ tipo: userRole, role: userRole });
 
-    const carregarPessoas = async () => {
+    const carregarDados = async () => {
+        setCarregando(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${sigla}`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+            
+            const response = await fetch(`${apiUrl}/api/pessoas/${sigla}`);
             if (response.ok) {
                 const data = await response.json();
                 setPessoas(Array.isArray(data) ? data : []);
             } else {
                 setPessoas([]);
             }
+
+            const resLojas = await fetch(`${apiUrl}/api/lojas`);
+            if (resLojas.ok) {
+                const todasLojas: Loja[] = await resLojas.json();
+                const lojasDoEstado = todasLojas.filter(l => l.estado_sigla === sigla);
+                setLojas(lojasDoEstado);
+            }
+            
+            // Re-sync local storage acesso just in case
+            const acessoStorage = localStorage.getItem('acesso');
+            if (acessoStorage) {
+                setAcesso(JSON.parse(acessoStorage));
+            }
+            
         } catch (error) {
-            console.error('Erro ao carregar pessoas:', error);
+            console.error('Erro ao carregar dados:', error);
         } finally {
             setCarregando(false);
         }
     };
 
     useEffect(() => {
-        carregarPessoas();
+        carregarDados();
     }, [sigla]);
 
     const handlePessoaCriada = (novaPessoa: Pessoa) => {
@@ -110,10 +147,12 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                     )}
 
                     {/* Form Cadastro (Collapsible) */}
-                    {showForm && ['admin', 'grao_mestre', 'master', 'mestre', 'estadual'].includes(String(userRole).toLowerCase()) && (
+                    {showForm && ['admin', 'grao_mestre', 'master', 'mestre', 'estadual', 'loja'].includes(String(userRole).toLowerCase()) && (
                         <div className="mb-8 animate-in slide-in-from-top-4 fade-in duration-300">
                             <FormCadastro
                                 estadoSigla={sigla}
+                                lojas={lojas}
+                                acesso={acesso}
                                 onPessoaCriada={(p) => {
                                     handlePessoaCriada(p);
                                     setShowForm(false); // Auto-close after success
@@ -131,6 +170,7 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                         <ListaPessoas
                             pessoas={pessoas}
                             tipoAcesso={userRole}
+                            acesso={acesso}
                             onStatusAtualizado={handleStatusAtualizado}
                             onPessoaDeletada={handlePessoaDeletada}
                         />

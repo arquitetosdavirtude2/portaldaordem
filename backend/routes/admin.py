@@ -12,15 +12,17 @@ class UserCreate(BaseModel):
     nome: str
     login: str
     senha: str
-    role: str = Field(default="mestre", description="mestre, admin")
+    role: str = Field(default="mestre", description="mestre, admin, loja")
     estado_ids: Optional[List[int]] = [] # List of IDs
+    loja_id: Optional[int] = None
 
 class UserUpdate(BaseModel):
     nome: Optional[str] = None
     login: Optional[str] = None
     senha: Optional[str] = None
-    role: Optional[str] = Field(None, description="mestre, admin")
+    role: Optional[str] = Field(None, description="mestre, admin, loja")
     estado_ids: Optional[List[int]] = [] # List of IDs
+    loja_id: Optional[int] = None
 
 class UserResponse(BaseModel):
     id: int
@@ -28,6 +30,8 @@ class UserResponse(BaseModel):
     login: str
     role: str
     estados: List[str] = [] # List of Siglas
+    loja_id: Optional[int] = None
+    loja_nome: Optional[str] = None
 
 @router.post("/users", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -40,7 +44,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         nome=user.nome,
         login=user.login,
         senha=user.senha,
-        role=user.role
+        role=user.role,
+        loja_id=user.loja_id if user.role == "loja" else None
     )
     
     if user.role == "mestre" and user.estado_ids:
@@ -56,7 +61,9 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         nome=new_user.nome,
         login=new_user.login,
         role=new_user.role,
-        estados=[e.sigla for e in new_user.estados]
+        estados=[e.sigla for e in new_user.estados],
+        loja_id=new_user.loja_id,
+        loja_nome=new_user.loja.nome if new_user.loja else None
     )
 
 @router.get("/users", response_model=List[UserResponse])
@@ -69,7 +76,9 @@ def list_users(db: Session = Depends(get_db)):
             nome=u.nome,
             login=u.login,
             role=u.role,
-            estados=[e.sigla for e in u.estados]
+            estados=[e.sigla for e in u.estados],
+            loja_id=u.loja_id,
+            loja_nome=u.loja.nome if u.loja else None
         ))
     return response
 
@@ -102,9 +111,15 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
         # Recreate state associations
         states = db.query(Estado).filter(Estado.id.in_(user_update.estado_ids)).all()
         db_user.estados = states
+        db_user.loja_id = None
     elif user_update.role == "admin":
         # clear any existing state records if upgrading to admin
         db_user.estados = [] # Admin has implicit access, clear explicit links
+        db_user.loja_id = None
+    elif user_update.role == "loja":
+        db_user.estados = []
+        if user_update.loja_id is not None:
+            db_user.loja_id = user_update.loja_id
         
     db.commit()
     db.refresh(db_user)
@@ -114,7 +129,9 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
         nome=db_user.nome,
         login=db_user.login,
         role=db_user.role,
-        estados=[e.sigla for e in db_user.estados]
+        estados=[e.sigla for e in db_user.estados],
+        loja_id=db_user.loja_id,
+        loja_nome=db_user.loja.nome if db_user.loja else None
     )
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.id == user_id).first()

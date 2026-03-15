@@ -9,15 +9,34 @@ interface Pessoa {
   status: string;
 }
 
+interface Loja {
+  id: number;
+  nome: string;
+  numero: string;
+}
+
+interface Acesso {
+  tipo: string;
+  role?: string;
+  loja_id?: number | null;
+}
+
 interface FormCadastroProps {
   estadoSigla: string;
+  lojas: Loja[];
+  acesso: Acesso | null;
   onPessoaCriada: (pessoa: Pessoa) => void;
 }
 
-export default function FormCadastro({ estadoSigla, onPessoaCriada }: FormCadastroProps) {
+export default function FormCadastro({ estadoSigla, lojas, acesso, onPessoaCriada }: FormCadastroProps) {
+  const isLojaUser = acesso?.role === 'loja' || acesso?.tipo === 'loja';
+  
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [status, setStatus] = useState('Profano');
+  const [lojaId, setLojaId] = useState<number | ''>(
+      isLojaUser && acesso?.loja_id ? acesso.loja_id : ''
+  );
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState('');
 
@@ -57,7 +76,8 @@ export default function FormCadastro({ estadoSigla, onPessoaCriada }: FormCadast
           nome: nome.trim(),
           telefone: telefone.trim(),
           estado_sigla: estadoSigla,
-          status
+          status,
+          loja_id: lojaId || null
         }),
       });
 
@@ -67,6 +87,9 @@ export default function FormCadastro({ estadoSigla, onPessoaCriada }: FormCadast
         setNome('');
         setTelefone('');
         setStatus('Profano');
+        if (!isLojaUser) {
+          setLojaId('');
+        }
         setMensagem('✅ Cadastrado com sucesso!');
         setTimeout(() => setMensagem(''), 3000);
       } else {
@@ -115,18 +138,42 @@ export default function FormCadastro({ estadoSigla, onPessoaCriada }: FormCadast
           </div>
         </div>
 
-        <div>
-          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-            Grau / Status
-          </label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
-          >
-            <option value="Profano">Profano</option>
-            <option value="Candidato em Andamento">Candidato em Andamento</option>
-          </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              Grau / Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
+            >
+              <option value="Profano">Profano</option>
+              <option value="Candidato em Andamento">Candidato em Andamento</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              Vincular a uma Loja (Opcional)
+            </label>
+            <select
+              value={lojaId}
+              onChange={(e) => setLojaId(e.target.value ? Number(e.target.value) : '')}
+              disabled={isLojaUser}
+              className={`w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm ${isLojaUser ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              <option value="">Sem vínculo</option>
+              {lojas.map(loja => (
+                <option key={loja.id} value={loja.id}>
+                  Loja {loja.nome} N° {loja.numero}
+                </option>
+              ))}
+            </select>
+            {isLojaUser && (
+                <p className="text-[9px] text-gray-500 mt-1 uppercase">Acesso restrito à sua Loja</p>
+            )}
+          </div>
         </div>
 
         {mensagem && (

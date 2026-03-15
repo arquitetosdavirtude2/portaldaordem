@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth, pessoas, admin
+from fastapi import APIRouter
+from routes import auth, pessoas, admin, lojas
 from database import engine
 
 app = FastAPI(title="Sistema Mapa Estados")
@@ -18,6 +19,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["Autenticação"])
 app.include_router(pessoas.router, prefix="/api/pessoas", tags=["Pessoas"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
+app.include_router(lojas.router, prefix="/api/lojas", tags=["Lojas"])
 
 @app.get("/")
 async def root():

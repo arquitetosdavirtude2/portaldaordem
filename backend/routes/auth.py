@@ -16,6 +16,7 @@ class LoginResponse(BaseModel):
     role: str = None # same as above, normalizing
     allowed_states: list = [] # List of siglas
     message: str = None
+    loja_id: int = None
 
 @router.post("/login", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
@@ -30,6 +31,9 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         states = []
         if user.role == 'admin': # Grão-Mestrado
             states = ['*'] # All access
+        elif user.role == 'loja':
+            if user.loja and user.loja.estado:
+                states = [user.loja.estado.sigla]
         else:
             states = [e.sigla for e in user.estados]
             
@@ -37,7 +41,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             success=True, 
             tipo="leitor", # Frontend uses this to distinguish from Master-Admin table login
             role=user.role, 
-            allowed_states=states
+            allowed_states=states,
+            loja_id=user.loja_id if user.role == 'loja' else None
         )
     
     return LoginResponse(success=False, message="Senha incorreta")

@@ -7,11 +7,20 @@ interface Pessoa {
     nome: string;
     telefone: string;
     status: string;
+    loja_id?: number | null;
+    loja_nome?: string | null;
+}
+
+interface Acesso {
+    tipo: string;
+    role?: string;
+    loja_id?: number | null;
 }
 
 interface ListaPessoasProps {
     pessoas: Pessoa[];
-    tipoAcesso: 'master' | 'mestre' | 'estadual' | 'admin' | 'grao_mestre';
+    tipoAcesso: string;
+    acesso?: Acesso | null;
     onStatusAtualizado: (pessoa: Pessoa) => void;
     onPessoaDeletada: (pessoaId: number) => void;
 }
@@ -19,6 +28,7 @@ interface ListaPessoasProps {
 export default function ListaPessoas({
     pessoas,
     tipoAcesso,
+    acesso,
     onStatusAtualizado,
     onPessoaDeletada
 }: ListaPessoasProps) {
@@ -26,8 +36,16 @@ export default function ListaPessoas({
     const [editandoId, setEditandoId] = useState<number | null>(null);
 
     const pessoasSafe = Array.isArray(pessoas) ? pessoas : [];
+    
+    // Isolation rule for Loja role
+    const isLojaUser = acesso?.role === 'loja' || acesso?.tipo === 'loja';
+    const storeId = acesso?.loja_id;
 
     const pessoasFiltradas = pessoasSafe.filter(p => {
+        // Enforce Loja isolation first
+        if (isLojaUser && p.loja_id !== storeId) return false;
+        
+        // Then apply status filter
         if (filtroStatus === 'todos') return true;
         return p.status === filtroStatus;
     });
@@ -79,7 +97,9 @@ export default function ListaPessoas({
     };
 
     const roleStr = String(tipoAcesso).toLowerCase();
-    const podeEditar = ['master', 'mestre', 'admin', 'grao_mestre', 'estadual'].includes(roleStr);
+    const isLojaType = roleStr === 'loja' || acesso?.role === 'loja';
+    
+    const podeEditar = ['master', 'mestre', 'admin', 'grao_mestre', 'estadual'].includes(roleStr) || isLojaType;
     const podeDeletar = ['admin', 'grao_mestre', 'master'].includes(roleStr);
 
     return (
@@ -122,6 +142,7 @@ export default function ListaPessoas({
                         <thead>
                             <tr className="bg-white/5 text-gray-400 text-xs uppercase tracking-[0.15em] border-b border-white/5">
                                 <th className="py-4 px-6 font-medium">Nome</th>
+                                <th className="py-4 px-6 font-medium">Loja</th>
                                 <th className="py-4 px-6 font-medium">Contato</th>
                                 <th className="py-4 px-6 font-medium">Status</th>
                                 <th className="py-4 px-6 font-medium text-center">Ações</th>
@@ -132,6 +153,15 @@ export default function ListaPessoas({
                                 <tr key={pessoa.id} className="hover:bg-white/5 transition-colors group">
                                     <td className="py-4 px-6 font-medium text-gray-200 tracking-wide">
                                         {pessoa.nome}
+                                    </td>
+                                    <td className="py-4 px-6">
+                                        {pessoa.loja_nome ? (
+                                            <span className="bg-yellow-900/10 text-yellow-500 px-2 py-1 rounded text-[10px] uppercase font-bold border border-yellow-500/20">
+                                                {pessoa.loja_nome}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-500 text-xs italic">-</span>
+                                        )}
                                     </td>
                                     <td className="py-4 px-6">
                                         <a

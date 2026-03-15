@@ -48,7 +48,8 @@ export default function LoginPage() {
                     tipo: userTipo,
                     role: userRole,
                     estado: Array.isArray(data.allowed_states) && data.allowed_states.length > 0 ? data.allowed_states[0] : 'BR',
-                    allowed_states: Array.isArray(data.allowed_states) ? data.allowed_states : []
+                    allowed_states: Array.isArray(data.allowed_states) ? data.allowed_states : [],
+                    loja_id: data.loja_id || null
                 }));
                 window.location.href = '/dashboard';
             } else {

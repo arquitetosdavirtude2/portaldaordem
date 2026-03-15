@@ -10,11 +10,23 @@ interface Pessoa {
     nome: string;
     telefone: string;
     status: string;
+    loja_id?: number | null;
+    loja_nome?: string | null;
+}
+
+interface Loja {
+    id: number;
+    nome: string;
+    numero: string;
+    estado_id: number;
+    estado_sigla: string;
 }
 
 interface Acesso {
     estado: string;
-    tipo: 'master' | 'estadual' | 'admin' | 'grao_mestre';
+    tipo: string;
+    role?: string;
+    loja_id?: number | null;
 }
 
 const nomeEstados: Record<string, string> = {
@@ -32,6 +44,7 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
     const sigla = params.sigla;
 
     const [pessoas, setPessoas] = useState<Pessoa[]>([]);
+    const [lojas, setLojas] = useState<Loja[]>([]);
     const [acesso, setAcesso] = useState<Acesso | null>(null);
     const [carregando, setCarregando] = useState(true);
 
@@ -62,26 +75,33 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
         // For now, let's assume if it's not master restricted, it's allowed if they got here.
 
         setAcesso(acessoObj);
-        carregarPessoas();
+        carregarDados();
     }, [sigla, router]);
 
-    const carregarPessoas = async () => {
+    const carregarDados = async () => {
+        setCarregando(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${sigla}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (Array.isArray(data)) {
-                    setPessoas(data);
-                } else {
-                    console.error("API retornou formato inválido:", data);
-                    setPessoas([]);
-                }
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+            
+            // Fetch Pessoas
+            const resPessoas = await fetch(`${apiUrl}/api/pessoas/${sigla}`);
+            if (resPessoas.ok) {
+                const data = await resPessoas.json();
+                setPessoas(Array.isArray(data) ? data : []);
             } else {
-                console.warn("Falha ao carregar pessoas:", response.status);
                 setPessoas([]);
             }
+
+            // Fetch Lojas to pass to the Form
+            const resLojas = await fetch(`${apiUrl}/api/lojas`);
+            if (resLojas.ok) {
+                const todasLojas: Loja[] = await resLojas.json();
+                // Filter lojas that belong to this state specifically
+                const lojasDoEstado = todasLojas.filter(l => l.estado_sigla === sigla);
+                setLojas(lojasDoEstado);
+            }
         } catch (error) {
-            console.error('Erro ao carregar pessoas:', error);
+            console.error('Erro ao carregar dados:', error);
         } finally {
             setCarregando(false);
         }
@@ -187,11 +207,13 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
 
                     {/* Content Area - Transparent */}
                     <div className="p-8">
-                        {/* Formulário de Cadastro (só Grão-Mestrado Federal) */}
-                        {(acesso?.tipo === 'admin' || acesso?.tipo === 'grao_mestre') && (
+                        {/* Formulário de Cadastro (só Grão-Mestrado Federal, Estadual, ou Loja) */}
+                        {['admin', 'grao_mestre', 'master', 'loja'].includes(acesso?.tipo || acesso?.role || '') && (
                             <div className="mb-10">
                                 <FormCadastro
                                     estadoSigla={sigla}
+                                    lojas={lojas}
+                                    acesso={acesso}
                                     onPessoaCriada={handlePessoaCriada}
                                 />
                             </div>
@@ -201,6 +223,7 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
                         <ListaPessoas
                             pessoas={pessoas}
                             tipoAcesso={acesso?.tipo || 'estadual'}
+                            acesso={acesso}
                             onStatusAtualizado={handleStatusAtualizado}
                             onPessoaDeletada={handlePessoaDeletada}
                         />

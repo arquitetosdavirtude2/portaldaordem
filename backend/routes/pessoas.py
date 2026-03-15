@@ -13,17 +13,21 @@ class PessoaCreate(BaseModel):
     telefone: str
     estado_sigla: str
     status: Optional[str] = "Profano"
+    loja_id: Optional[int] = None
 
 class PessoaUpdate(BaseModel):
     nome: Optional[str] = None
     telefone: Optional[str] = None
     status: Optional[str] = None
+    loja_id: Optional[int] = None
 
 class PessoaResponse(BaseModel):
     id: int
     nome: str
     telefone: str
     status: str
+    loja_id: Optional[int] = None
+    loja_nome: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -36,7 +40,19 @@ def listar_pessoas(estado_sigla: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Estado não encontrado")
     
     pessoas = db.query(Pessoa).filter(Pessoa.estado_id == estado.id).all()
-    return pessoas
+    
+    response = []
+    for p in pessoas:
+        loja_nome = p.loja.nome if p.loja else None
+        response.append(PessoaResponse(
+            id=p.id,
+            nome=p.nome,
+            telefone=p.telefone,
+            status=p.status,
+            loja_id=p.loja_id,
+            loja_nome=loja_nome
+        ))
+    return response
 
 # Criar pessoa (só master)
 @router.post("/", response_model=PessoaResponse)
@@ -49,13 +65,24 @@ def criar_pessoa(pessoa: PessoaCreate, db: Session = Depends(get_db)):
         nome=pessoa.nome,
         telefone=pessoa.telefone,
         status=pessoa.status,
-        estado_id=estado.id
+        estado_id=estado.id,
+        loja_id=pessoa.loja_id
     )
     
     db.add(nova_pessoa)
     db.commit()
     db.refresh(nova_pessoa)
-    return nova_pessoa
+    
+    loja_nome = nova_pessoa.loja.nome if nova_pessoa.loja else None
+    
+    return PessoaResponse(
+        id=nova_pessoa.id,
+        nome=nova_pessoa.nome,
+        telefone=nova_pessoa.telefone,
+        status=nova_pessoa.status,
+        loja_id=nova_pessoa.loja_id,
+        loja_nome=loja_nome
+    )
 
 # Atualizar status da pessoa
 @router.patch("/{pessoa_id}", response_model=PessoaResponse)
@@ -70,10 +97,22 @@ def atualizar_pessoa(pessoa_id: int, dados: PessoaUpdate, db: Session = Depends(
         pessoa.telefone = dados.telefone
     if dados.status is not None:
         pessoa.status = dados.status
+    if dados.loja_id is not None:
+        pessoa.loja_id = dados.loja_id
     
     db.commit()
     db.refresh(pessoa)
-    return pessoa
+    
+    loja_nome = pessoa.loja.nome if pessoa.loja else None
+    
+    return PessoaResponse(
+        id=pessoa.id,
+        nome=pessoa.nome,
+        telefone=pessoa.telefone,
+        status=pessoa.status,
+        loja_id=pessoa.loja_id,
+        loja_nome=loja_nome
+    )
 
 # Deletar pessoa (só master)
 @router.delete("/{pessoa_id}")
