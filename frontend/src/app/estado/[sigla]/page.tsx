@@ -27,6 +27,9 @@ interface Acesso {
     tipo: string;
     role?: string;
     loja_id?: number | null;
+    loja_nome?: string | null;
+    loja_numero?: string | null;
+    loja_cidade?: string | null;
 }
 
 const nomeEstados: Record<string, string> = {
@@ -41,12 +44,13 @@ const nomeEstados: Record<string, string> = {
 
 export default function EstadoPage({ params }: { params: { sigla: string } }) {
     const router = useRouter();
-    const sigla = params.sigla;
+    const sigla = (params.sigla || '').toUpperCase();
 
     const [pessoas, setPessoas] = useState<Pessoa[]>([]);
     const [lojas, setLojas] = useState<Loja[]>([]);
     const [acesso, setAcesso] = useState<Acesso | null>(null);
     const [carregando, setCarregando] = useState(true);
+    const [pessoaSendoEditada, setPessoaSendoEditada] = useState<Pessoa | null>(null);
 
     // Verifica se tem acesso
     useEffect(() => {
@@ -60,19 +64,17 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
         const acessoObj: Acesso = JSON.parse(acessoSalvo);
 
         // Permission Logic:
-        // 'admin' or 'grao_mestre' -> Can access ALL states.
-        // 'master' -> Can access ONLY their assigned state.
+        // 'admin' (Federal) -> Can access ALL states.
+        // 'master' (Estadual) -> Can access ONLY their assigned state.
+        // 'loja' (Venerável) -> Can access ONLY their assigned state/lodge.
 
-        const isGrandMaster = acessoObj.tipo === 'admin' || acessoObj.tipo === 'grao_mestre';
-        const isMaster = acessoObj.tipo === 'master';
+        const isFederal = acessoObj.role === 'admin' || acessoObj.tipo === 'admin';
+        const isMaster = acessoObj.tipo === 'master' || acessoObj.role === 'mestre';
 
         if (isMaster && acessoObj.estado !== sigla) {
-            // Master trying to access a different state -> Redirect to their own state or dashboard
             router.push('/dashboard');
             return;
         }
-        // If it's a completely different role (e.g. unknown), maybe we should block too?
-        // For now, let's assume if it's not master restricted, it's allowed if they got here.
 
         setAcesso(acessoObj);
         carregarDados();
@@ -87,7 +89,10 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
             const resPessoas = await fetch(`${apiUrl}/api/pessoas/${sigla}`);
             if (resPessoas.ok) {
                 const data = await resPessoas.json();
-                setPessoas(Array.isArray(data) ? data : []);
+                const filteredPessoas = acesso?.role === 'loja' 
+                    ? (data as Pessoa[]).filter(p => p.loja_id === acesso.loja_id)
+                    : (Array.isArray(data) ? data : []);
+                setPessoas(filteredPessoas);
             } else {
                 setPessoas([]);
             }
@@ -96,7 +101,6 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
             const resLojas = await fetch(`${apiUrl}/api/lojas`);
             if (resLojas.ok) {
                 const todasLojas: Loja[] = await resLojas.json();
-                // Filter lojas that belong to this state specifically
                 const lojasDoEstado = todasLojas.filter(l => l.estado_sigla === sigla);
                 setLojas(lojasDoEstado);
             }
@@ -109,6 +113,7 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
 
     const handlePessoaCriada = (novaPessoa: Pessoa) => {
         setPessoas([...pessoas, novaPessoa]);
+        setPessoaSendoEditada(null); // Clear edit state after success
     };
 
     const handleStatusAtualizado = (pessoaAtualizada: Pessoa) => {
@@ -122,11 +127,7 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
     };
 
     const handleVoltar = () => {
-        if (acesso?.tipo === 'master') {
-            router.push('/mapa');
-        } else {
-            router.push('/dashboard');
-        }
+        router.push('/dashboard');
     };
 
     const handleSair = () => {
@@ -136,69 +137,71 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
 
     if (carregando) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <p className="text-xl">Carregando...</p>
+            <div className="flex items-center justify-center min-h-screen bg-[#0a1536]">
+                <p className="text-xl text-yellow-500 font-serif animate-pulse">Carregando Templo...</p>
             </div>
         );
     }
 
+    const isLojaUser = acesso?.role === 'loja';
+    const displayTitle = isLojaUser && acesso?.loja_nome 
+        ? `${acesso.loja_nome}${acesso.loja_numero ? ` Nº ${acesso.loja_numero}` : ''}`
+        : (nomeEstados[sigla] || sigla);
+
     return (
         <div className="min-h-screen flex flex-col relative font-serif text-gray-100 overflow-x-hidden">
 
-            {/* Background Gradient - Same as Dashboard */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-black z-0 fixed"></div>
+            {/* Background Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0a1536] via-[#1c3879] to-black z-0 fixed"></div>
 
-            {/* Watermark Logo - Fixed */}
-            <div className="absolute inset-0 flex items-center justify-center z-0 opacity-[0.1] pointer-events-none fixed">
-                <div className="relative w-[800px] h-[800px]">
-                    <img
-                        src="/logo-gomb.png"
-                        alt="Watermark"
-                        className="object-contain w-full h-full"
-                    />
-                </div>
-            </div>
+            {/* Content Container */}
+            <div className="z-10 w-full max-w-6xl mx-auto p-4 sm:p-6 relative">
 
-            {/* Content Container - Z-Index 10 */}
-            <div className="z-10 w-full max-w-6xl mx-auto p-6 relative">
+                {/* Header Card */}
+                <div className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl overflow-hidden mb-6">
+                    <div className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                        
+                        <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2">
+                            {/* Role Badge - Compact */}
+                            <div className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border shadow-sm ${
+                                (acesso?.role === 'admin') ? 'border-yellow-500/50 text-yellow-500 bg-yellow-500/10' :
+                                (acesso?.tipo === 'master') ? 'border-blue-400/50 text-blue-400 bg-blue-400/10' :
+                                'border-green-400/50 text-green-400 bg-green-400/10'
+                            }`}>
+                                {
+                                    (acesso?.role === 'admin') ? 'Grão-Mestrado Federal' :
+                                    (acesso?.tipo === 'master') ? 'Grão-Mestrado Estadual' :
+                                    'Loja'
+                                }
+                            </div>
 
-                {/* Header Card - Glassmorphism */}
-                <div className="bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden mb-8">
-                    <div className="p-8 flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
-
-                        {/* Decorative Glow */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-
-                        <div className="z-10 mb-6 md:mb-0 text-center md:text-left">
-                            <h1 className="text-4xl font-bold text-yellow-500 tracking-widest uppercase mb-2 drop-shadow-md">
-                                {nomeEstados[sigla]}
+                            {/* Main Title */}
+                            <h1 className="text-2xl md:text-3xl font-bold text-yellow-500 tracking-tight leading-tight uppercase drop-shadow-lg">
+                                {displayTitle}
                             </h1>
-                            <div className="flex items-center justify-center md:justify-start gap-3 text-sm tracking-widest uppercase">
-                                <span className={`px-3 py-1 rounded border ${(acesso?.tipo === 'admin' || acesso?.tipo === 'grao_mestre') ? 'border-yellow-500/50 text-yellow-200 bg-yellow-900/20' :
-                                    acesso?.tipo === 'master' ? 'border-blue-400/50 text-blue-200 bg-blue-900/20' :
-                                        'border-gray-500/50 text-gray-300'
-                                    }`}>
-                                    {
-                                        (acesso?.tipo === 'admin' || acesso?.tipo === 'grao_mestre') ? '👑 Grão-Mestrado Federal' :
-                                            acesso?.tipo === 'master' ? '🔑 Grão-Mestrado Estadual' :
-                                                '👤 Secretaria Estadual'
-                                    }
-                                </span>
-                                <span className="text-gray-500">|</span>
-                                <span className="text-gray-300 font-bold">{sigla}</span>
+
+                            {/* Subtitle / Breadcrumb */}
+                            <div className="flex items-center gap-2 text-[11px] text-gray-400 font-sans tracking-widest uppercase font-bold">
+                                <span>{nomeEstados[sigla]}</span>
+                                {isLojaUser && acesso?.loja_cidade && (
+                                    <>
+                                        <span className="text-gray-600">•</span>
+                                        <span className="text-gray-300">{acesso.loja_cidade}</span>
+                                    </>
+                                )}
                             </div>
                         </div>
 
-                        <div className="flex gap-4 z-10">
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={handleVoltar}
-                                className="px-6 py-2 bg-white/5 hover:bg-white/10 text-gray-200 rounded-full border border-white/10 transition-all text-xs uppercase tracking-[0.2em] hover:border-white/30"
+                                className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg border border-white/10 transition-all text-[10px] font-bold uppercase tracking-wider h-11 min-w-[140px]"
                             >
-                                {acesso?.tipo === 'master' ? 'Voltar ao Mapa' : 'Voltar ao Início'}
+                                Voltar ao Início
                             </button>
                             <button
                                 onClick={handleSair}
-                                className="px-6 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-300 rounded-full border border-red-500/30 transition-all text-xs uppercase tracking-[0.2em] hover:border-red-500/50"
+                                className="px-5 py-2.5 bg-red-900/20 hover:bg-red-900/40 text-red-400 rounded-lg border border-red-500/20 transition-all text-[10px] font-bold uppercase tracking-wider h-11"
                             >
                                 Sair
                             </button>
@@ -206,15 +209,17 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
                     </div>
 
                     {/* Content Area - Transparent */}
-                    <div className="p-8">
+                    <div className="p-8 border-t border-white/5">
                         {/* Formulário de Cadastro (só Grão-Mestrado Federal, Estadual, ou Loja) */}
-                        {['admin', 'grao_mestre', 'master', 'loja'].includes(acesso?.tipo || acesso?.role || '') && (
+                        {(['admin', 'grao_mestre', 'master', 'loja'].includes(acesso?.tipo || '') || ['admin', 'grao_mestre', 'master', 'loja'].includes(acesso?.role || '')) && (
                             <div className="mb-10">
                                 <FormCadastro
                                     estadoSigla={sigla}
                                     lojas={lojas}
                                     acesso={acesso}
                                     onPessoaCriada={handlePessoaCriada}
+                                    pessoaParaEditar={pessoaSendoEditada}
+                                    onCancelarEdicao={() => setPessoaSendoEditada(null)}
                                 />
                             </div>
                         )}
@@ -226,6 +231,7 @@ export default function EstadoPage({ params }: { params: { sigla: string } }) {
                             acesso={acesso}
                             onStatusAtualizado={handleStatusAtualizado}
                             onPessoaDeletada={handlePessoaDeletada}
+                            onEditPessoa={(p) => setPessoaSendoEditada(p)}
                         />
                     </div>
                 </div>

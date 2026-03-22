@@ -19,6 +19,7 @@ class Loja(Base):
     numero = Column(String(20))
     estado_id = Column(Integer, ForeignKey("estados.id"))
     endereco = Column(String(255))
+    rito = Column(String(50), nullable=True) # Adding Rito as requested
 
     estado = relationship("Estado", back_populates="lojas")
     usuarios = relationship("Usuario", back_populates="loja")
@@ -58,8 +59,11 @@ class Pessoa(Base):
     loja_id = Column(Integer, ForeignKey("lojas.id"), nullable=True)
     nome = Column(String(100))
     telefone = Column(String(20))
-    status = Column(String(30), default="Profano")  # "Profano" ou "Candidato em Andamento"
-    
+    status = Column(String(30), default="Aprendiz")  # Reused as 'Grau'
+    cargo = Column(String(100), nullable=True) # Adding specific Lodge Role
+    login = Column(String(100), unique=True, index=True, nullable=True)
+    senha = Column(String(100), nullable=True)
+
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")
 

@@ -9,12 +9,16 @@ app = FastAPI(title="Sistema Mapa Estados")
 # Libera o frontend acessar a API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, colocar o domínio específico
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Rotas
 app.include_router(auth.router, prefix="/api/auth", tags=["Autenticação"])
 app.include_router(pessoas.router, prefix="/api/pessoas", tags=["Pessoas"])

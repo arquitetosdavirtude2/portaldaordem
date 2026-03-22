@@ -12,23 +12,32 @@ class PessoaCreate(BaseModel):
     nome: str
     telefone: str
     estado_sigla: str
-    status: Optional[str] = "Profano"
+    status: Optional[str] = "Aprendiz"
+    cargo: Optional[str] = None
     loja_id: Optional[int] = None
+    login: Optional[str] = None
+    senha: Optional[str] = None
 
 class PessoaUpdate(BaseModel):
     nome: Optional[str] = None
     telefone: Optional[str] = None
     status: Optional[str] = None
+    cargo: Optional[str] = None
     loja_id: Optional[int] = None
+    login: Optional[str] = None
+    senha: Optional[str] = None
 
 class PessoaResponse(BaseModel):
     id: int
     nome: str
     telefone: str
     status: str
+    cargo: Optional[str] = None
     loja_id: Optional[int] = None
     loja_nome: Optional[str] = None
-    
+    login: Optional[str] = None
+    senha: Optional[str] = None
+   
     class Config:
         from_attributes = True
 
@@ -49,8 +58,32 @@ def listar_pessoas(estado_sigla: str, db: Session = Depends(get_db)):
             nome=p.nome,
             telefone=p.telefone,
             status=p.status,
+            cargo=p.cargo,
             loja_id=p.loja_id,
-            loja_nome=loja_nome
+            loja_nome=loja_nome,
+            login=p.login,
+            senha=p.senha
+        ))
+    return response
+
+# Listar pessoas de uma loja específica
+@router.get("/loja/{loja_id}", response_model=List[PessoaResponse])
+def listar_pessoas_loja(loja_id: int, db: Session = Depends(get_db)):
+    pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
+    
+    response = []
+    for p in pessoas:
+        loja_nome = p.loja.nome if p.loja else None
+        response.append(PessoaResponse(
+            id=p.id,
+            nome=p.nome,
+            telefone=p.telefone,
+            status=p.status,
+            cargo=p.cargo,
+            loja_id=p.loja_id,
+            loja_nome=loja_nome,
+            login=p.login,
+            senha=p.senha
         ))
     return response
 
@@ -65,10 +98,13 @@ def criar_pessoa(pessoa: PessoaCreate, db: Session = Depends(get_db)):
         nome=pessoa.nome,
         telefone=pessoa.telefone,
         status=pessoa.status,
+        cargo=pessoa.cargo,
         estado_id=estado.id,
-        loja_id=pessoa.loja_id
+        loja_id=pessoa.loja_id,
+        login=pessoa.login,
+        senha=pessoa.senha
     )
-    
+   
     db.add(nova_pessoa)
     db.commit()
     db.refresh(nova_pessoa)
@@ -80,8 +116,11 @@ def criar_pessoa(pessoa: PessoaCreate, db: Session = Depends(get_db)):
         nome=nova_pessoa.nome,
         telefone=nova_pessoa.telefone,
         status=nova_pessoa.status,
+        cargo=nova_pessoa.cargo,
         loja_id=nova_pessoa.loja_id,
-        loja_nome=loja_nome
+        loja_nome=loja_nome,
+        login=nova_pessoa.login,
+        senha=nova_pessoa.senha
     )
 
 # Atualizar status da pessoa
@@ -97,9 +136,18 @@ def atualizar_pessoa(pessoa_id: int, dados: PessoaUpdate, db: Session = Depends(
         pessoa.telefone = dados.telefone
     if dados.status is not None:
         pessoa.status = dados.status
+    if dados.cargo is not None:
+        if dados.cargo == "Nenhum": # Allow removing cargo
+            pessoa.cargo = None
+        else:
+            pessoa.cargo = dados.cargo
     if dados.loja_id is not None:
         pessoa.loja_id = dados.loja_id
-    
+    if dados.login is not None:
+        pessoa.login = dados.login
+    if dados.senha is not None:
+        pessoa.senha = dados.senha
+   
     db.commit()
     db.refresh(pessoa)
     
@@ -110,8 +158,11 @@ def atualizar_pessoa(pessoa_id: int, dados: PessoaUpdate, db: Session = Depends(
         nome=pessoa.nome,
         telefone=pessoa.telefone,
         status=pessoa.status,
+        cargo=pessoa.cargo,
         loja_id=pessoa.loja_id,
-        loja_nome=loja_nome
+        loja_nome=loja_nome,
+        login=pessoa.login,
+        senha=pessoa.senha
     )
 
 # Deletar pessoa (só master)

@@ -32,6 +32,7 @@ class UserResponse(BaseModel):
     estados: List[str] = [] # List of Siglas
     loja_id: Optional[int] = None
     loja_nome: Optional[str] = None
+    loja_numero: Optional[str] = None
 
 @router.post("/users", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -78,7 +79,8 @@ def list_users(db: Session = Depends(get_db)):
             role=u.role,
             estados=[e.sigla for e in u.estados],
             loja_id=u.loja_id,
-            loja_nome=u.loja.nome if u.loja else None
+            loja_nome=u.loja.nome if u.loja else None,
+            loja_numero=u.loja.numero if u.loja else None
         ))
     return response
 
@@ -133,6 +135,7 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
         loja_id=db_user.loja_id,
         loja_nome=db_user.loja.nome if db_user.loja else None
     )
+@router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.id == user_id).first()
     if not user:

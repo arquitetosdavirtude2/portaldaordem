@@ -30,33 +30,48 @@ export default function LoginPage() {
         setCarregando(true);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/login`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/login/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ login: identificacao, senha }),
             });
 
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                setErro(errorData.detail || errorData.message || `Erro do Servidor (${response.status})`);
+                return;
+            }
+
             const data = await response.json();
 
             if (data.success) {
-                // Ensure dirty caches don't retain 'master' permissions for standard users
+                // ... same logic ...
                 const userRole = data.role === 'admin' ? 'admin' : (data.role || 'mestre');
                 const userTipo = data.tipo || 'leitor';
+                const states = Array.isArray(data.allowed_states) ? data.allowed_states : [];
+                const estadoDefault = states.length > 0 ? states[0] : 'BR';
 
                 localStorage.setItem('acesso', JSON.stringify({
                     login: identificacao,
                     tipo: userTipo,
                     role: userRole,
-                    estado: Array.isArray(data.allowed_states) && data.allowed_states.length > 0 ? data.allowed_states[0] : 'BR',
-                    allowed_states: Array.isArray(data.allowed_states) ? data.allowed_states : [],
-                    loja_id: data.loja_id || null
+                    estado: estadoDefault,
+                    allowed_states: states,
+                    loja_id: data.loja_id || null,
+                    loja_nome: data.loja_nome || null,
+                    loja_numero: data.loja_numero || null,
+                    loja_cidade: data.loja_cidade || null,
+                    nome: data.nome || null,
+                    cargo: data.cargo || null
                 }));
+
                 window.location.href = '/dashboard';
             } else {
                 setErro(data.message || 'Credenciais inválidas.');
             }
         } catch (error) {
-            setErro('Erro de conexão com o Templo. Verifique sua internet.');
+            console.error('Login Error:', error);
+            setErro('Erro de conexão com o Templo. Verifique seu servidor.');
         } finally {
             setCarregando(false);
         }
@@ -103,10 +118,10 @@ export default function LoginPage() {
                     </p>
                 </div>
 
-                {/* Badge Acesso Federal */}
+                {/* Badge Acesso Restrito */}
                 <div className="flex justify-center mb-8">
                     <span className="bg-[#1a2f6c] text-[#739aff] text-[9px] px-4 py-1.5 font-bold uppercase tracking-widest rounded-sm shadow-inner">
-                        Acesso Federal
+                        Acesso Restrito
                     </span>
                 </div>
 
