@@ -39,6 +39,7 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
     const [lojas, setLojas] = useState<Loja[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [pessoaSendoEditada, setPessoaSendoEditada] = useState<Pessoa | null>(null);
     
     // We mock the `acesso` based on userRole if it is passed this way
     const [acesso, setAcesso] = useState<Acesso>({ tipo: userRole, role: userRole });
@@ -81,7 +82,13 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
     }, [sigla]);
 
     const handlePessoaCriada = (novaPessoa: Pessoa) => {
-        setPessoas([...pessoas, novaPessoa]);
+        if (pessoaSendoEditada) {
+            setPessoas(pessoas.map(p => p.id === novaPessoa.id ? novaPessoa : p));
+            setPessoaSendoEditada(null);
+        } else {
+            setPessoas([...pessoas, novaPessoa]);
+        }
+        setShowForm(false);
     };
 
     const handleStatusAtualizado = (pessoaAtualizada: Pessoa) => {
@@ -93,7 +100,7 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
     };
 
     return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-12 pointer-events-none">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 pointer-events-none">
             {/* The Overlay Container - Centered and Transparent */}
             <div className="bg-black/60 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col pointer-events-auto overflow-hidden animate-in fade-in zoom-in duration-300">
 
@@ -109,10 +116,10 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                             <span className="font-bold text-white">{sigla}</span>
                             <span>•</span>
                             <span>
-                                {['admin', 'grao_mestre', 'master'].includes(String(userRole).toLowerCase())
+                                {['admin', 'grao_mestre', 'master', 'federal'].includes(String(userRole).toLowerCase())
                                     ? '👑 Acesso Total'
                                     : ['mestre', 'estadual'].includes(String(userRole).toLowerCase())
-                                        ? '⚒️ Gestão de Loja'
+                                        ? '⚒️ Loja'
                                         : '🔑 Acesso Visualização'}
                             </span>
                         </div>
@@ -132,16 +139,24 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                 <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1 bg-black/20">
 
                     {/* Control Bar - Only for Admins */}
-                    {['admin', 'grao_mestre', 'master', 'mestre', 'estadual'].includes(String(userRole).toLowerCase()) && (
+                    {['admin', 'grao_mestre', 'master', 'federal'].includes(String(userRole).toLowerCase()) && (
                         <div className="mb-6 flex justify-end">
                             <button
-                                onClick={() => setShowForm(!showForm)}
+                                onClick={() => {
+                                    if (showForm) {
+                                        setShowForm(false);
+                                        setPessoaSendoEditada(null);
+                                    } else {
+                                        setShowForm(true);
+                                        setPessoaSendoEditada(null);
+                                    }
+                                }}
                                 className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all border flex items-center gap-2 ${showForm
                                     ? 'bg-red-900/20 text-red-400 border-red-500/30 hover:bg-red-900/40'
                                     : 'bg-yellow-600/20 text-yellow-500 border-yellow-500/30 hover:bg-yellow-600/40 hover:shadow-[0_0_15px_rgba(234,179,8,0.2)]'
                                     }`}
                             >
-                                {showForm ? 'Cancelar Cadastro' : '➕ Novo Membro'}
+                                {showForm ? 'Fechar Cadastro' : '➕ Novo Candidato'}
                             </button>
                         </div>
                     )}
@@ -153,9 +168,12 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                                 estadoSigla={sigla}
                                 lojas={lojas}
                                 acesso={acesso}
-                                onPessoaCriada={(p) => {
-                                    handlePessoaCriada(p);
-                                    setShowForm(false); // Auto-close after success
+                                isCandidato={true} // Map view is ALWAYS for candidates/profanos
+                                pessoaParaEditar={pessoaSendoEditada}
+                                onPessoaCriada={handlePessoaCriada}
+                                onCancelarEdicao={() => {
+                                    setShowForm(false);
+                                    setPessoaSendoEditada(null);
                                 }}
                             />
                         </div>
@@ -173,6 +191,11 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                             acesso={acesso}
                             onStatusAtualizado={handleStatusAtualizado}
                             onPessoaDeletada={handlePessoaDeletada}
+                            isCandidato={true}
+                            onEditPessoa={(p) => {
+                                setPessoaSendoEditada(p);
+                                setShowForm(true);
+                            }}
                         />
                     )}
                 </div>

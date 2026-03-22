@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -11,6 +12,7 @@ interface User {
     estados: string[];
     loja_id: number | null;
     loja_nome: string | null;
+    loja_numero: string | null;
 }
 
 interface Loja {
@@ -61,6 +63,11 @@ export default function AdminUsersPage() {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const [msg, setMsg] = useState('');
+    const [userParaDeletar, setUserParaDeletar] = useState<User | null>(null);
+    const [deletando, setDeletando] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => { setIsMounted(true); }, []);
 
     useEffect(() => {
         const access = localStorage.getItem('acesso');
@@ -69,7 +76,10 @@ export default function AdminUsersPage() {
             return;
         }
         const userObj = JSON.parse(access);
-        if (userObj.tipo !== 'master') {
+        const isMaster = userObj.tipo === 'master';
+        const isAdmin = userObj.role === 'admin';
+        
+        if (!isMaster && !isAdmin) {
             router.push('/login');
             return;
         }
@@ -135,7 +145,6 @@ export default function AdminUsersPage() {
         setLogin(user.login);
         // Password field is left empty. If user wants to change, they type it. 
         // If they leave it empty, we send a placeholder or handle it in backend.
-        // For security, we force re-entry or just assume empty = no change if we handle it that way.
         // Current Backend Logic: If password provided, it updates. If we send empty string, backend might set it to empty string?
         // Let's check backend logic again. 
         // Backend: `if user_update.senha: db_user.senha = user_update.senha`
@@ -230,19 +239,24 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Tem certeza? Isso apagará o acesso deste usuário.')) return;
+    const handleDelete = (user: User) => {
+        setUserParaDeletar(user);
+    };
 
+    const executarDelecaoUser = async () => {
+        if (!userParaDeletar) return;
+        setDeletando(true);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            const res = await fetch(`${apiUrl}/api/admin/users/${id}`, {
-                method: 'DELETE'
-            });
+            const res = await fetch(`${apiUrl}/api/admin/users/${userParaDeletar.id}`, { method: 'DELETE' });
             if (res.ok) {
-                setUsers(users.filter(u => u.id !== id));
+                setUsers(users.filter(u => u.id !== userParaDeletar.id));
+                setUserParaDeletar(null);
             }
         } catch (error) {
             console.error("Erro ao deletar", error);
+        } finally {
+            setDeletando(false);
         }
     };
 
@@ -279,159 +293,101 @@ export default function AdminUsersPage() {
                             CADASTRO DE GRÃO-MESTRADOS FEDERAIS E ESTADUAIS
                         </p>
                     </div>
-                    <div className="flex gap-4 mt-4 md:mt-0">
-                        {/* 'Voltar ao Painel' removed as per user request to avoid redirect loops */}
+                    <div className="flex flex-wrap gap-4 mt-4 md:mt-0 justify-end">
                         <button
-                            onClick={() => router.push('/admin/lojas')}
-                            className="px-6 py-2 bg-yellow-900/20 border border-yellow-500/30 text-yellow-400 rounded hover:bg-yellow-900/40 transition-all text-xs uppercase tracking-widest hover:text-yellow-300 hover:shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                            onClick={() => router.push('/dashboard')}
+                            className="px-6 py-2 bg-blue-900/20 border border-blue-500/30 text-blue-400 rounded hover:bg-blue-900/40 transition-all text-[10px] uppercase tracking-widest hover:text-blue-300 hover:shadow-[0_0_15px_rgba(59,130,246,0.2)] font-bold flex items-center gap-2"
                         >
-                            Gestão de Lojas
+                            <span>🏠</span> Voltar ao Painel
                         </button>
                         <button
                             onClick={() => {
                                 localStorage.removeItem('acesso');
-                                router.push('/master-admin');
+                                router.push('/login');
                             }}
-                            className="px-6 py-2 bg-red-900/20 border border-red-500/30 text-red-400 rounded hover:bg-red-900/40 transition-all text-xs uppercase tracking-widest hover:text-red-300 hover:shadow-[0_0_15px_rgba(220,38,38,0.2)]"
+                            className="px-6 py-2 bg-red-900/20 border border-red-500/30 text-red-400 rounded hover:bg-red-900/40 transition-all text-[10px] uppercase tracking-widest hover:text-red-300 hover:shadow-[0_0_15px_rgba(220,38,38,0.2)] font-bold flex items-center gap-2"
                         >
-                            Sair (Admin)
+                            <span>🚪</span> Sair
                         </button>
                     </div>
                 </div>
 
-                {/* Main Content Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Form - Horizontal across the top */}
+                <div className={`relative z-20 bg-black/30 backdrop-blur-xl rounded-2xl p-6 border mb-8 ${editingId ? 'border-masonic-gold/50 shadow-[0_0_30px_rgba(212,175,55,0.1)]' : 'border-white/10'} transition-all duration-300`}>
+                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-white/5">
+                        <h2 className={`text-sm font-bold uppercase tracking-widest flex items-center gap-2 ${editingId ? 'text-masonic-gold' : 'text-gray-200'}`}>
+                            {editingId ? <><span>✏️</span> Editar Usuário</> : <><span>➕</span> Novo Cadastro</>}
+                        </h2>
+                        {editingId && (
+                            <button onClick={handleCancelEdit} className="text-[10px] text-red-400 hover:text-red-300 uppercase tracking-wider border border-red-900/50 px-2 py-1 rounded hover:bg-red-900/20 transition-colors">
+                                Cancelar
+                            </button>
+                        )}
+                    </div>
 
-                    {/* Form Column */}
-                    <div className={`lg:col-span-1 bg-black/30 backdrop-blur-xl rounded-2xl p-6 border ${editingId ? 'border-masonic-gold/50 shadow-[0_0_30px_rgba(212,175,55,0.1)]' : 'border-white/10'} h-fit transition-all duration-300`}>
-                        <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
-                            <h2 className={`text-sm font-bold uppercase tracking-widest flex items-center gap-2 ${editingId ? 'text-masonic-gold' : 'text-gray-200'}`}>
-                                {editingId ? (
-                                    <><span>✏️</span> Editar Usuário</>
-                                ) : (
-                                    <><span>➕</span> Novo Cadastro</>
-                                )}
-                            </h2>
-                            {editingId && (
-                                <button onClick={handleCancelEdit} className="text-[10px] text-red-400 hover:text-red-300 uppercase tracking-wider border border-red-900/50 px-2 py-1 rounded hover:bg-red-900/20 transition-colors">
-                                    Cancelar
-                                </button>
-                            )}
-                        </div>
-
-                        <form onSubmit={handleCreate} className="space-y-5">
-                            <div className="space-y-1">
+                    <form onSubmit={handleCreate}>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+                            <div className="space-y-1 lg:col-span-2">
                                 <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Nome Completo</label>
-                                <input
-                                    type="text"
-                                    value={nome}
-                                    onChange={e => setNome(e.target.value)}
-                                    placeholder="Ex: Ir. João"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans"
-                                />
+                                <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Ir. João"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
                             </div>
-
                             <div className="space-y-1">
-                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Login de Acesso</label>
-                                <input
-                                    type="text"
-                                    value={login}
-                                    onChange={e => setLogin(e.target.value)}
-                                    placeholder="Ex: joao.silva"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans"
-                                />
+                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Login</label>
+                                <input type="text" value={login} onChange={e => setLogin(e.target.value)} placeholder="Ex: joao.silva"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
                             </div>
-
                             <div className="space-y-1">
-                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">
-                                    {editingId ? 'Nova Senha (Opcional)' : 'Senha Inicial'}
-                                </label>
-                                <input
-                                    type="password"
-                                    value={senha}
-                                    onChange={e => setSenha(e.target.value)}
-                                    placeholder={editingId ? "Manter atual" : "******"}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans"
-                                />
+                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">{editingId ? 'Nova Senha' : 'Senha'}</label>
+                                <input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder={editingId ? "Manter atual" : "******"}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
                             </div>
-
                             <div className="space-y-1">
-                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Perfil de Acesso</label>
-                                <select
-                                    value={role}
-                                    onChange={e => setRole(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer"
-                                >
+                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Perfil</label>
+                                <select value={role} onChange={e => setRole(e.target.value)}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer">
                                     <option value="mestre">Grão-Mestrado Estadual</option>
                                     <option value="admin">Grão-Mestrado Federal</option>
-                                    <option value="loja">Venerável Mestre / Loja</option>
+                                    <option value="loja">Loja</option>
                                 </select>
                             </div>
-
-                            {/* Loja Select */}
+                            {/* Loja or States depending on role */}
                             {role === 'loja' && (
                                 <div className="space-y-1">
                                     <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Loja</label>
-                                    <select
-                                        value={selectedLoja || ''}
-                                        onChange={e => setSelectedLoja(Number(e.target.value))}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer"
-                                    >
-                                        <option value="" disabled>Selecione uma Loja...</option>
+                                    <select value={selectedLoja || ''} onChange={e => setSelectedLoja(Number(e.target.value))}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer">
+                                        <option value="" disabled>Selecione...</option>
                                         {lojas.map(loja => (
                                             <option key={loja.id} value={loja.id}>
-                                                Loja {loja.nome} N° {loja.numero} ({loja.estado_sigla})
+                                                {loja.nome} N° {loja.numero} ({loja.estado_sigla})
                                             </option>
                                         ))}
                                     </select>
                                 </div>
                             )}
-
-                            {/* Custom Multi-Select Dropdown */}
                             {role === 'mestre' && (
                                 <div className="space-y-1 relative" ref={dropdownRef}>
-                                    <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Estados Permitidos</label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-left text-white focus:border-masonic-gold focus:outline-none flex justify-between items-center cursor-pointer min-h-[46px] hover:bg-black/50 transition-colors"
-                                    >
-                                        <span className="truncate pr-4 text-sm">
+                                    <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Estados</label>
+                                    <button type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-left text-white focus:border-masonic-gold focus:outline-none flex justify-between items-center cursor-pointer min-h-[42px] hover:bg-black/50 transition-colors">
+                                        <span className="truncate pr-2 text-xs">
                                             {selectedEstados.length > 0
                                                 ? estados.filter(e => selectedEstados.includes(e.id)).map(e => e.sigla).join(', ')
-                                                : <span className="text-gray-500 italic">Selecione os estados...</span>}
+                                                : <span className="text-gray-500 italic">Selecione...</span>}
                                         </span>
-                                        <span className="text-masonic-gold text-xs">▼</span>
+                                        <span className="text-masonic-gold text-xs flex-shrink-0">▼</span>
                                     </button>
-
                                     {isDropdownOpen && (
-                                        <div className="absolute z-50 w-full mt-2 bg-gray-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] max-h-60 overflow-y-auto custom-scrollbar p-2">
+                                        <div className="absolute z-50 w-64 mt-2 bg-gray-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] max-h-60 overflow-y-auto p-2">
                                             <div className="grid grid-cols-2 gap-1">
                                                 {estados.map(est => (
-                                                    <label
-                                                        key={est.id}
-                                                        className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors border border-transparent ${selectedEstados.includes(est.id)
-                                                            ? 'bg-masonic-gold/20 border-masonic-gold/30'
-                                                            : 'hover:bg-white/5'
-                                                            }`}
-                                                    >
-                                                        <div className={`w-3 h-3 rounded-sm border flex items-center justify-center mr-2 flex-shrink-0 ${selectedEstados.includes(est.id)
-                                                            ? 'bg-masonic-gold border-masonic-gold'
-                                                            : 'border-gray-600 bg-transparent'
-                                                            }`}>
-                                                            {selectedEstados.includes(est.id) && (
-                                                                <span className="text-black text-[8px] font-bold">✓</span>
-                                                            )}
+                                                    <label key={est.id} className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors border border-transparent ${selectedEstados.includes(est.id) ? 'bg-masonic-gold/20 border-masonic-gold/30' : 'hover:bg-white/5'}`}>
+                                                        <div className={`w-3 h-3 rounded-sm border flex items-center justify-center mr-2 flex-shrink-0 ${selectedEstados.includes(est.id) ? 'bg-masonic-gold border-masonic-gold' : 'border-gray-600 bg-transparent'}`}>
+                                                            {selectedEstados.includes(est.id) && <span className="text-black text-[8px] font-bold">✓</span>}
                                                         </div>
-                                                        <span className={`text-xs ${selectedEstados.includes(est.id) ? 'text-masonic-gold font-bold' : 'text-gray-400'}`}>
-                                                            {est.nome}
-                                                        </span>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedEstados.includes(est.id)}
-                                                            onChange={() => toggleEstado(est.id)}
-                                                            className="hidden"
-                                                        />
+                                                        <span className={`text-xs ${selectedEstados.includes(est.id) ? 'text-masonic-gold font-bold' : 'text-gray-400'}`}>{est.nome}</span>
+                                                        <input type="checkbox" checked={selectedEstados.includes(est.id)} onChange={() => toggleEstado(est.id)} className="hidden" />
                                                     </label>
                                                 ))}
                                             </div>
@@ -439,49 +395,40 @@ export default function AdminUsersPage() {
                                     )}
                                 </div>
                             )}
-
                             {role === 'admin' && (
-                                <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20 text-center">
-                                    <p className="text-blue-300 text-xs leading-relaxed">👑 Usuários <strong>Grão-Mestrado Federal</strong> possuem acesso irrestrito a todos os Orientes.</p>
+                                <div className="flex items-end">
+                                    <div className="bg-blue-900/20 p-3 rounded-lg border border-blue-500/20 text-center w-full">
+                                        <p className="text-blue-300 text-[10px] leading-relaxed">👑 <strong>Federal</strong> — acesso irrestrito</p>
+                                    </div>
                                 </div>
                             )}
+                        </div>
 
-                            <div className="pt-4">
-                                {msg && (
-                                    <div className={`mb-4 p-3 rounded text-xs text-center border font-bold ${msg.includes('✅')
-                                        ? 'bg-green-900/20 text-green-400 border-green-500/30'
-                                        : 'bg-red-900/20 text-red-400 border-red-500/30'}`}>
-                                        {msg}
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    className={`w-full py-3 font-bold rounded-lg uppercase tracking-[0.2em] transition-all cursor-pointer text-xs shadow-lg ${editingId
-                                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20'
-                                        : 'bg-gradient-to-r from-yellow-700 to-yellow-600 hover:from-yellow-600 hover:to-yellow-500 text-white border border-yellow-500/20 shadow-yellow-900/20'
-                                        }`}
-                                >
-                                    {editingId ? 'Salvar Alterações' : 'Cadastrar Usuário'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    {/* List Column */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="bg-black/40 text-masonic-gold uppercase text-[10px] tracking-[0.2em] border-b border-white/5">
-                                            <th className="p-4 font-bold">Credenciais</th>
-                                            <th className="p-4 font-bold">Perfil</th>
-                                            <th className="p-4 font-bold">Orientes Permitidos</th>
-                                            <th className="p-4 font-bold text-right">Controle</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/5">
+                        <div className="flex items-center gap-4">
+                            {msg && (
+                                <div className={`flex-1 p-2.5 rounded text-xs text-center border font-bold ${msg.includes('✅') ? 'bg-green-900/20 text-green-400 border-green-500/30' : 'bg-red-900/20 text-red-400 border-red-500/30'}`}>
+                                    {msg}
+                                </div>
+                            )}
+                            <button type="submit" className={`px-8 py-2.5 font-bold rounded-lg uppercase tracking-[0.2em] transition-all cursor-pointer text-xs shadow-lg whitespace-nowrap ${editingId ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-gradient-to-r from-yellow-700 to-yellow-600 hover:from-yellow-600 hover:to-yellow-500 text-white border border-yellow-500/20'}`}>
+                                {editingId ? 'Salvar Alterações' : 'Cadastrar Usuário'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {/* Table - Full width */}
+                <div className="relative z-10 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-black/40 text-masonic-gold uppercase text-[10px] tracking-[0.2em] border-b border-white/5">
+                                    <th className="p-4 font-bold whitespace-nowrap">Credenciais</th>
+                                    <th className="p-4 font-bold whitespace-nowrap">Perfil</th>
+                                    <th className="p-4 font-bold whitespace-nowrap">Orientes Permitidos</th>
+                                    <th className="p-4 font-bold text-right whitespace-nowrap">Controle</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
                                         {users.map(u => (
                                             <tr key={u.id} className={`transition-colors group ${editingId === u.id ? 'bg-masonic-gold/5' : 'hover:bg-white/5'}`}>
                                                 <td className="p-4">
@@ -495,7 +442,7 @@ export default function AdminUsersPage() {
                                                         </span>
                                                     ) : u.role === 'loja' ? (
                                                         <span className="bg-green-900/30 text-green-300 px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-green-500/30 font-bold">
-                                                            🏛️ Venerável Mestre / Loja
+                                                            🏛️ Loja
                                                         </span>
                                                     ) : (
                                                         <span className="bg-blue-900/30 text-blue-300 px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-blue-500/30 font-bold">
@@ -507,7 +454,7 @@ export default function AdminUsersPage() {
                                                     {u.role === 'admin' ? (
                                                         <span className="text-gray-400 text-xs italic">Acesso Universal</span>
                                                     ) : u.role === 'loja' ? (
-                                                        <span className="text-green-400 text-xs font-bold">{u.loja_nome || 'Desconhecida'}</span>
+                                                        <span className="text-green-400 text-xs font-bold">{u.loja_nome || 'Desconhecida'}{u.loja_numero ? ` Nº ${u.loja_numero}` : ''}</span>
                                                     ) : (
                                                         <div className="flex flex-wrap gap-1 max-w-xs">
                                                             {u.estados && u.estados.length > 0 ? u.estados.map(sigla => (
@@ -527,8 +474,8 @@ export default function AdminUsersPage() {
                                                         >
                                                             ✏️
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleDelete(u.id)}
+                                                         <button
+                                                            onClick={() => handleDelete(u)}
                                                             className="p-2 text-red-500 hover:text-white hover:bg-red-600 rounded-lg transition-all"
                                                             title="Excluir"
                                                         >
@@ -545,13 +492,50 @@ export default function AdminUsersPage() {
                                                 </td>
                                             </tr>
                                         )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal via Portal */}
+            {isMounted && userParaDeletar && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
+                    <div className="bg-[#0a0a0a] border border-red-900/50 rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div className="p-6">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-900/20 text-red-500 mb-4 border border-red-500/20 mx-auto">
+                                <span className="text-2xl">⚠️</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-center text-red-500 font-serif mb-2 uppercase tracking-wide">
+                                Confirmar Exclusão
+                            </h3>
+                            <p className="text-gray-400 text-center text-sm mb-6">
+                                Tem certeza que deseja remover o acesso de <br />
+                                <strong className="text-gray-200 text-base">{userParaDeletar.nome}</strong>?
+                                <br /><br />
+                                Esta ação não pode ser desfeita.
+                            </p>
+                            <div className="flex gap-3 justify-center mt-4">
+                                <button
+                                    onClick={() => setUserParaDeletar(null)}
+                                    disabled={deletando}
+                                    className="px-6 py-2.5 rounded border border-white/10 text-gray-300 hover:bg-white/5 transition-colors font-medium text-sm tracking-wide disabled:opacity-50"
+                                >
+                                    CANCELAR
+                                </button>
+                                <button
+                                    onClick={executarDelecaoUser}
+                                    disabled={deletando}
+                                    className="px-6 py-2.5 rounded bg-red-900/80 hover:bg-red-800 text-white border border-red-500/50 transition-all font-bold text-sm tracking-wider uppercase disabled:opacity-50"
+                                >
+                                    {deletando ? 'REMOVENDO...' : 'SIM, EXCLUIR'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 }

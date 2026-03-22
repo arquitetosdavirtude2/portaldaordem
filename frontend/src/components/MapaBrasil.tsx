@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { mapData } from './mapData';
 import EstadoDetailsOverlay from './EstadoDetailsOverlay';
@@ -20,7 +20,7 @@ export default function MapaBrasil() {
     const router = useRouter();
     const [estadoSelecionado, setEstadoSelecionado] = useState<string | null>(null);
     const [estadoHover, setEstadoHover] = useState<string | null>(null);
-    const [userRole, setUserRole] = useState<'master' | 'mestre' | 'estadual' | 'admin' | 'grao_mestre' | null>(null);
+    const [userRole, setUserRole] = useState<'master' | 'mestre' | 'estadual' | 'admin' | 'grao_mestre' | 'federal' | 'mestre_federal' | null>(null);
     const [userEstados, setUserEstados] = useState<string[]>([]);
     const [showPermissionWarning, setShowPermissionWarning] = useState(false);
 
@@ -30,30 +30,44 @@ export default function MapaBrasil() {
             const access = localStorage.getItem('acesso');
             if (access) {
                 const user = JSON.parse(access);
-                const realRole = user.role || user.tipo || 'master';
+                const realRole = (user.role || user.tipo || 'master').toLowerCase() as any;
                 setUserRole(realRole);
                 const statesAllowed = user.allowed_states || user.estados || (user.estado ? [user.estado] : []);
                 setUserEstados(statesAllowed);
             } else {
-                // Not logged in -> redirect to login immediately
                 router.replace('/login');
             }
         }
     }, [router]);
 
-    const handleClickEstado = (sigla: string) => {
-        // Only Master/Admin or users with explicit permission can select the state (case-insensitive and trimmed)
-        const isMestreWithAccess = ['mestre', 'estadual'].includes(String(userRole).toLowerCase()) && userEstados.some(s => s.trim().toUpperCase() === sigla.trim().toUpperCase());
+    const handleClickEstado = useCallback((sigla: string) => {
+        if (!sigla) return;
+        
+        const s = sigla.trim().toUpperCase();
+        const roleStr = String(userRole).toLowerCase();
+        
+        console.log(`[MAP] Clique em: ${s} | Role detectada: ${roleStr}`);
 
-        if (['master', 'admin', 'grao_mestre'].includes(String(userRole).toLowerCase()) || isMestreWithAccess) {
-            setEstadoSelecionado(sigla);
+        // Granular Permissions:
+        // 1. Federal/Admin/Master/Grao Federal roles have UNIVERSAL access (all states).
+        // 2. Estadual/Mestre roles are RESTRICTED to their assigned states only.
+        
+        const isFederal = roleStr.includes('admin') || 
+                          roleStr.includes('federal') || 
+                          roleStr.includes('master') ||
+                          (roleStr.includes('grao') && roleStr.includes('federal'));
+                          
+        const hasAccess = isFederal || userEstados.some(allowed => allowed && allowed.trim().toUpperCase() === s);
+
+        if (hasAccess) {
+            setEstadoSelecionado(s);
             setShowPermissionWarning(false);
         } else {
-            // Flash a warning or just ignore the click
+            console.warn(`[MAP] Acesso negado para ${s}. Role: ${userRole} | Estados:`, userEstados);
             setShowPermissionWarning(true);
-            setTimeout(() => setShowPermissionWarning(false), 2000);
+            setTimeout(() => setShowPermissionWarning(false), 3000);
         }
-    };
+    }, [userRole, userEstados]);
 
     const handleCloseOverlay = () => {
         setEstadoSelecionado(null);
@@ -81,7 +95,7 @@ export default function MapaBrasil() {
                 <EstadoDetailsOverlay
                     sigla={estadoSelecionado}
                     nomeEstado={getEstadoNome(estadoSelecionado)}
-                    userRole={userRole || 'master'}
+                    userRole={(userRole as any) || 'master'}
                     onClose={handleCloseOverlay}
                 />
             )}
