@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel
 from typing import List, Optional
 from database import get_db
@@ -48,7 +48,7 @@ def listar_pessoas(estado_sigla: str, db: Session = Depends(get_db)):
     if not estado:
         raise HTTPException(status_code=404, detail="Estado não encontrado")
     
-    pessoas = db.query(Pessoa).filter(Pessoa.estado_id == estado.id).all()
+    pessoas = db.query(Pessoa).options(joinedload(Pessoa.loja)).filter(Pessoa.estado_id == estado.id).all()
     
     response = []
     for p in pessoas:
@@ -69,7 +69,7 @@ def listar_pessoas(estado_sigla: str, db: Session = Depends(get_db)):
 # Listar pessoas de uma loja específica
 @router.get("/loja/{loja_id}", response_model=List[PessoaResponse])
 def listar_pessoas_loja(loja_id: int, db: Session = Depends(get_db)):
-    pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
+    pessoas = db.query(Pessoa).options(joinedload(Pessoa.loja)).filter(Pessoa.loja_id == loja_id).all()
     
     response = []
     for p in pessoas:

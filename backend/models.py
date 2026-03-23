@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -24,6 +24,7 @@ class Loja(Base):
     estado = relationship("Estado", back_populates="lojas")
     usuarios = relationship("Usuario", back_populates="loja")
     pessoas = relationship("Pessoa", back_populates="loja")
+    caixas = relationship("Caixa", back_populates="loja")
 
 class Estado(Base):
     __tablename__ = "estados"
@@ -72,3 +73,34 @@ class Admin(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     senha_master = Column(String(100))
+
+class Caixa(Base):
+    __tablename__ = "caixas"
+    id = Column(Integer, primary_key=True, index=True)
+    loja_id = Column(Integer, ForeignKey("lojas.id"))
+    nome = Column(String(100)) # 'Geral', 'Benevolência'
+    saldo_atual = Column(Float, default=0.0)
+
+    loja = relationship("Loja", back_populates="caixas")
+    transacoes = relationship("Transacao", back_populates="caixa")
+
+class Transacao(Base):
+    __tablename__ = "transacoes"
+    id = Column(Integer, primary_key=True, index=True)
+    caixa_id = Column(Integer, ForeignKey("caixas.id"))
+    pessoa_id = Column(Integer, ForeignKey("pessoas.id"), nullable=True) # Irmão relacionado (se houver)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id")) # Quem lançou (Tesoureiro/Venerável)
+    
+    tipo = Column(String(20)) # 'entrada', 'saida'
+    categoria = Column(String(50)) # 'joia', 'mensalidade', 'aluguel', etc.
+    valor = Column(Float)
+    data_vencimento = Column(String(20)) # 'YYYY-MM-DD' (usando string para simplificar no SQLite)
+    data_pagamento = Column(String(20), nullable=True)
+    descricao = Column(String(255))
+    notas = Column(String(1000), nullable=True) # Observações detalhadas
+    anexo_url = Column(String(255), nullable=True) # Link/Caminho do comprovante
+    status = Column(String(20), default="pendente") # 'pago', 'pendente', 'atrasado'
+
+    caixa = relationship("Caixa", back_populates="transacoes")
+    pessoa = relationship("Pessoa")
+    usuario = relationship("Usuario")

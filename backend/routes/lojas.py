@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel
 from typing import List, Optional
 from database import get_db
@@ -10,7 +10,7 @@ router = APIRouter()
 class LojaBase(BaseModel):
     nome: str
     numero: str
-    estado_id: int
+    estado_id: Optional[int] = None
     endereco: Optional[str] = None
     rito: Optional[str] = None
 
@@ -55,12 +55,15 @@ def create_loja(loja: LojaCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[LojaResponse])
 def list_lojas(db: Session = Depends(get_db)):
-    lojas = db.query(Loja).all()
+    lojas = db.query(Loja).options(joinedload(Loja.estado)).all()
     response = []
     for l in lojas:
         estado_sigla = l.estado.sigla if l.estado else ""
-        # total_membros = db.query(Pessoa).filter(Pessoa.loja_id == l.id).count()
-        total_membros = 0
+        try:
+            total_membros = db.query(Pessoa).filter(Pessoa.loja_id == l.id).count()
+        except:
+            total_membros = 0
+
         response.append(LojaResponse(
             id=l.id,
             nome=l.nome,
@@ -75,11 +78,16 @@ def list_lojas(db: Session = Depends(get_db)):
 
 @router.get("/{loja_id}", response_model=LojaResponse)
 def get_loja(loja_id: int, db: Session = Depends(get_db)):
-    db_loja = db.query(Loja).filter(Loja.id == loja_id).first()
+    db_loja = db.query(Loja).options(joinedload(Loja.estado)).filter(Loja.id == loja_id).first()
     if not db_loja:
         raise HTTPException(status_code=404, detail="Loja não encontrada")
     
     estado_sigla = db_loja.estado.sigla if db_loja.estado else ""
+    try:
+        total_membros = db.query(Pessoa).filter(Pessoa.loja_id == db_loja.id).count()
+    except:
+        total_membros = 0
+
     return LojaResponse(
         id=db_loja.id,
         nome=db_loja.nome,
@@ -87,7 +95,8 @@ def get_loja(loja_id: int, db: Session = Depends(get_db)):
         estado_id=db_loja.estado_id,
         endereco=db_loja.endereco,
         rito=db_loja.rito,
-        estado_sigla=estado_sigla
+        estado_sigla=estado_sigla,
+        total_membros=total_membros
     )
 
 @router.put("/{loja_id}", response_model=LojaResponse)

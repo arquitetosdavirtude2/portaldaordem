@@ -54,6 +54,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
                 cargo_display = "Grão-Mestre Estadual"
             elif user.role == "loja":
                 cargo_display = "Venerável Mestre"
+            elif user.role == "tesoureiro":
+                cargo_display = "Tesoureiro"
 
             return LoginResponse(
                 success=True, 
@@ -103,10 +105,15 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             
             cidade = pessoa.loja.endereco if pessoa.loja else None
             
+            # Assign role based on cargo
+            user_role = "membro"
+            if pessoa.cargo and "tesoureiro" in pessoa.cargo.lower():
+                user_role = "tesoureiro"
+            
             return LoginResponse(
                 success=True,
                 tipo="membro",
-                role="membro",
+                role=user_role,
                 allowed_states=states,
                 loja_id=pessoa.loja_id,
                 loja_nome=pessoa.loja.nome if pessoa.loja else None,

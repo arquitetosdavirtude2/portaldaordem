@@ -140,11 +140,11 @@ export default function Dashboard() {
                             <div className="absolute inset-0 bg-gradient-to-br from-red-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                             <div className="w-14 h-14 bg-red-900/20 rounded-lg flex items-center justify-center mb-8 text-3xl border border-red-500/20 group-hover:border-red-500 group-hover:bg-red-600 text-red-500 group-hover:text-white transition-all duration-300">
-                                ⚙️
+                                👥
                             </div>
 
                             <h3 className="text-xl font-bold text-gray-100 group-hover:text-red-500 mb-3 transition-colors uppercase tracking-widest font-serif">
-                                Gestão Federal
+                                Gestão de Usuários
                             </h3>
                             <p className="text-sm text-gray-500 group-hover:text-gray-300 transition-colors leading-relaxed font-light">
                                 Painel exclusivo para administração de usuários, permissões e configurações globais do sistema.
@@ -227,7 +227,7 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {rawRole === 'loja' && (
+                    {(rawRole === 'loja' || rawRole === 'tesoureiro') && (
                         <div 
                             onClick={() => router.push('/tesouraria')}
                             className="group relative bg-black/20 backdrop-blur-sm rounded-xl p-8 border border-white/5 hover:border-green-500/50 cursor-pointer transition-all duration-500 transform hover:-translate-y-2 hover:shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden"
