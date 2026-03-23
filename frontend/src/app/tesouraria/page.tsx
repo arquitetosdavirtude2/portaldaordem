@@ -78,10 +78,21 @@ export default function TesourariaPage() {
         : 'Tesouraria';
 
     return (
-        <div className="min-h-screen flex flex-col font-serif text-gray-100 selection:bg-yellow-500 selection:text-black">
+        <div className="min-h-screen w-full flex flex-col font-serif text-gray-100 selection:bg-yellow-500 selection:text-black relative">
+            {/* Global Background Fix - Bulletproof */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                html, body { 
+                    background-color: #0a1536 !important; 
+                    margin: 0 !important; 
+                    padding: 0 !important;
+                    overflow-x: hidden !important;
+                    width: 100% !important;
+                }
+            ` }} />
+            
             {/* Optimized Fixed Background */}
-            <div className="fixed inset-0 bg-[#0a1536] bg-gradient-to-br from-[#0a1536] via-[#1c3879] to-black -z-10"></div>
-            <div className="fixed inset-0 bg-[url('/texture-noise.png')] opacity-[0.03] -z-10 pointer-events-none"></div>
+            <div className="fixed inset-0 bg-[#0a1536] bg-gradient-to-br from-[#0a1536] via-[#1c3879] to-black -z-10 w-full h-full"></div>
+            <div className="fixed inset-0 bg-[url('/texture-noise.png')] opacity-[0.03] -z-10 pointer-events-none w-full h-full"></div>
 
             <div className="z-10 w-full max-w-7xl mx-auto p-4 sm:p-6 relative">
                 {/* Header Section */}
