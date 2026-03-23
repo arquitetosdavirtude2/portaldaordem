@@ -35,14 +35,8 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
     const [enviando, setEnviando] = useState(false);
 
     useEffect(() => {
-        // Prevent background scroll and layout shift
-        const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
-        document.body.style.overflow = 'hidden';
-        document.body.style.paddingRight = `${scrollBarWidth}px`;
-        return () => {
-            document.body.style.overflow = 'unset';
-            document.body.style.paddingRight = '0px';
-        };
+        // Simple presence check, no body lock to avoid layout shifts reported by user
+        return () => {};
     }, []);
 
     useEffect(() => {
@@ -98,8 +92,8 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all">
-            <div className="bg-[#0f1d45] border border-yellow-500/20 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm transition-all overflow-y-auto">
+            <div className="bg-[#0f1d45] border border-yellow-500/30 rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.8)] w-full max-w-lg overflow-hidden flex flex-col my-auto animate-in zoom-in duration-300">
                 <div className="p-5 border-b border-white/5 bg-black/20 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
