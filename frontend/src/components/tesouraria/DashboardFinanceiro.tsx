@@ -16,10 +16,9 @@ interface Resumo {
     total_saida_pendente: number;
 }
 
-export default function DashboardFinanceiro({ acesso }: { acesso: any }) {
+export default function DashboardFinanceiro({ acesso, onNovoLancamento, chaveAtualizacao }: { acesso: any, onNovoLancamento: () => void, chaveAtualizacao?: any }) {
     const [resumo, setResumo] = useState<Resumo | null>(null);
     const [caixaAtivo, setCaixaAtivo] = useState<number | null>(null);
-    const [isModalAberto, setIsModalAberto] = useState(false);
     const [carregando, setCarregando] = useState(true);
 
     const carregarResumo = async () => {
@@ -42,7 +41,7 @@ export default function DashboardFinanceiro({ acesso }: { acesso: any }) {
 
     useEffect(() => {
         carregarResumo();
-    }, [acesso.loja_id]);
+    }, [acesso.loja_id, chaveAtualizacao]);
 
     if (carregando) {
         return <div className="text-center py-10 text-gray-500">Carregando dados financeiros...</div>;
@@ -59,7 +58,7 @@ export default function DashboardFinanceiro({ acesso }: { acesso: any }) {
                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans font-medium">Controle e Lançamentos Financeiros</p>
                 </div>
                 <button
-                    onClick={() => setIsModalAberto(true)}
+                    onClick={onNovoLancamento}
                     className="w-full md:w-auto px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-black uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.4)] active:scale-95 flex items-center justify-center gap-2"
                 >
                     <span className="text-lg leading-none">+</span>
@@ -121,17 +120,6 @@ export default function DashboardFinanceiro({ acesso }: { acesso: any }) {
                 )}
             </div>
 
-            {isModalAberto && (
-                <ModalNovaTransacao 
-                    acesso={acesso}
-                    caixas={resumo?.caixas || []}
-                    onClose={() => setIsModalAberto(false)}
-                    onSuccess={() => {
-                        setIsModalAberto(false);
-                        carregarResumo();
-                    }}
-                />
-            )}
         </div>
     );
 }

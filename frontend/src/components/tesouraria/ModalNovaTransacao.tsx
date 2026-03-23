@@ -92,8 +92,11 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm transition-all overflow-y-auto">
-            <div className="bg-[#0f1d45] border border-yellow-500/30 rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.8)] w-full max-w-lg overflow-hidden flex flex-col my-auto animate-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-sm py-8 sm:py-16 px-4 animate-in fade-in duration-300">
+            {/* Backdrop click to close */}
+            <div className="fixed inset-0 -z-10" onClick={onClose}></div>
+            
+            <div className="bg-[#0f1d45] border border-white/10 rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.7)] w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in duration-300">
                 <div className="p-5 border-b border-white/5 bg-black/20 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>

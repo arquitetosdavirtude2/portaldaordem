@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardFinanceiro from '@/components/tesouraria/DashboardFinanceiro';
-import ListaTransacoes from '@/components/tesouraria/ListaTransacoes';
 import GestaoIrmaosFinanceiro from '@/components/tesouraria/GestaoIrmaosFinanceiro';
+import ModalNovaTransacao from '@/components/tesouraria/ModalNovaTransacao';
 
 interface Acesso {
     estado: string;
@@ -22,6 +22,9 @@ export default function TesourariaPage() {
     const [acesso, setAcesso] = useState<Acesso | null>(null);
     const [abaAtiva, setAbaAtiva] = useState<'geral' | 'irmaos'>('geral');
     const [carregando, setCarregando] = useState(true);
+    const [isModalAberto, setIsModalAberto] = useState(false);
+    const [caixas, setCaixas] = useState<any[]>([]);
+    const [chaveAtualizacao, setChaveAtualizacao] = useState(0);
 
     useEffect(() => {
         const acessoSalvo = localStorage.getItem('acesso');
@@ -43,6 +46,22 @@ export default function TesourariaPage() {
         }
 
         setAcesso(acessoObj);
+        
+        // Fetch caixas for the modal
+        const fetchCaixas = async () => {
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+                const res = await fetch(`${apiUrl}/api/tesouraria/resumo/${acessoObj.loja_id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setCaixas(data.caixas || []);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar caixas:', error);
+            }
+        };
+        fetchCaixas();
+
         setCarregando(false);
     }, [router]);
 
@@ -59,8 +78,10 @@ export default function TesourariaPage() {
         : 'Tesouraria';
 
     return (
-        <div className="min-h-screen flex flex-col relative font-serif text-gray-100 overflow-x-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0a1536] via-[#1c3879] to-black z-0 fixed"></div>
+        <div className="min-h-screen flex flex-col font-serif text-gray-100 selection:bg-yellow-500 selection:text-black">
+            {/* Optimized Fixed Background */}
+            <div className="fixed inset-0 bg-[#0a1536] bg-gradient-to-br from-[#0a1536] via-[#1c3879] to-black -z-10"></div>
+            <div className="fixed inset-0 bg-[url('/texture-noise.png')] opacity-[0.03] -z-10 pointer-events-none"></div>
 
             <div className="z-10 w-full max-w-7xl mx-auto p-4 sm:p-6 relative">
                 {/* Header Section */}
@@ -115,13 +136,30 @@ export default function TesourariaPage() {
 
                     <div className="p-6 md:p-8">
                         {abaAtiva === 'geral' ? (
-                            <DashboardFinanceiro acesso={acesso} />
+                            <DashboardFinanceiro 
+                                acesso={acesso} 
+                                onNovoLancamento={() => setIsModalAberto(true)}
+                                chaveAtualizacao={chaveAtualizacao}
+                            />
                         ) : (
                             <GestaoIrmaosFinanceiro acesso={acesso} />
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Modal isolated at page level */}
+            {isModalAberto && (
+                <ModalNovaTransacao 
+                    acesso={acesso}
+                    caixas={caixas}
+                    onClose={() => setIsModalAberto(false)}
+                    onSuccess={() => {
+                        setIsModalAberto(false);
+                        setChaveAtualizacao(prev => prev + 1);
+                    }}
+                />
+            )}
         </div>
     );
 }
