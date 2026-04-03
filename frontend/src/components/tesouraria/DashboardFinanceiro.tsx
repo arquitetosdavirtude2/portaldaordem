@@ -66,57 +66,89 @@ export default function DashboardFinanceiro({ acesso, onNovoLancamento, chaveAtu
                 </button>
             </div>
 
-            {/* Summary Cards - The "4 Cards" */}
+            {/* Summary Cards - The "4 Cards" ONLY */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Caixa Geral */}
-                {resumo?.caixas.map(caixa => (
-                    <div 
-                        key={caixa.id}
-                        onClick={() => setCaixaAtivo(caixa.id)}
-                        className={`group relative p-6 rounded-2xl border transition-all duration-500 overflow-hidden ${caixaAtivo === caixa.id ? 'bg-gradient-to-br from-yellow-500/20 to-yellow-500/5 border-yellow-500/50 shadow-[0_0_25px_rgba(234,179,8,0.15)] ring-1 ring-yellow-500/30' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
-                    >
-                        <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity">
-                            <span className="text-4xl">💰</span>
-                        </div>
-                        <div className="relative z-10">
-                            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">{caixa.nome}</div>
-                            <div className={`text-2xl font-black ${caixa.saldo_atual >= 0 ? 'text-white' : 'text-red-400'} tracking-tight`}>
-                                R$ {caixa.saldo_atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </div>
-                        </div>
+                {/* Saldo Total */}
+                <div 
+                    onClick={() => setCaixaAtivo(resumo?.caixas[0]?.id || null)}
+                    className="p-6 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/5 border border-yellow-500/30 relative overflow-hidden group cursor-pointer hover:shadow-[0_0_20px_rgba(234,179,8,0.1)] transition-all"
+                >
+                    <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity">
+                        <span className="text-4xl text-yellow-500">🏦</span>
                     </div>
-                ))}
-
-                {/* Always show at least these if they exist */}
-                <div className="p-6 rounded-2xl bg-white/5 border border-white/10 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-3 opacity-10">
-                        <span className="text-4xl text-green-500">📥</span>
-                    </div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Entradas Pendentes</div>
-                    <div className="text-2xl font-black text-green-400 tracking-tight">
-                        R$ {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                    <div className="relative z-10">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Saldo Consolidado</div>
+                        <div className="text-2xl font-black text-white tracking-tight">
+                            R$ {(resumo as any)?.saldo_geral?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        </div>
                     </div>
                 </div>
 
+                {/* Benevolência */}
+                <div 
+                    onClick={() => {
+                        const c = resumo?.caixas.find(x => (x as any).tipo === 'benevolencia');
+                        if (c) setCaixaAtivo(c.id);
+                    }}
+                    className={`p-6 rounded-2xl border relative overflow-hidden group cursor-pointer transition-all ${caixaAtivo === resumo?.caixas.find(x => (x as any).tipo === 'benevolencia')?.id ? 'bg-green-500/10 border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.1)]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                >
+                    <div className="absolute top-0 right-0 p-3 opacity-10">
+                        <span className="text-4xl text-green-500">🕊️</span>
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Benevolência</div>
+                    <div className="text-2xl font-black text-green-400 tracking-tight">
+                        R$ {(resumo as any)?.saldo_benevolencia?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                    </div>
+                    {/* Display Bank Name inside the card */}
+                    <div className="mt-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest">
+                        {resumo?.caixas.find(c => (c as any).tipo === 'benevolencia')?.nome || 'Recarga Pay'}
+                    </div>
+                </div>
+
+                {/* Joias e Mensalidades */}
+                <div 
+                    onClick={() => {
+                        const c = resumo?.caixas.find(x => (x as any).tipo === 'joias_mensalidade');
+                        if (c) setCaixaAtivo(c.id);
+                    }}
+                    className={`p-6 rounded-2xl border relative overflow-hidden group cursor-pointer transition-all ${caixaAtivo === resumo?.caixas.find(x => (x as any).tipo === 'joias_mensalidade')?.id ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                >
+                    <div className="absolute top-0 right-0 p-3 opacity-10">
+                        <span className="text-4xl text-blue-500">💎</span>
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Joias e Mensalidades</div>
+                    <div className="text-2xl font-black text-blue-400 tracking-tight">
+                        R$ {(resumo as any)?.saldo_joias_mensalidade?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                    </div>
+                    {/* Display Bank Name inside the card */}
+                    <div className="mt-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest">
+                        {resumo?.caixas.find(c => (c as any).tipo === 'joias_mensalidade')?.nome || 'Banco Pan'}
+                    </div>
+                </div>
+
+                {/* Pendências Totais (Entradas) */}
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-3 opacity-10">
-                        <span className="text-4xl text-red-500">📤</span>
+                        <span className="text-4xl text-orange-500">⏳</span>
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Saídas Pendentes</div>
-                    <div className="text-2xl font-black text-red-500 tracking-tight">
-                        R$ {resumo?.total_saida_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Recebimentos Pendentes</div>
+                    <div className="text-2xl font-black text-orange-400 tracking-tight">
+                        R$ {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
                 </div>
             </div>
 
-            {/* List Section */}
+            {/* List Section - Only visible if an account is selected */}
             <div className="bg-black/20 rounded-2xl border border-white/5 p-1">
-                {caixaAtivo && (
+                {caixaAtivo ? (
                     <ListaTransacoes 
                         caixaId={caixaAtivo} 
-                        chaveAtualizacao={resumo?.total_entrada_pendente} // More reliable trigger
                         onStatusChanged={carregarResumo}
                     />
+                ) : (
+                    <div className="text-center py-20 text-gray-600 font-serif italic text-sm">
+                        Selecione uma conta acima para visualizar o extrato detalhado.
+                    </div>
                 )}
             </div>
 

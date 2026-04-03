@@ -326,3 +326,513 @@ WHERE caixas.loja_id = %(loja_id_1)s]
 INFO:     127.0.0.1:55170 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51513 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51513 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:54966 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:54966 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:54966 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:54966 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54966 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54966 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:55276 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:55276 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:55276 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:55276 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53355 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53355 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+   Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64363 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64363 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64363 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64363 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64093 - "GET /api/tesouraria/irmaos/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64093 - "GET /api/tesouraria/irmaos/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64093 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64093 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64093 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64093 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56013 - "GET /api/tesouraria/irmaos/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56013 - "GET /api/tesouraria/irmaos/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:56013 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:56013 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:65251 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:65251 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:65251 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:65251 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53349 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53349 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64873 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64873 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64873 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64873 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64873 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64873 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+ Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:52731 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:52731 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:54113 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61037 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61037 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54777 - "OPTIONS /api/tesouraria/caixas/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54777 - "POST /api/tesouraria/caixas/ HTTP/1.1" 500 Internal Server Error
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:58336 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:58336 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:58336 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58336 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58336 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64188 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64188 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:64188 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65446 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65446 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56072 - "POST /api/tesouraria/caixas/ HTTP/1.1" 500 Internal Server Error
+ INFO:     127.0.0.1:51798 - "POST /api/tesouraria/caixas/ HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:61363 - "POST /api/tesouraria/caixas/ HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:65227 - "POST /api/tesouraria/caixas/ HTTP/1.1" 422 Unprocessable Content
+ Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:57090 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:57090 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:57090 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51831 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51831 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54479 - "OPTIONS /api/tesouraria/caixas HTTP/1.1" 200 OK
+DEBUG: Criando caixa Caixa de Teste 2 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 2', 'saldo_atual': 250.5}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:54479 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+DEBUG: Criando caixa Caixa de Teste 2 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 2', 'saldo_atual': 250.5}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:63568 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+DEBUG: Criando caixa Caixa de Teste 2 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 2', 'saldo_atual': 250.5}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:62395 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+DEBUG: Criando caixa Caixa de Teste 2 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 2', 'saldo_atual': 250.5}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:51925 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+   Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:52326 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:52326 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:52326 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63380 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63380 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+DEBUG: Criando caixa Caixa de Teste 3 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 3', 'saldo_atual': 300.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:59829 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+DEBUG: Criando caixa Caixa de Teste 3 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 3', 'saldo_atual': 300.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:59655 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+DEBUG: Criando caixa Caixa de Teste 3 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 3', 'saldo_atual': 300.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:61542 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:58982 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:58982 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:58982 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57600 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57600 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50166 - "OPTIONS /api/tesouraria/caixas HTTP/1.1" 200 OK
+DEBUG: Criando caixa Caixa de Teste 3 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 3', 'saldo_atual': 300.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:60678 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51253 - "OPTIONS /api/tesouraria/caixas HTTP/1.1" 200 OK
+DEBUG: Criando caixa Caixa de Teste 3 para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa de Teste 3', 'saldo_atual': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:51253 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:55076 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:55076 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:55076 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57043 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57043 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:49888 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:49888 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:49888 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51166 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51166 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+ Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:60082 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+BANCO ATIVO: mysql+pymysql://portald3_user:gWh28%40dGcMp@localhost/portald3_gomb?charset=utf8mb4
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:58935 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:56841 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49677 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49677 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60190 - "OPTIONS /api/tesouraria/caixas HTTP/1.1" 200 OK
+DEBUG: Criando caixa Caixa Final para loja 1
+DEBUG ERROR: (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: INSERT INTO caixas (loja_id, nome, saldo_atual) VALUES (%(loja_id)s, %(nome)s, %(saldo_atual)s)]
+[parameters: {'loja_id': 1, 'nome': 'Caixa Final', 'saldo_atual': 500.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:60744 - "POST /api/tesouraria/caixas HTTP/1.1" 500 Internal Server Error
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:62248 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:62248 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): (pymysql.err.ProgrammingError) (1146, "Table 'portald3_gomb.caixas' doesn't exist")
+[SQL: SELECT caixas.id AS caixas_id, caixas.loja_id AS caixas_loja_id, caixas.nome AS caixas_nome, caixas.saldo_atual AS caixas_saldo_atual 
+FROM caixas 
+WHERE caixas.loja_id = %(loja_id_1)s]
+[parameters: {'loja_id_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     127.0.0.1:62248 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56480 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56480 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+ BANCO ATIVO (FORÇADO): sqlite:///./database.db
+INFO:     127.0.0.1:60526 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60526 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60526 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60526 - "GET /api/tesouraria/transacoes/1 HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60526 - "GET /api/tesouraria/transacoes/1 HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50601 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50601 - "GET /api/pessoas/loja/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60073 - "OPTIONS /api/tesouraria/caixas HTTP/1.1" 200 OK
+DEBUG: Criando caixa Caixa OK para loja 1
+INFO:     127.0.0.1:64568 - "POST /api/tesouraria/caixas HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64568 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59595 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59595 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58167 - "GET /api/tesouraria/transacoes/1 HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59595 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58167 - "GET /api/tesouraria/transacoes/1 HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:62123 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62123 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62123 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62123 - "GET /api/tesouraria/transacoes/1 HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:62123 - "GET /api/tesouraria/transacoes/1 HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60873 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60873 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60873 - "GET /api/tesouraria/resumo/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60873 - "GET /api/tesouraria/transacoes/1 HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60873 - "GET /api/tesouraria/transacoes/1 HTTP/1.1" 405 Method Not Allowed

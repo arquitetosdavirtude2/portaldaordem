@@ -8,41 +8,52 @@ from dotenv import load_dotenv
 # Carrega variáveis do .env
 load_dotenv()
 
-# Usar variável de ambiente ou SQLite local para testes
+# 1. Main Database (MySQL for original data)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database.db")
 
-# No cPanel, conexões TCP locais muitas vezes sofrem timeout silencioso (SYN drop)
-# Forçamos o uso do socket UNIX nativo do MySQL quando rodando em produção (Linux).
+# cPanel Socket logic for MySQL
 if "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in DATABASE_URL):
     DATABASE_URL = DATABASE_URL.replace("@127.0.0.1", "@localhost")
-    if os.name != 'nt':  # Aplica socket apenas se NÃO estiver no Windows
+    if os.name != 'nt':
         if "unix_socket=" not in DATABASE_URL:
             if "?" in DATABASE_URL:
                 DATABASE_URL += "&unix_socket=/var/lib/mysql/mysql.sock"
             else:
                 DATABASE_URL += "?unix_socket=/var/lib/mysql/mysql.sock"
 
-# Configura engine com parâmetros específicos por banco
-connect_args = {}
-if "sqlite" in DATABASE_URL:
-    connect_args = {"check_same_thread": False}
-elif "mysql" in DATABASE_URL:
-    # Timeout de 5s na conexão — evita o Python travar se o MySQL estiver lento
-    connect_args = {"connect_timeout": 5}
+def get_engine(url, is_sqlite=False):
+    connect_args = {}
+    if is_sqlite or "sqlite" in url:
+        connect_args = {"check_same_thread": False}
+    elif "mysql" in url:
+        connect_args = {"connect_timeout": 5}
+    return create_engine(url, connect_args=connect_args, poolclass=NullPool)
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-    poolclass=NullPool,
-)
-
+engine = get_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 2. Treasury Database (Always local SQLite to avoid permission issues)
+TREASURY_DB_URL = "sqlite:///./treasury.db" 
+treasury_engine = get_engine(TREASURY_DB_URL, is_sqlite=True)
+TreasurySessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=treasury_engine)
+
 Base = declarative_base()
 
-# Dependency para usar nas rotas
+# Main DB Dependency
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+# Treasury DB Dependency (Inquebrável)
+def get_treasury_db():
+    db = TreasurySessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+print(f"BANCO PRINCIPAL: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DATABASE_URL}")
+print(f"BANCO TESOURARIA: {TREASURY_DB_URL}")

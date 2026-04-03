@@ -12,17 +12,27 @@ interface Pessoa {
     nome: string;
 }
 
-export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess }: {
+export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess, onCaixaAdicionado }: {
     acesso: any,
     caixas: Caixa[],
     onClose: () => void,
-    onSuccess: () => void
+    onSuccess: () => void,
+    onCaixaAdicionado?: () => void
 }) {
     const [pessoas, setPessoas] = useState<Pessoa[]>([]);
+    const [mostrarNovoCaixa, setMostrarNovoCaixa] = useState(false);
+    const [novoCaixaForm, setNovoCaixaForm] = useState({ 
+        nome: '', 
+        tipo: 'geral',
+        descricao: '',
+        saldo_inicial: '0' 
+    });
+    const [carregandoCaixa, setCarregandoCaixa] = useState(false);
     const [form, setForm] = useState({
         caixa_id: caixas[0]?.id || 0,
         pessoa_id: '',
         tipo: 'entrada',
+        grupo: 'Receitas de Obreiros',
         categoria: 'mensalidade',
         valor: '',
         data_vencimento: new Date().toISOString().split('T')[0],
@@ -34,10 +44,54 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
     const [arquivo, setArquivo] = useState<File | null>(null);
     const [enviando, setEnviando] = useState(false);
 
+    // Hierarquia de categorias por tipo
+    const categoriasHierarquicas: Record<string, { nome: string, categorias: { id: string, label: string }[] }[]> = {
+        entrada: [
+            { 
+                nome: 'Receitas de Obreiros',
+                categorias: [
+                    { id: 'mensalidade', label: 'Mensalidade' },
+                    { id: 'joia', label: 'Joia de Ingresso' },
+                    { id: 'benevolencia', label: 'Benevolência / Caridade' }
+                ]
+            },
+            {
+                nome: 'Outras Receitas',
+                categorias: [
+                    { id: 'doacao', label: 'Doação / Patrocínio' },
+                    { id: 'evento', label: 'Arrecadação de Eventos' },
+                    { id: 'outro_entrada', label: 'Resíduo / Outros' }
+                ]
+            }
+        ],
+        saida: [
+            {
+                nome: 'Despesas Fixas',
+                categorias: [
+                    { id: 'aluguel', label: 'Aluguel / Condomínio' },
+                    { id: 'utilidades', label: 'Água / Luz / Internet' },
+                    { id: 'taxas_gomb', label: 'Per Capita / Taxas GOMB' }
+                ]
+            },
+            {
+                nome: 'Despesas Variáveis',
+                categorias: [
+                    { id: 'agape', label: 'Ágape / Refeições' },
+                    { id: 'manutencao', label: 'Manutenção de Templo' },
+                    { id: 'insumos', label: 'Velas / Incenso / Materiais' },
+                    { id: 'caridade', label: 'Caridade / Donativos' },
+                    { id: 'social', label: 'Social / Outros' }
+                ]
+            }
+        ]
+    };
+
     useEffect(() => {
-        // Simple presence check, no body lock to avoid layout shifts reported by user
-        return () => {};
-    }, []);
+        // Ensure default caixa is set when caixas prop loads
+        if (caixas.length > 0 && form.caixa_id === 0) {
+            setForm(f => ({ ...f, caixa_id: caixas[0].id }));
+        }
+    }, [caixas]);
 
     useEffect(() => {
         const carregarPessoas = async () => {
@@ -107,8 +161,17 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
 
                 <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 font-sans custom-scrollbar">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Conta / Caixa</label>
+                        <div className="space-y-1.5 flex-1">
+                            <div className="flex justify-between items-center">
+                                <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Conta / Caixa</label>
+                                <button 
+                                    type="button"
+                                    onClick={() => setMostrarNovoCaixa(!mostrarNovoCaixa)}
+                                    className="text-[10px] text-yellow-500 hover:text-yellow-400 font-bold uppercase"
+                                >
+                                    {mostrarNovoCaixa ? 'Cancelar' : '+ Nova'}
+                                </button>
+                            </div>
                             <select 
                                 value={form.caixa_id}
                                 onChange={e => setForm({...form, caixa_id: parseInt(e.target.value)})}
@@ -121,7 +184,16 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
                             <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Tipo de Movimentação</label>
                             <select 
                                 value={form.tipo}
-                                onChange={e => setForm({...form, tipo: e.target.value})}
+                                onChange={e => {
+                                    const novoTipo = e.target.value;
+                                    const primeiroGrupo = categoriasHierarquicas[novoTipo][0];
+                                    setForm({
+                                        ...form, 
+                                        tipo: novoTipo,
+                                        grupo: primeiroGrupo.nome,
+                                        categoria: primeiroGrupo.categorias[0].id
+                                    });
+                                }}
                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
                             >
                                 <option value="entrada">Entrada (+)</option>
@@ -130,23 +202,150 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
                         </div>
                     </div>
 
+                    {/* Quick Caixa Creation Form */}
+                    {mostrarNovoCaixa && (
+                        <div className="p-5 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl space-y-4 animate-in fade-in zoom-in duration-300 shadow-inner">
+                            <div className="flex justify-between items-center">
+                                <div className="text-[10px] uppercase font-bold text-yellow-500 tracking-widest flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
+                                    Nova Conta ou Caixa
+                                </div>
+                                <button onClick={() => setMostrarNovoCaixa(false)} className="text-[9px] text-gray-500 hover:text-white uppercase font-bold tracking-tighter">Fechar</button>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Nome da Conta / Banco</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="Ex: Banco Pan, Recarga Pay..."
+                                            value={novoCaixaForm.nome}
+                                            onChange={e => setNovoCaixaForm({...novoCaixaForm, nome: e.target.value})}
+                                            className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Finalidade do Caixa</label>
+                                        <select 
+                                            value={novoCaixaForm.tipo}
+                                            onChange={e => setNovoCaixaForm({...novoCaixaForm, tipo: e.target.value})}
+                                            className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option value="geral">Geral (Fluxo de Caixa)</option>
+                                            <option value="benevolencia">Benevolência (Recarga Pay)</option>
+                                            <option value="joias_mensalidade">Joias e Mensalidades (Banco Pan)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Descrição / Notas do Caixa</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="Ex: Conta principal para recebimento de taxas..."
+                                        value={novoCaixaForm.descricao}
+                                        onChange={e => setNovoCaixaForm({...novoCaixaForm, descricao: e.target.value})}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 transition-all"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Saldo Inicial (R$)</label>
+                                    <input 
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="0,00"
+                                        value={novoCaixaForm.saldo_inicial}
+                                        onChange={e => setNovoCaixaForm({...novoCaixaForm, saldo_inicial: e.target.value})}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                type="button"
+                                disabled={carregandoCaixa || !novoCaixaForm.nome}
+                                onClick={async () => {
+                                    setCarregandoCaixa(true);
+                                    try {
+                                        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+                                        const res = await fetch(`${apiUrl}/api/tesouraria/caixas`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                loja_id: acesso.loja_id,
+                                                nome: novoCaixaForm.nome,
+                                                tipo: novoCaixaForm.tipo,
+                                                descricao: novoCaixaForm.descricao,
+                                                saldo_inicial: parseFloat(novoCaixaForm.saldo_inicial || '0')
+                                            })
+                                        });
+                                        if (res.ok) {
+                                            if (onCaixaAdicionado) onCaixaAdicionado();
+                                            setMostrarNovoCaixa(false);
+                                            setNovoCaixaForm({ 
+                                                nome: '', 
+                                                tipo: 'geral',
+                                                descricao: '',
+                                                saldo_inicial: '0' 
+                                            });
+                                            alert("Conta cadastrada com sucesso!");
+                                        } else {
+                                            alert("Erro ao cadastrar conta. Tente novamente.");
+                                        }
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert("Erro de conexão com o servidor. Verifique o CORS.");
+                                    } finally {
+                                        setCarregandoCaixa(false);
+                                    }
+                                }}
+                                className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-black text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                            >
+                                {carregandoCaixa ? 'Cadastrando...' : 'Confirmar Cadastro'}
+                            </button>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Categoria</label>
+                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Grupo de Categoria</label>
+                            <select 
+                                value={form.grupo}
+                                onChange={e => {
+                                    const novoGrupo = e.target.value;
+                                    const categoriasDoGrupo = categoriasHierarquicas[form.tipo].find(g => g.nome === novoGrupo)?.categorias || [];
+                                    setForm({
+                                        ...form, 
+                                        grupo: novoGrupo,
+                                        categoria: categoriasDoGrupo[0]?.id || ''
+                                    });
+                                }}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
+                            >
+                                {categoriasHierarquicas[form.tipo].map(grupo => (
+                                    <option key={grupo.nome} value={grupo.nome}>{grupo.nome}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Categoria Específica</label>
                             <select 
                                 value={form.categoria}
                                 onChange={e => setForm({...form, categoria: e.target.value})}
                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
                             >
-                                <option value="mensalidade">Mensalidade</option>
-                                <option value="joia">Joia de Ingresso</option>
-                                <option value="benevolencia">Benevolência / Caridade</option>
-                                <option value="aluguel">Aluguel / Despesas Fixas</option>
-                                <option value="agape">Ágape / Refeições</option>
-                                <option value="consumo">Insumos (Velas/Incenso)</option>
-                                <option value="outro">Outro / Diversos</option>
+                                {categoriasHierarquicas[form.tipo]
+                                    .find(g => g.nome === form.grupo)?.categorias.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                    ))
+                                }
                             </select>
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
                             <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Irmão Vinculado</label>
                             <select 
@@ -158,9 +357,6 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
                                 {pessoas.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
                             </select>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
                             <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Valor do Lançamento</label>
                             <div className="relative">
@@ -176,6 +372,9 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1.5 relative">
                             <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Vencimento</label>
                             <input 
@@ -189,7 +388,7 @@ export default function ModalNovaTransacao({ acesso, caixas, onClose, onSuccess 
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Título do Lançamento</label>
+                        <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Descrição / Título do Lançamento</label>
                         <input 
                             type="text"
                             required

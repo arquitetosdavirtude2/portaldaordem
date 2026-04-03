@@ -25,6 +25,7 @@ export default function TesourariaPage() {
     const [isModalAberto, setIsModalAberto] = useState(false);
     const [caixas, setCaixas] = useState<any[]>([]);
     const [chaveAtualizacao, setChaveAtualizacao] = useState(0);
+    const [caixaAtualizacao, setCaixaAtualizacao] = useState(0);
 
     useEffect(() => {
         const acessoSalvo = localStorage.getItem('acesso');
@@ -46,12 +47,15 @@ export default function TesourariaPage() {
         }
 
         setAcesso(acessoObj);
-        
-        // Fetch caixas for the modal
+        setCarregando(false);
+    }, [router]);
+
+    useEffect(() => {
         const fetchCaixas = async () => {
+            if (!acesso?.loja_id) return;
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-                const res = await fetch(`${apiUrl}/api/tesouraria/resumo/${acessoObj.loja_id}`);
+                const res = await fetch(`${apiUrl}/api/tesouraria/resumo/${acesso.loja_id}`);
                 if (res.ok) {
                     const data = await res.json();
                     setCaixas(data.caixas || []);
@@ -61,9 +65,7 @@ export default function TesourariaPage() {
             }
         };
         fetchCaixas();
-
-        setCarregando(false);
-    }, [router]);
+    }, [acesso?.loja_id, caixaAtualizacao]);
 
     if (carregando || !acesso) {
         return (
@@ -169,6 +171,7 @@ export default function TesourariaPage() {
                         setIsModalAberto(false);
                         setChaveAtualizacao(prev => prev + 1);
                     }}
+                    onCaixaAdicionado={() => setCaixaAtualizacao(prev => prev + 1)}
                 />
             )}
         </div>

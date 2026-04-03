@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-from database import get_db
+from database import get_db, get_treasury_db
 from models import Caixa, Transacao, Pessoa, Loja, Usuario
 from datetime import datetime
 
@@ -21,6 +21,13 @@ class CaixaResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class CaixaCreate(BaseModel):
+    loja_id: int
+    nome: str
+    tipo: str = "geral" 
+    descricao: Optional[str] = None
+    saldo_inicial: float = 0.0
 
 class TransacaoResponse(BaseModel):
     id: int
@@ -50,6 +57,9 @@ class ResumoFinanceiro(BaseModel):
     caixas: List[CaixaResponse]
     total_entrada_pendente: float
     total_saida_pendente: float
+    saldo_geral: float
+    saldo_benevolencia: float
+    saldo_joias_mensalidade: float
 
     class Config:
         from_attributes = True
@@ -68,9 +78,10 @@ async def criar_transacao(
     notas: Optional[str] = Form(None),
     status: Optional[str] = Form("pendente"),
     comprovante: Optional[UploadFile] = File(None),
-    db: Session = Depends(get_db)
+    db_main: Session = Depends(get_db),
+    db_treasury: Session = Depends(get_treasury_db)
 ):
-    caixa = db.query(Caixa).filter(Caixa.id == caixa_id).first()
+    caixa = db_treasury.query(Caixa).filter(Caixa.id == caixa_id).first()
     if not caixa:
         raise HTTPException(status_code=404, detail="Caixa não encontrado")
     
@@ -108,15 +119,21 @@ async def criar_transacao(
         else:
             caixa.saldo_atual -= nova_transacao.valor
             
-    db.add(nova_transacao)
-    db.commit()
-    db.refresh(nova_transacao)
+    db_treasury.add(nova_transacao)
+    db_treasury.commit()
+    db_treasury.refresh(nova_transacao)
     
+    # Lookup person name from main DB if provided
+    p_nome = None
+    if nova_transacao.pessoa_id:
+        p = db_main.query(Pessoa).filter(Pessoa.id == nova_transacao.pessoa_id).first()
+        p_nome = p.nome if p else None
+
     return TransacaoResponse(
         id=nova_transacao.id,
         caixa_id=nova_transacao.caixa_id,
         pessoa_id=nova_transacao.pessoa_id,
-        pessoa_nome=nova_transacao.pessoa.nome if nova_transacao.pessoa else None,
+        pessoa_nome=p_nome,
         tipo=nova_transacao.tipo,
         categoria=nova_transacao.categoria,
         valor=nova_transacao.valor,
@@ -129,8 +146,8 @@ async def criar_transacao(
     )
 
 @router.patch("/transacoes/{transacao_id}", response_model=TransacaoResponse)
-def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db: Session = Depends(get_db)):
-    transacao = db.query(Transacao).filter(Transacao.id == transacao_id).first()
+def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: Session = Depends(get_treasury_db)):
+    transacao = db_treasury.query(Transacao).filter(Transacao.id == transacao_id).first()
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     
@@ -153,14 +170,13 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db: Session =
     if dados.anexo_url is not None:
         transacao.anexo_url = dados.anexo_url
         
-    db.commit()
-    db.refresh(transacao)
+    db_treasury.commit()
+    db_treasury.refresh(transacao)
     
     return TransacaoResponse(
         id=transacao.id,
         caixa_id=transacao.caixa_id,
         pessoa_id=transacao.pessoa_id,
-        pessoa_nome=transacao.pessoa.nome if transacao.pessoa else None,
         tipo=transacao.tipo,
         categoria=transacao.categoria,
         valor=transacao.valor,
@@ -173,28 +189,61 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db: Session =
     )
 
 @router.get("/resumo/{loja_id}", response_model=ResumoFinanceiro)
-def resumo_financeiro(loja_id: int, db: Session = Depends(get_db)):
+def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
     try:
-        caixas = db.query(Caixa).filter(Caixa.loja_id == loja_id).all()
+        caixas = db_treasury.query(Caixa).filter(Caixa.loja_id == loja_id).all()
         
         # Calculate pendencies
-        transacoes_pendentes = db.query(Transacao).join(Caixa).filter(Caixa.loja_id == loja_id, Transacao.status == 'pendente').all()
+        transacoes_pendentes = db_treasury.query(Transacao).join(Caixa).filter(Caixa.loja_id == loja_id, Transacao.status == 'pendente').all()
         
         ent_pend = sum(t.valor for t in transacoes_pendentes if t.tipo == 'entrada')
         sai_pend = sum(t.valor for t in transacoes_pendentes if t.tipo == 'saida')
         
+        # Calculate categorized totals
+        saldo_geral = sum(c.saldo_atual for c in caixas)
+        saldo_ben = sum(c.saldo_atual for c in caixas if c.tipo == 'benevolencia')
+        saldo_jm = sum(c.saldo_atual for c in caixas if c.tipo == 'joias_mensalidade')
+        
         return ResumoFinanceiro(
             caixas=caixas,
             total_entrada_pendente=ent_pend,
-            total_saida_pendente=sai_pend
+            total_saida_pendente=sai_pend,
+            saldo_geral=saldo_geral,
+            saldo_benevolencia=saldo_ben,
+            saldo_joias_mensalidade=saldo_jm
         )
     except Exception as e:
-        print(f"Erro ao carregar resumo financeiro (provavelmente tabelas ausentes): {e}")
+        msg = str(e)
+        if "Table" in msg and "doesn't exist" in msg:
+             print(f"AVISO: Tabelas de tesouraria ausentes no SQLite: {e}")
+        else:
+             print(f"Erro ao carregar resumo financeiro: {e}")
+             
         return ResumoFinanceiro(
             caixas=[],
             total_entrada_pendente=0,
             total_saida_pendente=0
         )
+
+@router.post("/caixas", response_model=CaixaResponse)
+def criar_caixa(dados: CaixaCreate, db_treasury: Session = Depends(get_treasury_db)):
+        print(f"DEBUG: Criando caixa {dados.nome} para loja {dados.loja_id}")
+        try:
+            nuevo_caixa = Caixa(
+                loja_id=dados.loja_id,
+                nome=dados.nome,
+                tipo=dados.tipo,
+                descricao=dados.descricao,
+                saldo_atual=dados.saldo_inicial
+            )
+            db_treasury.add(nuevo_caixa)
+            db_treasury.commit()
+            db_treasury.refresh(nuevo_caixa)
+            return nuevo_caixa
+        except Exception as e:
+            db_treasury.rollback()
+            print(f"DEBUG ERROR: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
 class IrmaoFinanceiro(BaseModel):
     id: int
@@ -205,15 +254,19 @@ class IrmaoFinanceiro(BaseModel):
     mensalidade_pendente: float
 
 @router.get("/irmaos/{loja_id}", response_model=List[IrmaoFinanceiro])
-def listar_financeiro_irmaos(loja_id: int, db: Session = Depends(get_db)):
+def listar_financeiro_irmaos(
+    loja_id: int, 
+    db_main: Session = Depends(get_db),
+    db_treasury: Session = Depends(get_treasury_db)
+):
     try:
-        pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
+        pessoas = db_main.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
         
         response = []
         for p in pessoas:
             try:
-                # Sum transactions for this brother
-                transacoes = db.query(Transacao).filter(Transacao.pessoa_id == p.id).all()
+                # Sum transactions from SQLite for this brother
+                transacoes = db_treasury.query(Transacao).filter(Transacao.pessoa_id == p.id).all()
                 
                 joia_p = sum(t.valor for t in transacoes if t.categoria == 'joia' and t.status == 'pago')
                 joia_pend = sum(t.valor for t in transacoes if t.categoria == 'joia' and t.status == 'pendente')
@@ -235,4 +288,3 @@ def listar_financeiro_irmaos(loja_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Erro ao carregar financeiro de irmãos: {e}")
         return []
-
