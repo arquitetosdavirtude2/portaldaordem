@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardFinanceiro from '@/components/tesouraria/DashboardFinanceiro';
 import GestaoIrmaosFinanceiro from '@/components/tesouraria/GestaoIrmaosFinanceiro';
-import ModalNovaTransacao from '@/components/tesouraria/ModalNovaTransacao';
+import ContasPagar from '@/components/tesouraria/ContasPagar';
+import ModalTransacao from '@/components/tesouraria/ModalTransacao';
+import ModalCompromisso from '@/components/tesouraria/ModalCompromisso';
 
 interface Acesso {
     estado: string;
@@ -20,12 +22,14 @@ interface Acesso {
 export default function TesourariaPage() {
     const router = useRouter();
     const [acesso, setAcesso] = useState<Acesso | null>(null);
-    const [abaAtiva, setAbaAtiva] = useState<'geral' | 'irmaos'>('geral');
+    const [abaAtiva, setAbaAtiva] = useState<'geral' | 'irmaos' | 'contas_pagar'>('geral');
     const [carregando, setCarregando] = useState(true);
     const [isModalAberto, setIsModalAberto] = useState(false);
     const [caixas, setCaixas] = useState<any[]>([]);
     const [chaveAtualizacao, setChaveAtualizacao] = useState(0);
     const [caixaAtualizacao, setCaixaAtualizacao] = useState(0);
+    const [transacaoParaEditar, setTransacaoParaEditar] = useState<any>(null);
+    const [isModalCompromissoAberto, setIsModalCompromissoAberto] = useState(false);
 
     useEffect(() => {
         const acessoSalvo = localStorage.getItem('acesso');
@@ -145,33 +149,82 @@ export default function TesourariaPage() {
                         >
                             Joias & Mensalidades
                         </button>
+                        <button
+                            onClick={() => setAbaAtiva('contas_pagar')}
+                            className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 ${abaAtiva === 'contas_pagar' ? 'border-yellow-500 text-yellow-500 bg-yellow-500/5' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Contas a Pagar
+                        </button>
                     </div>
 
                     <div className="p-6 md:p-8">
                         {abaAtiva === 'geral' ? (
                             <DashboardFinanceiro 
                                 acesso={acesso} 
-                                onNovoLancamento={() => setIsModalAberto(true)}
+                                onNovoLancamento={() => {
+                                    setTransacaoParaEditar(null);
+                                    setIsModalAberto(true);
+                                }}
+                                onEdit={(t) => {
+                                    setTransacaoParaEditar(t);
+                                    setIsModalAberto(true);
+                                }}
                                 chaveAtualizacao={chaveAtualizacao}
                             />
-                        ) : (
+                        ) : abaAtiva === 'irmaos' ? (
                             <GestaoIrmaosFinanceiro acesso={acesso} />
+                        ) : (
+                            <ContasPagar 
+                                acesso={acesso} 
+                                onNovoLancamento={() => {
+                                    setTransacaoParaEditar(null);
+                                    setIsModalCompromissoAberto(true);
+                                }}
+                                onEdit={(t) => {
+                                    setTransacaoParaEditar(t);
+                                    setIsModalCompromissoAberto(true);
+                                }}
+                                chaveAtualizacao={chaveAtualizacao}
+                            />
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Modal isolated at page level */}
+            {/* Modal General Transactions */}
             {isModalAberto && (
-                <ModalNovaTransacao 
+                <ModalTransacao 
                     acesso={acesso}
                     caixas={caixas}
-                    onClose={() => setIsModalAberto(false)}
+                    transacaoInicial={transacaoParaEditar}
+                    onClose={() => {
+                        setIsModalAberto(false);
+                        setTransacaoParaEditar(null);
+                    }}
                     onSuccess={() => {
                         setIsModalAberto(false);
+                        setTransacaoParaEditar(null);
                         setChaveAtualizacao(prev => prev + 1);
                     }}
                     onCaixaAdicionado={() => setCaixaAtualizacao(prev => prev + 1)}
+                />
+            )}
+
+            {/* Modal Dedicated for Expenses (Contas a Pagar) */}
+            {isModalCompromissoAberto && (
+                <ModalCompromisso 
+                    acesso={acesso}
+                    caixas={caixas}
+                    transacaoInicial={transacaoParaEditar}
+                    onClose={() => {
+                        setIsModalCompromissoAberto(false);
+                        setTransacaoParaEditar(null);
+                    }}
+                    onSuccess={() => {
+                        setIsModalCompromissoAberto(false);
+                        setTransacaoParaEditar(null);
+                        setChaveAtualizacao(prev => prev + 1);
+                    }}
                 />
             )}
         </div>

@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-from database import get_db, get_treasury_db
-from models import Caixa, Transacao, Pessoa, Loja, Usuario
+from database import get_db, get_treasury_db, TREASURY_DB_URL
+from models import Transacao, Pessoa, Caixa
 from datetime import datetime
 
 UPLOAD_DIR = "static/uploads/comprovantes"
@@ -29,21 +29,45 @@ class CaixaCreate(BaseModel):
     descricao: Optional[str] = None
     saldo_inicial: float = 0.0
 
+@router.get("/diagnostic")
+def diagnostic(db_treasury: Session = Depends(get_treasury_db)):
+    """Rota de diagnóstico para depuração de unificação MySQL."""
+    import os
+    from database import TREASURY_DB_URL
+    from models import Transacao, Pessoa, Caixa
+    
+    try:
+        t_count = db_treasury.query(Transacao).count()
+        p_count = db_treasury.query(Pessoa).count()
+        c_count = db_treasury.query(Caixa).count()
+        return {
+            "db_url": TREASURY_DB_URL,
+            "trans_count": t_count,
+            "pessoas_count": p_count,
+            "caixas_count": c_count,
+            "cwd": os.getcwd(),
+            "mysql_status": "OK"
+        }
+    except Exception as e:
+        return {"error": str(e), "db_url": TREASURY_DB_URL}
+
 class TransacaoResponse(BaseModel):
-    id: int
-    caixa_id: int
+    id: Optional[int] = None
+    caixa_id: Optional[int] = None
     pessoa_id: Optional[int] = None
-    pessoa_nome: Optional[str] = None
-    tipo: str
-    categoria: str
-    valor: float
-    data_vencimento: str
+    usuario_id: Optional[int] = None
+    tipo: Optional[str] = None
+    categoria: Optional[str] = None
+    valor: Optional[float] = 0.0
+    data_vencimento: Optional[str] = None
     data_pagamento: Optional[str] = None
-    descricao: str
+    descricao: Optional[str] = None
     notas: Optional[str] = None
     anexo_url: Optional[str] = None
-    status: str
-
+    status: Optional[str] = 'pendente'
+    pessoa_nome: Optional[str] = "N/A"
+    caixa_nome: Optional[str] = "Geral"
+    
     class Config:
         from_attributes = True
 
@@ -52,14 +76,18 @@ class TransacaoUpdate(BaseModel):
     data_pagamento: Optional[str] = None
     notas: Optional[str] = None
     anexo_url: Optional[str] = None
+    descricao: Optional[str] = None
+    valor: Optional[float] = None
+    tipo: Optional[str] = None
+    categoria: Optional[str] = None
 
 class ResumoFinanceiro(BaseModel):
-    caixas: List[CaixaResponse]
-    total_entrada_pendente: float
-    total_saida_pendente: float
-    saldo_geral: float
-    saldo_benevolencia: float
-    saldo_joias_mensalidade: float
+    caixas: List[CaixaResponse] = []
+    total_entrada_pendente: float = 0.0
+    total_saida_pendente: float = 0.0
+    saldo_geral: float = 0.0
+    saldo_benevolencia: float = 0.0
+    saldo_joias_mensalidade: float = 0.0
 
     class Config:
         from_attributes = True
@@ -163,12 +191,40 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         if not dados.data_pagamento:
              transacao.data_pagamento = datetime.now().strftime("%Y-%m-%d")
     
+    # Handle balance updates if valor OR tipo changes while status is already 'pago'
+    if transacao.status == "pago" and (dados.valor is not None or dados.tipo is not None):
+        # 1. Reverse the current value
+        if transacao.tipo == "entrada":
+            caixa.saldo_atual -= transacao.valor
+        else:
+            caixa.saldo_atual += transacao.valor
+        
+        # 2. Apply new values
+        if dados.valor is not None:
+             transacao.valor = dados.valor
+        if dados.tipo is not None:
+             transacao.tipo = dados.tipo
+             
+        # 3. Apply the impact of the new values
+        if transacao.tipo == "entrada":
+            caixa.saldo_atual += transacao.valor
+        else:
+            caixa.saldo_atual -= transacao.valor
+    elif dados.valor is not None:
+         transacao.valor = dados.valor
+    elif dados.tipo is not None:
+         transacao.tipo = dados.tipo
+
     if dados.data_pagamento is not None:
         transacao.data_pagamento = dados.data_pagamento
     if dados.notas is not None:
         transacao.notas = dados.notas
     if dados.anexo_url is not None:
         transacao.anexo_url = dados.anexo_url
+    if dados.descricao is not None:
+        transacao.descricao = dados.descricao
+    if dados.categoria is not None:
+        transacao.categoria = dados.categoria
         
     db_treasury.commit()
     db_treasury.refresh(transacao)
@@ -188,42 +244,146 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         status=transacao.status
     )
 
-@router.get("/resumo/{loja_id}", response_model=ResumoFinanceiro)
-def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
-    try:
-        caixas = db_treasury.query(Caixa).filter(Caixa.loja_id == loja_id).all()
-        
-        # Calculate pendencies
-        transacoes_pendentes = db_treasury.query(Transacao).join(Caixa).filter(Caixa.loja_id == loja_id, Transacao.status == 'pendente').all()
-        
-        ent_pend = sum(t.valor for t in transacoes_pendentes if t.tipo == 'entrada')
-        sai_pend = sum(t.valor for t in transacoes_pendentes if t.tipo == 'saida')
-        
-        # Calculate categorized totals
-        saldo_geral = sum(c.saldo_atual for c in caixas)
-        saldo_ben = sum(c.saldo_atual for c in caixas if c.tipo == 'benevolencia')
-        saldo_jm = sum(c.saldo_atual for c in caixas if c.tipo == 'joias_mensalidade')
-        
-        return ResumoFinanceiro(
-            caixas=caixas,
-            total_entrada_pendente=ent_pend,
-            total_saida_pendente=sai_pend,
-            saldo_geral=saldo_geral,
-            saldo_benevolencia=saldo_ben,
-            saldo_joias_mensalidade=saldo_jm
-        )
-    except Exception as e:
-        msg = str(e)
-        if "Table" in msg and "doesn't exist" in msg:
-             print(f"AVISO: Tabelas de tesouraria ausentes no SQLite: {e}")
+@router.delete("/transacoes/{transacao_id}")
+def excluir_transacao(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
+    transacao = db_treasury.query(Transacao).filter(Transacao.id == transacao_id).first()
+    if not transacao:
+        raise HTTPException(status_code=404, detail="Transação não encontrada")
+    
+    # Reverse balance if paid
+    if transacao.status == "pago":
+        caixa = transacao.caixa
+        if transacao.tipo == "entrada":
+            caixa.saldo_atual -= transacao.valor
         else:
-             print(f"Erro ao carregar resumo financeiro: {e}")
-             
-        return ResumoFinanceiro(
-            caixas=[],
-            total_entrada_pendente=0,
-            total_saida_pendente=0
-        )
+            caixa.saldo_atual += transacao.valor
+            
+    db_treasury.delete(transacao)
+    db_treasury.commit()
+    return {"status": "success", "message": "Transação excluída"}
+
+@router.get("/transacoes/{caixa_id}")
+def listar_transacoes(
+    caixa_id: int, 
+    mes: Optional[int] = None, 
+    ano: Optional[int] = None, 
+    status: Optional[str] = None,
+    db_treasury: Session = Depends(get_treasury_db)
+):
+    try:
+        db_treasury.expire_all()
+        # Support for consolidated view (caixa_id = 0)
+        from sqlalchemy import text
+        raw_sql = "SELECT id, caixa_id, pessoa_id, usuario_id, tipo, categoria, valor, data_vencimento, data_pagamento, descricao, status FROM transacoes"
+        print(f"DEBUG EXECUTING RAW SQL: {raw_sql}")
+        rows = db_treasury.execute(text(raw_sql)).fetchall()
+        print(f"DEBUG ROWS FOUND: {len(rows)}")
+        
+        res = []
+        for r in rows:
+            # Match person name manually for safety
+            p_nome = "N/A"
+            if r[2]: # pessoa_id
+                p = db_treasury.execute(text("SELECT nome FROM pessoas WHERE id = :id"), {"id": r[2]}).fetchone()
+                if p: p_nome = p[0]
+            
+            res.append({
+                "id": r[0],
+                "caixa_id": r[1],
+                "pessoa_id": r[2],
+                "usuario_id": r[3],
+                "tipo": r[4],
+                "categoria": r[5],
+                "valor": r[6],
+                "data_vencimento": r[7],
+                "data_pagamento": r[8],
+                "descricao": r[9],
+                "status": r[10],
+                "pessoa_nome": p_nome,
+                "caixa_nome": "Geral"
+            })
+                
+        return res
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
+@router.get("/resumo/{loja_id}")
+def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
+    """Resumo financeiro dinâmico via MySQL."""
+    try:
+        from sqlalchemy import text
+        db_treasury.expire_all()
+        
+        # 1. Buscar Caixas (Contas)
+        # Se loja_id=0 ou 1, pegamos tudo para garantir visibilidade conforme solicitado
+        if loja_id <= 1:
+            query_caixas = text("SELECT id, nome, tipo, saldo_atual FROM caixas")
+            caixas_rows = db_treasury.execute(query_caixas).fetchall()
+        else:
+            query_caixas = text("SELECT id, nome, tipo, saldo_atual FROM caixas WHERE loja_id = :lid")
+            caixas_rows = db_treasury.execute(query_caixas, {"lid": loja_id}).fetchall()
+        
+        caixas = []
+        saldo_geral = 0.0
+        saldo_ben = 0.0
+        saldo_jm = 0.0
+        
+        for r in caixas_rows:
+            # Usando mapeamento seguro por nome ou índice fixo do SELECT acima
+            c_id, c_nome, c_tipo, c_saldo = r[0], r[1], r[2], (r[3] or 0.0)
+            
+            caixas.append({
+                "id": c_id,
+                "nome": c_nome,
+                "tipo": c_tipo,
+                "saldo_atual": float(c_saldo)
+            })
+            
+            saldo_geral += float(c_saldo)
+            if c_tipo == 'benevolencia':
+                saldo_ben += float(c_saldo)
+            elif c_tipo == 'joias_mensalidade':
+                saldo_jm += float(c_saldo)
+        
+        # 2. Calcular Pendências (Tudo que está com status 'pendente')
+        query_pend = text("""
+            SELECT tipo, SUM(valor) as total 
+            FROM transacoes 
+            WHERE status = 'pendente' 
+            GROUP BY tipo
+        """)
+        pend_rows = db_treasury.execute(query_pend).fetchall()
+        
+        ent_pend = 0.0
+        sai_pend = 0.0
+        for p in pend_rows:
+            if p[0] == 'entrada':
+                ent_pend = float(p[1] or 0.0)
+            elif p[0] == 'saida':
+                sai_pend = float(p[1] or 0.0)
+        
+        return {
+            "caixas": caixas,
+            "total_entrada_pendente": ent_pend,
+            "total_saida_pendente": sai_pend,
+            "saldo_geral": saldo_geral,
+            "saldo_benevolencia": saldo_ben,
+            "saldo_joias_mensalidade": saldo_jm
+        }
+    except Exception as e:
+        print(f"ERRO CRÍTICO NO RESUMO: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return {
+            "caixas": [],
+            "total_entrada_pendente": 0.0,
+            "total_saida_pendente": 0.0,
+            "saldo_geral": 0.0,
+            "saldo_benevolencia": 0.0,
+            "saldo_joias_mensalidade": 0.0,
+            "error": str(e)
+        }
 
 @router.post("/caixas", response_model=CaixaResponse)
 def criar_caixa(dados: CaixaCreate, db_treasury: Session = Depends(get_treasury_db)):
@@ -252,39 +412,55 @@ class IrmaoFinanceiro(BaseModel):
     joia_pendente: float
     mensalidade_paga: float
     mensalidade_pendente: float
+    saude_financeira: str
 
-@router.get("/irmaos/{loja_id}", response_model=List[IrmaoFinanceiro])
+@router.get("/irmaos/{loja_id}")
 def listar_financeiro_irmaos(
     loja_id: int, 
-    db_main: Session = Depends(get_db),
+    mes: Optional[int] = None, 
+    ano: Optional[int] = None,
     db_treasury: Session = Depends(get_treasury_db)
 ):
+    """Listar situação financeira de TODOS os irmãos da Loja, dinamicamente via MySQL."""
     try:
-        pessoas = db_main.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
+        from sqlalchemy import text
+        # 1. Listar pessoas da Loja (ou todos se lid=0)
+        query_loja = text("SELECT id, nome FROM pessoas WHERE loja_id = :lid OR :lid <= 1")
+        pessoas = db_treasury.execute(query_loja, {"lid": loja_id}).fetchall()
         
-        response = []
+        res = []
         for p in pessoas:
-            try:
-                # Sum transactions from SQLite for this brother
-                transacoes = db_treasury.query(Transacao).filter(Transacao.pessoa_id == p.id).all()
-                
-                joia_p = sum(t.valor for t in transacoes if t.categoria == 'joia' and t.status == 'pago')
-                joia_pend = sum(t.valor for t in transacoes if t.categoria == 'joia' and t.status == 'pendente')
-                
-                mensal_p = sum(t.valor for t in transacoes if t.categoria == 'mensalidade' and t.status == 'pago')
-                mensal_pend = sum(t.valor for t in transacoes if t.categoria == 'mensalidade' and t.status == 'pendente')
-            except:
-                joia_p = joia_pend = mensal_p = mensal_pend = 0
+            pid, nome = p[0], p[1]
             
-            response.append(IrmaoFinanceiro(
-                id=p.id,
-                nome=p.nome,
-                joia_paga=joia_p,
-                joia_pendente=joia_pend,
-                mensalidade_paga=mensal_p,
-                mensalidade_pendente=mensal_pend
-            ))
-        return response
+            # 2. Calcular Joia (Paga/Pendente)
+            q_joia_paga = text("SELECT SUM(valor) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'joia' AND status = 'pago'")
+            j_paga = db_treasury.execute(q_joia_paga, {"pid": pid}).fetchone()[0] or 0.0
+            
+            q_joia_pend = text("SELECT SUM(valor) FROM transacoes WHERE pessoa_id = :pid AND (categoria = 'joia' OR categoria = 'entrada') AND status = 'pendente'")
+            j_pend = db_treasury.execute(q_joia_pend, {"pid": pid}).fetchone()[0] or 0.0
+            
+            # 3. Calcular Mensalidade (Paga/Pendente)
+            q_mens_paga = text("SELECT SUM(valor) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'")
+            m_paga = db_treasury.execute(q_mens_paga, {"pid": pid}).fetchone()[0] or 0.0
+            
+            q_mens_pend = text("SELECT SUM(valor) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pendente'")
+            m_pend = db_treasury.execute(q_mens_pend, {"pid": pid}).fetchone()[0] or 0.0
+            
+            saude = "ok"
+            if j_pend > 0 or m_pend > 0:
+                saude = "pendente"
+            
+            res.append({
+                "id": pid,
+                "nome": nome,
+                "joia_paga": float(j_paga),
+                "joia_pendente": float(j_pend),
+                "mensalidade_paga": float(m_paga),
+                "mensalidade_pendente": float(m_pend),
+                "saude_financeira": saude
+            })
+            
+        return res
     except Exception as e:
-        print(f"Erro ao carregar financeiro de irmãos: {e}")
+        print(f"ERRO AO LISTAR FINANCEIRO IRMAOS: {e}")
         return []

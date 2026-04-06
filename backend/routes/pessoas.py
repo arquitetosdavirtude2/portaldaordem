@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from database import get_db
 from models import Pessoa, Estado
+from datetime import datetime
 
 router = APIRouter()
 
@@ -17,6 +18,7 @@ class PessoaCreate(BaseModel):
     loja_id: Optional[int] = None
     login: Optional[str] = None
     senha: Optional[str] = None
+    data_admissao: Optional[str] = None
 
 class PessoaUpdate(BaseModel):
     nome: Optional[str] = None
@@ -37,6 +39,7 @@ class PessoaResponse(BaseModel):
     loja_nome: Optional[str] = None
     login: Optional[str] = None
     senha: Optional[str] = None
+    data_admissao: Optional[str] = None
    
     class Config:
         from_attributes = True
@@ -102,7 +105,8 @@ def criar_pessoa(pessoa: PessoaCreate, db: Session = Depends(get_db)):
         estado_id=estado.id,
         loja_id=pessoa.loja_id,
         login=pessoa.login,
-        senha=pessoa.senha
+        senha=pessoa.senha,
+        data_admissao=pessoa.data_admissao or datetime.now().strftime("%Y-%m-%d")
     )
    
     db.add(nova_pessoa)
@@ -147,6 +151,8 @@ def atualizar_pessoa(pessoa_id: int, dados: PessoaUpdate, db: Session = Depends(
         pessoa.login = dados.login
     if dados.senha is not None:
         pessoa.senha = dados.senha
+    if dados.data_admissao is not None:
+        pessoa.data_admissao = dados.data_admissao
    
     db.commit()
     db.refresh(pessoa)

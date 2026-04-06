@@ -13,13 +13,16 @@ interface IrmaoFinanceiro {
 
 export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [irmaos, setIrmaos] = useState<IrmaoFinanceiro[]>([]);
+    const [mesAtivo, setMesAtivo] = useState<number>(new Date().getMonth() + 1);
+    const [anoAtivo, setAnoAtivo] = useState<number>(new Date().getFullYear());
     const [carregando, setCarregando] = useState(true);
 
     const carregarFinanceiroIrmaos = async () => {
         setCarregando(true);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            const res = await fetch(`${apiUrl}/api/tesouraria/irmaos/${acesso.loja_id}`);
+            let url = `${apiUrl}/api/tesouraria/irmaos/${acesso.loja_id}?ano=${anoAtivo}&mes=${mesAtivo}`;
+            const res = await fetch(url);
             if (res.ok) {
                 setIrmaos(await res.json());
             }
@@ -32,7 +35,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     useEffect(() => {
         carregarFinanceiroIrmaos();
-    }, [acesso.loja_id]);
+    }, [acesso.loja_id, mesAtivo, anoAtivo]);
 
     if (carregando) {
         return <div className="text-center py-10 text-gray-400">Cruzando dados dos irmãos...</div>;
@@ -40,11 +43,34 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold text-yellow-500 uppercase tracking-tight">Situação Financeira por Obreiro</h2>
-                <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                    Resumo acumulado de Joias e Mensalidades de todos os membros ativos da loja.
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                    <h2 className="text-lg font-bold text-yellow-500 uppercase tracking-tight">Situação Financeira por Obreiro</h2>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
+                        Extrato de Joias e Mensalidades do período selecionado.
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <select 
+                        value={mesAtivo}
+                        onChange={(e) => setMesAtivo(Number(e.target.value))}
+                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase"
+                    >
+                        {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+                            <option key={m} value={i + 1}>{m}</option>
+                        ))}
+                    </select>
+                    <select 
+                        value={anoAtivo}
+                        onChange={(e) => setAnoAtivo(Number(e.target.value))}
+                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors"
+                    >
+                        {[2024, 2025, 2026].map(val => (
+                            <option key={val} value={val}>{val}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-md">

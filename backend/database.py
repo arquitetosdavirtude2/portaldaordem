@@ -5,8 +5,10 @@ from sqlalchemy.pool import NullPool
 import os
 from dotenv import load_dotenv
 
-# Carrega variáveis do .env
-load_dotenv()
+# Absolute Path for .env
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+load_dotenv(ENV_PATH)
 
 # 1. Main Database (MySQL for original data)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database.db")
@@ -32,10 +34,10 @@ def get_engine(url, is_sqlite=False):
 engine = get_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 2. Treasury Database (Always local SQLite to avoid permission issues)
-TREASURY_DB_URL = "sqlite:///./treasury.db" 
-treasury_engine = get_engine(TREASURY_DB_URL, is_sqlite=True)
-TreasurySessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=treasury_engine)
+# 2. Treasury Database (UNIFIED IN MYSQL as requested)
+TREASURY_DB_URL = DATABASE_URL
+treasury_engine = engine # Reuse the main MySQL engine
+TreasurySessionLocal = SessionLocal # Reuse the main SessionLocal
 
 Base = declarative_base()
 

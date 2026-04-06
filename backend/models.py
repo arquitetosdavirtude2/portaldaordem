@@ -64,6 +64,7 @@ class Pessoa(Base):
     cargo = Column(String(100), nullable=True) # Adding specific Lodge Role
     login = Column(String(100), unique=True, index=True, nullable=True)
     senha = Column(String(100), nullable=True)
+    data_admissao = Column(String(20), nullable=True) # YYYY-MM-DD
 
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")

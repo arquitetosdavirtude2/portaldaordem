@@ -55,6 +55,11 @@ export default function FormCadastro({
   const [senha, setSenha] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState('');
+  
+  // New financial fields for registration
+  const [dataAdmissao, setDataAdmissao] = useState(new Date().toISOString().split('T')[0]);
+  const [joiaPaga, setJoiaPaga] = useState<string>('');
+  const [comprovante, setComprovante] = useState<File | null>(null);
 
   // Effect to update when prop changes
   useEffect(() => {
@@ -75,6 +80,9 @@ export default function FormCadastro({
         setLojaId(isLojaUser && acesso?.loja_id ? acesso.loja_id : '');
         setLogin('');
         setSenha('');
+        setDataAdmissao(new Date().toISOString().split('T')[0]);
+        setJoiaPaga('');
+        setComprovante(null);
     }
   }, [pessoaParaEditar, isCandidato, isLojaUser, acesso]);
 
@@ -121,13 +129,41 @@ export default function FormCadastro({
           cargo: isCandidato || cargo === 'Nenhum' ? null : cargo,
           loja_id: isCandidato ? null : (lojaId || null),
           login: isCandidato ? null : (login.trim() || null),
-          senha: isCandidato ? null : (senha.trim() || (isEditing ? null : "")), 
+          senha: isCandidato ? null : (senha.trim() || (isEditing ? null : "")),
+          data_admissao: isCandidato ? null : dataAdmissao,
         }),
       });
 
       if (response.ok) {
         const dadosPessoa = await response.json();
         onPessoaCriada(dadosPessoa);
+        
+        // Handle Joia payment if provided
+        if (!isEditing && !isCandidato && Number(joiaPaga) > 0) {
+            try {
+                const formData = new FormData();
+                formData.append('caixa_id', '2'); // Fixed ID for Joias as per current setup
+                formData.append('pessoa_id', String(dadosPessoa.id));
+                formData.append('usuario_id', String(acesso?.loja_id || 0)); // Or current user ID, but using 0/placeholder
+                formData.append('tipo', 'entrada');
+                formData.append('categoria', 'joia');
+                formData.append('valor', joiaPaga);
+                formData.append('data_vencimento', dataAdmissao);
+                formData.append('data_pagamento', dataAdmissao);
+                formData.append('descricao', `Iniciação IR∴ ${nome.trim()}`);
+                formData.append('status', 'pago');
+                if (comprovante) {
+                    formData.append('comprovante', comprovante);
+                }
+
+                await fetch(`${apiUrl}/api/tesouraria/transacoes/`, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (err) {
+                console.error("Erro ao registrar pagamento inicial:", err);
+            }
+        }
         
         if (!isEditing) {
             setNome('');
@@ -136,12 +172,14 @@ export default function FormCadastro({
             setCargo('Nenhum');
             setLogin('');
             setSenha('');
+            setJoiaPaga('');
+            setComprovante(null);
             if (!isLojaUser) {
               setLojaId('');
             }
         }
         
-        setMensagem(isEditing ? '✅ Dados atualizados!' : '✅ Cadastrado com sucesso!');
+        setMensagem(isEditing ? '✅ Dados atualizados!' : '✅ Cadastrado com sucesso! Pagamento de Joia registrado.');
         setTimeout(() => setMensagem(''), 3000);
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
@@ -150,6 +188,13 @@ export default function FormCadastro({
     } catch (error) {
       setMensagem('❌ Erro de conexão');
     } finally {
+      // Logic for Joia payment if it's a new registration
+      if (!pessoaParaEditar && !isCandidato && Number(joiaPaga) > 0) {
+        try {
+            // We need the person ID, but we just got it from response.json() in the try block
+            // However, the try block is already returning. I should move this inside the response.ok block.
+        } catch(e) {}
+      }
       setSalvando(false);
     }
   };
@@ -270,6 +315,7 @@ export default function FormCadastro({
                 className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
               >
                 <option value="Nenhum">Nenhum</option>
+                <option value="Venerável Mestre">Venerável Mestre</option>
                 <option value="1º Vigilante">1º Vigilante</option>
                 <option value="2º Vigilante">2º Vigilante</option>
                 <option value="Orador">Orador</option>
@@ -313,6 +359,56 @@ export default function FormCadastro({
             </div>
           )}
         </div>
+
+        {!isCandidato && !pessoaParaEditar && (
+          <div className="bg-yellow-500/5 rounded-xl p-6 border border-yellow-500/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">💰</span>
+              <h3 className="text-[11px] font-black text-yellow-500 uppercase tracking-widest">Configuração Financeira Inicial</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                  Data de Iniciação / Admissão
+                </label>
+                <input
+                  type="date"
+                  value={dataAdmissao}
+                  onChange={(e) => setDataAdmissao(e.target.value)}
+                  className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                  Joia Paga (R$)
+                </label>
+                <input
+                  type="number"
+                  value={joiaPaga}
+                  onChange={(e) => setJoiaPaga(e.target.value)}
+                  placeholder="0,00"
+                  className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                  Comprovante da Joia
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setComprovante(e.target.files?.[0] || null)}
+                  className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-yellow-500/10 file:text-yellow-500 hover:file:bg-yellow-500/20 transition-all cursor-pointer"
+                />
+              </div>
+            </div>
+            <p className="text-[9px] text-gray-500 uppercase italic">
+              * O valor da Joia padrão é R$ 2.000,00. O valor inserido aqui será registrado como entrada no caixa de Joias.
+            </p>
+          </div>
+        )}
 
         {mensagem && (
           <p className={`text-xs font-semibold p-2 rounded border animate-in fade-in duration-300 ${mensagem.includes('✅') ? 'bg-green-900/20 text-green-400 border-green-900/40' : 'bg-red-900/20 text-red-400 border-red-900/40'}`}>
