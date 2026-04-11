@@ -52,22 +52,32 @@ class Usuario(Base):
     estados = relationship("Estado", secondary=usuario_estados, back_populates="usuarios")
     loja = relationship("Loja", back_populates="usuarios")
 
+class Cargo(Base):
+    __tablename__ = "cargos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(100), nullable=False, unique=True)
+    isento_contribuicao = Column(Integer, default=0)  # 1 = isento (VM, Vigilantes)
+
+    pessoas = relationship("Pessoa", back_populates="cargo_rel")
+
 class Pessoa(Base):
     __tablename__ = "pessoas"
     
     id = Column(Integer, primary_key=True, index=True)
     estado_id = Column(Integer, ForeignKey("estados.id"))
     loja_id = Column(Integer, ForeignKey("lojas.id"), nullable=True)
+    cargo_id = Column(Integer, ForeignKey("cargos.id"), nullable=True)
     nome = Column(String(100))
     telefone = Column(String(20))
-    status = Column(String(30), default="Aprendiz")  # Reused as 'Grau'
-    cargo = Column(String(100), nullable=True) # Adding specific Lodge Role
+    status = Column(String(30), default="Aprendiz")  # Grau Maçônico
     login = Column(String(100), unique=True, index=True, nullable=True)
     senha = Column(String(100), nullable=True)
-    data_admissao = Column(String(20), nullable=True) # YYYY-MM-DD
+    data_admissao = Column(String(20), nullable=True)  # YYYY-MM-DD
 
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")
+    cargo_rel = relationship("Cargo", back_populates="pessoas")
 
 class Admin(Base):
     __tablename__ = "admin"

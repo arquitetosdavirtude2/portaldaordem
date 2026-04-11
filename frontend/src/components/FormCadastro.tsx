@@ -4,11 +4,18 @@ interface Pessoa {
   id: number;
   nome: string;
   telefone: string;
-  status: string; // Used as Grau now
-  cargo?: string | null;
+  status: string;
+  cargo_id?: number | null;
+  cargo_nome?: string | null;
   login?: string | null;
   senha?: string | null;
   loja_id?: number | null;
+}
+
+interface Cargo {
+  id: number;
+  nome: string;
+  isento_contribuicao: number;
 }
 
 interface Loja {
@@ -47,7 +54,8 @@ export default function FormCadastro({
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [status, setStatus] = useState(isCandidato ? 'Profano' : 'Aprendiz'); 
-  const [cargo, setCargo] = useState('Nenhum'); 
+  const [cargoId, setCargoId] = useState<number>(0);
+  const [cargos, setCargos] = useState<Cargo[]>([]);
   const [lojaId, setLojaId] = useState<number | ''>(
       isLojaUser && acesso?.loja_id ? acesso.loja_id : ''
   );
@@ -55,6 +63,15 @@ export default function FormCadastro({
   const [senha, setSenha] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState('');
+
+  // Carregar cargos da API
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    fetch(`${apiUrl}/api/pessoas/cargos`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setCargos)
+      .catch(() => {});
+  }, []);
   
   // New financial fields for registration
   const [dataAdmissao, setDataAdmissao] = useState(new Date().toISOString().split('T')[0]);
@@ -67,16 +84,15 @@ export default function FormCadastro({
       setNome(pessoaParaEditar.nome);
       setTelefone(pessoaParaEditar.telefone);
       setStatus(pessoaParaEditar.status);
-      setCargo(pessoaParaEditar.cargo || 'Nenhum');
+      setCargoId(pessoaParaEditar.cargo_id || 0);
       setLojaId(pessoaParaEditar.loja_id || (isLojaUser && acesso?.loja_id ? acesso.loja_id : ''));
       setLogin(pessoaParaEditar.login || '');
-      setSenha(''); // Keep password blank when editing unless specifically changed
+      setSenha('');
     } else {
-        // Reset to empty for new creation
         setNome('');
         setTelefone('');
         setStatus(isCandidato ? 'Profano' : 'Aprendiz');
-        setCargo('Nenhum');
+        setCargoId(0);
         setLojaId(isLojaUser && acesso?.loja_id ? acesso.loja_id : '');
         setLogin('');
         setSenha('');
@@ -126,7 +142,7 @@ export default function FormCadastro({
           telefone: telefone.trim(),
           estado_sigla: estadoSigla,
           status,
-          cargo: isCandidato || cargo === 'Nenhum' ? null : cargo,
+          cargo_id: isCandidato ? null : (cargoId || null),
           loja_id: isCandidato ? null : (lojaId || null),
           login: isCandidato ? null : (login.trim() || null),
           senha: isCandidato ? null : (senha.trim() || (isEditing ? null : "")),
@@ -169,7 +185,7 @@ export default function FormCadastro({
             setNome('');
             setTelefone('');
             setStatus(isCandidato ? 'Profano' : 'Aprendiz');
-            setCargo('Nenhum');
+            setCargoId(0);
             setLogin('');
             setSenha('');
             setJoiaPaga('');
@@ -310,27 +326,14 @@ export default function FormCadastro({
                 Cargo
               </label>
               <select
-                value={cargo}
-                onChange={(e) => setCargo(e.target.value)}
+                value={cargoId}
+                onChange={(e) => setCargoId(Number(e.target.value))}
                 className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
               >
-                <option value="Nenhum">Nenhum</option>
-                <option value="Venerável Mestre">Venerável Mestre</option>
-                <option value="1º Vigilante">1º Vigilante</option>
-                <option value="2º Vigilante">2º Vigilante</option>
-                <option value="Orador">Orador</option>
-                <option value="Secretário">Secretário</option>
-                <option value="Tesoureiro">Tesoureiro</option>
-                <option value="Chanceler">Chanceler</option>
-                <option value="Hospitaleiro">Hospitaleiro</option>
-                <option value="Mestre de Cerimônias">Mestre de Cerimônias</option>
-                <option value="1º Diácono">1º Diácono</option>
-                <option value="2º Diácono">2º Diácono</option>
-                <option value="Organista">Organista</option>
-                <option value="Auxiliar de Secretário">Auxiliar de Secretário</option>
-                <option value="Auxiliar de Tesoureiro">Auxiliar de Tesoureiro</option>
-                <option value="Guarda Interno">Guarda Interno</option>
-                <option value="Guarda Externo">Guarda Externo</option>
+                <option value={0}>Sem cargo</option>
+                {cargos.map(c => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
               </select>
             </div>
           )}

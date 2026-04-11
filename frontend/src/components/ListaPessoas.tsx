@@ -8,11 +8,18 @@ interface Pessoa {
     nome: string;
     telefone: string;
     status: string; // Grau
-    cargo?: string | null;
+    cargo_id?: number | null;
+    cargo_nome?: string | null;
     loja_id?: number | null;
     loja_nome?: string | null;
     login?: string | null;
     senha?: string | null;
+}
+
+interface Cargo {
+    id: number;
+    nome: string;
+    isento_contribuicao: number;
 }
 
 interface Acesso {
@@ -48,9 +55,16 @@ export default function ListaPessoas({
     const [pessoaParaDeletar, setPessoaParaDeletar] = useState<Pessoa | null>(null);
     const [deletando, setDeletando] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [cargos, setCargos] = useState<Cargo[]>([]);
 
     useEffect(() => {
         setIsMounted(true);
+        // Carregar lista de cargos da API
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+        fetch(`${apiUrl}/api/pessoas/cargos`)
+            .then(r => r.ok ? r.json() : [])
+            .then(setCargos)
+            .catch(() => {});
     }, []);
 
     const pessoasSafe = Array.isArray(pessoas) ? pessoas : [];
@@ -127,17 +141,16 @@ export default function ListaPessoas({
         setEditandoSenha(pessoa.senha || '');
     };
 
-    const handleMudarCargo = async (pessoa: Pessoa, novoCargo: string) => {
+    const handleMudarCargo = async (pessoa: Pessoa, novoCargoId: number) => {
         try {
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${pessoa.id}`,
                 {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cargo: novoCargo }),
+                    body: JSON.stringify({ cargo_id: novoCargoId === 0 ? null : novoCargoId }),
                 }
             );
-
             if (response.ok) {
                 const pessoaAtualizada = await response.json();
                 onStatusAtualizado(pessoaAtualizada);
@@ -393,34 +406,22 @@ export default function ListaPessoas({
                                                 <td className="py-3 px-3">
                                                     {editandoId === pessoa.id && podeFullEdit ? (
                                                         <select
-                                                            defaultValue={pessoa.cargo || 'Nenhum'}
-                                                            onChange={(e) => handleMudarCargo(pessoa, e.target.value)}
-                                                            className="bg-gray-800 border border-yellow-500/50 text-yellow-100 text-xs rounded p-1 max-w-[150px]"
+                                                            defaultValue={pessoa.cargo_id || 0}
+                                                            onChange={(e) => handleMudarCargo(pessoa, Number(e.target.value))}
+                                                            className="bg-gray-800 border border-yellow-500/50 text-yellow-100 text-xs rounded p-1 max-w-[180px]"
                                                         >
-                                                            <option value="Nenhum">Nenhum</option>
-                                                            <option value="1º Vigilante">1º Vigilante</option>
-                                                            <option value="2º Vigilante">2º Vigilante</option>
-                                                            <option value="Orador">Orador</option>
-                                                            <option value="Secretário">Secretário</option>
-                                                            <option value="Tesoureiro">Tesoureiro</option>
-                                                            <option value="Chanceler">Chanceler</option>
-                                                            <option value="Hospitaleiro">Hospitaleiro</option>
-                                                            <option value="Mestre de Cerimônias">Mestre de Cerimônias</option>
-                                                            <option value="1º Diácono">1º Diácono</option>
-                                                            <option value="2º Diácono">2º Diácono</option>
-                                                            <option value="Organista">Organista</option>
-                                                            <option value="Auxiliar de Secretário">Auxiliar de Secretário</option>
-                                                            <option value="Auxiliar de Tesoureiro">Auxiliar de Tesoureiro</option>
-                                                            <option value="Guarda Interno">Guarda Interno</option>
-                                                            <option value="Guarda Externo">Guarda Externo</option>
+                                                            <option value={0}>Sem cargo</option>
+                                                            {cargos.map(c => (
+                                                                <option key={c.id} value={c.id}>{c.nome}</option>
+                                                            ))}
                                                         </select>
                                                     ) : (
                                                         <span
-                                                            className={`text-xs ${pessoa.cargo && pessoa.cargo !== 'Nenhum' ? 'text-yellow-400 font-bold' : 'text-gray-500 italic'} ${podeFullEdit ? 'cursor-pointer hover:underline underline-offset-2 decoration-white/20' : ''}`}
+                                                            className={`text-xs ${pessoa.cargo_nome ? 'text-yellow-400 font-bold' : 'text-gray-500 italic'} ${podeFullEdit ? 'cursor-pointer hover:underline underline-offset-2 decoration-white/20' : ''}`}
                                                             onClick={() => podeFullEdit && actStartEdit(pessoa)}
                                                             title={podeFullEdit ? "Clique para alterar cargo" : ""}
                                                         >
-                                                            {pessoa.cargo && pessoa.cargo !== 'Nenhum' ? pessoa.cargo : 'Sem cargo'}
+                                                            {pessoa.cargo_nome || 'Sem cargo'}
                                                         </span>
                                                     )}
                                                 </td>

@@ -1,21 +1,23 @@
-import sqlite3
-import os
+from database import SessionLocal
+from models import Pessoa, Loja, Transacao
+import json
 
-db_path = "backend/treasury.db"
-if not os.path.exists(db_path):
-    print(f"Error: {db_path} not found")
-else:
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+db = SessionLocal()
+try:
+    pessoas = db.query(Pessoa).all()
+    lojas = db.query(Loja).all()
     
-    print("--- CAIXAS ---")
-    cursor.execute("SELECT id, nome, tipo, saldo_atual FROM caixas")
-    for row in cursor.fetchall():
-        print(row)
+    print("--- PESSOAS ---")
+    for p in pessoas:
+        print(f"ID: {p.id}, Nome: {p.nome}, LojaID: {p.loja_id}, Admissao: {p.data_admissao}")
         
-    print("\n--- TRANSACOES ---")
-    cursor.execute("SELECT id, caixa_id, tipo, categoria, valor, data_vencimento, status FROM transacoes")
-    for row in cursor.fetchall():
-        print(row)
-    
-    conn.close()
+    print("\n--- LOJAS ---")
+    for l in lojas:
+        print(f"ID: {l.id}, Nome: {l.nome}")
+
+    print("\n--- TRANSACOES RECENTES ---")
+    trans = db.query(Transacao).order_by(Transacao.id.desc()).limit(10).all()
+    for t in trans:
+        print(f"ID: {t.id}, PessoaID: {t.pessoa_id}, Cat: {t.categoria}, Valor: {t.valor}, Status: {t.status}")
+finally:
+    db.close()

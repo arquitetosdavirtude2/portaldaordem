@@ -96,7 +96,7 @@ class ResumoFinanceiro(BaseModel):
 async def criar_transacao(
     caixa_id: int = Form(...),
     pessoa_id: Optional[int] = Form(None),
-    usuario_id: int = Form(...),
+    usuario_id: Optional[int] = Form(None),
     tipo: str = Form(...),
     categoria: str = Form(...),
     valor: float = Form(...),
@@ -109,9 +109,22 @@ async def criar_transacao(
     db_main: Session = Depends(get_db),
     db_treasury: Session = Depends(get_treasury_db)
 ):
+    from sqlalchemy import text
+    from models import Usuario
+
     caixa = db_treasury.query(Caixa).filter(Caixa.id == caixa_id).first()
     if not caixa:
         raise HTTPException(status_code=404, detail="Caixa não encontrado")
+
+    # Garantir que usuario_id seja válido — fallback para o primeiro usuário existente
+    uid_final = usuario_id
+    if uid_final:
+        exists = db_treasury.execute(text("SELECT id FROM usuarios WHERE id = :uid"), {"uid": uid_final}).fetchone()
+        if not exists:
+            uid_final = None
+    if not uid_final:
+        first_user = db_treasury.execute(text("SELECT id FROM usuarios LIMIT 1")).fetchone()
+        uid_final = first_user[0] if first_user else 1
     
     anexo_url = None
     if comprovante:
@@ -119,16 +132,14 @@ async def criar_transacao(
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         filename = f"recibo_{timestamp}{ext}"
         filepath = os.path.join(UPLOAD_DIR, filename)
-        
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(comprovante.file, buffer)
-        
         anexo_url = f"/static/uploads/comprovantes/{filename}"
 
     nova_transacao = Transacao(
         caixa_id=caixa_id,
         pessoa_id=pessoa_id,
-        usuario_id=usuario_id,
+        usuario_id=uid_final,
         tipo=tipo,
         categoria=categoria,
         valor=valor,
@@ -140,7 +151,6 @@ async def criar_transacao(
         status=status
     )
     
-    # Update balance if already paid
     if nova_transacao.status == "pago":
         if nova_transacao.tipo == "entrada":
             caixa.saldo_atual += nova_transacao.valor
@@ -151,7 +161,6 @@ async def criar_transacao(
     db_treasury.commit()
     db_treasury.refresh(nova_transacao)
     
-    # Lookup person name from main DB if provided
     p_nome = None
     if nova_transacao.pessoa_id:
         p = db_main.query(Pessoa).filter(Pessoa.id == nova_transacao.pessoa_id).first()
@@ -421,46 +430,98 @@ def listar_financeiro_irmaos(
     ano: Optional[int] = None,
     db_treasury: Session = Depends(get_treasury_db)
 ):
-    """Listar situação financeira de TODOS os irmãos da Loja, dinamicamente via MySQL."""
+    """Listar situação financeira dos irmãos contribuintes da Loja.
+    Joia: Valor fixo de R$ 2000 total.
+    Mensalidade: R$ 250/mês a partir da admissão (se admitido até dia 15).
+    Saúde Financeira: Atrasado se pendência > 1 mês ou se no mês atual passou do dia 10 sem pagar.
+    """
     try:
         from sqlalchemy import text
-        # 1. Listar pessoas da Loja (ou todos se lid=0)
-        query_loja = text("SELECT id, nome FROM pessoas WHERE loja_id = :lid OR :lid <= 1")
-        pessoas = db_treasury.execute(query_loja, {"lid": loja_id}).fetchall()
-        
+        from datetime import datetime, date
+
+        # Data atual para cálculos
+        hoje = date.today()
+
+        query_pessoas = text("""
+            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao
+            FROM pessoas p
+            LEFT JOIN cargos c ON p.cargo_id = c.id
+            WHERE p.loja_id = :lid
+              AND (c.isento_contribuicao = 0 OR p.cargo_id IS NULL)
+            ORDER BY c.id, p.nome
+        """)
+        pessoas = db_treasury.execute(query_pessoas, {"lid": loja_id}).fetchall()
+
         res = []
         for p in pessoas:
-            pid, nome = p[0], p[1]
-            
-            # 2. Calcular Joia (Paga/Pendente)
-            q_joia_paga = text("SELECT SUM(valor) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'joia' AND status = 'pago'")
-            j_paga = db_treasury.execute(q_joia_paga, {"pid": pid}).fetchone()[0] or 0.0
-            
-            q_joia_pend = text("SELECT SUM(valor) FROM transacoes WHERE pessoa_id = :pid AND (categoria = 'joia' OR categoria = 'entrada') AND status = 'pendente'")
-            j_pend = db_treasury.execute(q_joia_pend, {"pid": pid}).fetchone()[0] or 0.0
-            
-            # 3. Calcular Mensalidade (Paga/Pendente)
-            q_mens_paga = text("SELECT SUM(valor) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'")
-            m_paga = db_treasury.execute(q_mens_paga, {"pid": pid}).fetchone()[0] or 0.0
-            
-            q_mens_pend = text("SELECT SUM(valor) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pendente'")
-            m_pend = db_treasury.execute(q_mens_pend, {"pid": pid}).fetchone()[0] or 0.0
-            
-            saude = "ok"
-            if j_pend > 0 or m_pend > 0:
-                saude = "pendente"
-            
+            pid, nome, cargo_nome, data_adm_str = p[0], p[1], (p[2] or ""), p[3]
+
+            # 1. JOIA (Total de R$ 2.000)
+            j_paga = db_treasury.execute(text(
+                "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'joia' AND status = 'pago'"
+            ), {"pid": pid}).fetchone()[0]
+            j_pend = max(0.0, 2000.0 - float(j_paga))
+
+            # 2. MENSALIDADE (Cálculo proativo por tempo de filiação)
+            # Valor mensal: R$ 250
+            m_paga = db_treasury.execute(text(
+                "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
+            ), {"pid": pid}).fetchone()[0]
+
+            # Calcular meses devidos
+            m_pend = 0.0
+            if data_adm_str:
+                try:
+                    data_adm = datetime.strptime(data_adm_str, "%Y-%m-%d").date()
+                    
+                    # Regra do usuário: Se admitido após o dia 15, começa a pagar no mês seguinte
+                    inicio_cobranca = data_adm
+                    if data_adm.day > 15:
+                        if data_adm.month == 12:
+                            inicio_cobranca = date(data_adm.year + 1, 1, 1)
+                        else:
+                            inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
+                    
+                    # Total de meses desde o início da cobrança até hoje
+                    # (Mesmo ano/mês = 1 mês)
+                    meses_totais = (hoje.year - inicio_cobranca.year) * 12 + (hoje.month - inicio_cobranca.month) + 1
+                    if meses_totais < 0: meses_totais = 0
+                    
+                    valor_esperado = meses_totais * 250.0
+                    m_pend = max(0.0, valor_esperado - float(m_paga))
+                except:
+                    m_pend = 0.0 # Caso data esteja mal formatada (ex: string vazia)
+
+            # 3. SAÚDE FINANCEIRA
+            # ATRASADO: > 1 mensalidade pendente OU 1 mensalidade pendente e passou do dia 10
+            is_atrasado = False
+            if m_pend > 250:
+                is_atrasado = True
+            elif m_pend >= 250 and hoje.day > 10:
+                is_atrasado = True
+                
+            if is_atrasado:
+                saude = "ATRASADO"
+            elif (j_pend > 0 or m_pend > 0):
+                saude = "PENDENTE"
+            else:
+                saude = "REGULAR"
+
             res.append({
                 "id": pid,
                 "nome": nome,
+                "cargo": cargo_nome,
                 "joia_paga": float(j_paga),
                 "joia_pendente": float(j_pend),
                 "mensalidade_paga": float(m_paga),
                 "mensalidade_pendente": float(m_pend),
                 "saude_financeira": saude
             })
-            
+
         return res
     except Exception as e:
         print(f"ERRO AO LISTAR FINANCEIRO IRMAOS: {e}")
+        import traceback
+        print(traceback.format_exc())
         return []
+

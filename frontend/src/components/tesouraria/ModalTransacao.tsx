@@ -125,14 +125,19 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         carregarPessoas();
     }, [acesso.loja_id]);
 
+    const [erro, setErro] = useState<string | null>(null);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setEnviando(true);
+        setErro(null);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+
+            // usuario_id: usa loja_id do acesso como proxy para o usuário da loja
+            const usuarioId = acesso?.loja_id || 1;
             
             if (isEdit) {
-                // PATCH request (JSON as current backend PATCH expects JSON for TransacaoUpdate)
                 const payload = {
                     caixa_id: form.caixa_id,
                     tipo: form.tipo,
@@ -144,15 +149,18 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     status: form.status,
                     pessoa_id: form.pessoa_id ? parseInt(form.pessoa_id) : null
                 };
-
                 const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/${transacaoInicial.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                if (res.ok) onSuccess();
+                if (res.ok) {
+                    onSuccess();
+                } else {
+                    const body = await res.json().catch(() => ({}));
+                    setErro(body.detail || `Erro ${res.status} ao editar lançamento`);
+                }
             } else {
-                // POST request (FormData to support file upload)
                 const formData = new FormData();
                 formData.append('caixa_id', form.caixa_id.toString());
                 formData.append('tipo', form.tipo);
@@ -160,10 +168,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 formData.append('valor', form.valor);
                 formData.append('data_vencimento', form.data_vencimento);
                 formData.append('descricao', form.descricao);
-                formData.append('notas', form.notas);
-                formData.append('status', form.status);
-                formData.append('usuario_id', (acesso.id || 1).toString());
-                
+                formData.append('notas', form.notas || '');
+                formData.append('status', form.status || 'pendente');
+                formData.append('usuario_id', String(usuarioId));
                 if (form.pessoa_id) formData.append('pessoa_id', form.pessoa_id);
                 if (arquivo) formData.append('comprovante', arquivo);
 
@@ -171,10 +178,16 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     method: 'POST',
                     body: formData
                 });
-                if (res.ok) onSuccess();
+                if (res.ok) {
+                    onSuccess();
+                } else {
+                    const body = await res.json().catch(() => ({}));
+                    setErro(body.detail || `Erro ${res.status} ao criar lançamento`);
+                }
             }
         } catch (error) {
             console.error('Erro ao salvar transação:', error);
+            setErro('Erro de conexão com o servidor.');
         } finally {
             setEnviando(false);
         }
@@ -417,6 +430,12 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         ></textarea>
                     </div>
 
+                    {erro && (
+                        <div className="bg-red-900/30 border border-red-500/50 text-red-400 text-xs p-3 rounded-xl">
+                            ⚠️ {erro}
+                        </div>
+                    )}
+
                     <div className="pt-4 pb-2">
                         <button
                             type="submit"
@@ -429,7 +448,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 </form>
             </div>
             
-            <style jsx>{`
+            <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
