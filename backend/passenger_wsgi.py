@@ -1,117 +1,53 @@
 import os
 import sys
 import traceback
-import mimetypes
+from a2wsgi import ASGIMiddleware
 
-# Adiciona o diretório atual ao path do Python
-sys.path.insert(0, os.path.dirname(__file__))
+# Configura o path do Python para o diretório backend
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, BASE_DIR)
 
-log_path = os.path.join(os.path.dirname(__file__), 'passenger_error.log')
+# Adiciona logs de erro para podermos depurar
+log_file = os.path.join(BASE_DIR, 'passenger_error.log')
 
 def log(msg):
-    with open(log_path, 'a') as f:
-        f.write(msg + "\n")
+    with open(log_file, 'a') as f:
+        f.write(f"[WSGI LOG] {msg}\n")
 
-# Caminho absoluto para os arquivos estáticos do frontend em public_html
-STATIC_DIR = '/home1/portald3/public_html/portaldaordem/frontend/out'
-log(f"[startup] STATIC_DIR = {STATIC_DIR}")
-log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
-
-# --- APP FastAPI (para /api/) ---
-api_app = None
-asgi_initialized = False
-
-def get_api_app():
-    global api_app, asgi_initialized
-    if not asgi_initialized:
-        try:
-            from dotenv import load_dotenv
-            load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
-            
-            from main import app as fastapi_app
-            from a2wsgi import ASGIMiddleware
-            
-            # Instancia o adaptador ASGI -> WSGI somente AQUI dentro do worker forked
-            api_app = ASGIMiddleware(fastapi_app)
-            log("[startup] FastAPI/ASGI Middleware carregado c/ sucesso dentro do worker process")
-        except Exception as e:
-            log(f"[ERRO] FastAPI/ASGI nao carregou no worker: {str(e)}")
-            log(traceback.format_exc())
-        finally:
-            asgi_initialized = True
-            
-    return api_app
+try:
+    from main import app as fastapi_app
+    log("FastAPI carregado com sucesso.")
+except Exception as e:
+    log(f"Erro ao carregar FastAPI: {e}")
+    fastapi_app = None
 
 def serve_static(environ, start_response):
-    """Serve arquivos estáticos do frontend/out/"""
+    import mimetypes
     path = environ.get('PATH_INFO', '/').lstrip('/')
+    if not path: path = 'index.html'
     
-    # Rota padrão ou rota sem extensão -> tenta servir .html
-    if not path:
-        path = 'index.html'
+    # PASTA ONDE ESTÁ O SEU FRONTEND (OUT)
+    static_root = '/home1/portald3/public_html/portaldaordem/frontend/out'
+    file_path = os.path.join(static_root, path)
     
-    file_path = os.path.join(STATIC_DIR, path)
-    
-    # Se não tem extensão, tenta como .html (Next.js static export)
-    if not os.path.exists(file_path) and '.' not in os.path.basename(path):
-        file_path = os.path.join(STATIC_DIR, path + '.html')
-    
-    # Tenta index.html dentro de subpasta
+    # Suporte a rotas limpas do Next.js
+    if not os.path.exists(file_path):
+         file_path = os.path.join(static_root, path + '.html')
     if os.path.isdir(file_path):
-        file_path = os.path.join(file_path, 'index.html')
-    
-    if os.path.isfile(file_path):
-        content_type, _ = mimetypes.guess_type(file_path)
-        if not content_type:
-            content_type = 'application/octet-stream'
-        
+         file_path = os.path.join(file_path, 'index.html')
+
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        ctype, _ = mimetypes.guess_type(file_path)
         with open(file_path, 'rb') as f:
             content = f.read()
-        
-        start_response('200 OK', [
-            ('Content-Type', content_type),
-            ('Content-Length', str(len(content))),
-        ])
+        start_response('200 OK', [('Content-Type', ctype or 'application/octet-stream')])
         return [content]
     
-    # 404
-    msg = b"404 Not Found"
-    start_response('404 Not Found', [('Content-Type', 'text/plain'), ('Content-Length', str(len(msg)))])
-    return [msg]
+    start_response('404 Not Found', [('Content-Type', 'text/plain')])
+    return [b"Arquivo nao encontrado"]
 
 def application(environ, start_response):
-    """Router principal: /api/ vai para FastAPI, o resto serve estático."""
-    path = environ.get('PATH_INFO', '/')
-    method = environ.get('REQUEST_METHOD', 'GET')
-    
-    # Correção crítica para cPanel/Passenger: Headers com string vazia travam requisições HTTP para o a2wsgi (loop infinito)
-    if environ.get('CONTENT_LENGTH') == '':
-        environ['CONTENT_LENGTH'] = '0'
-    if environ.get('HTTP_CONTENT_LENGTH') == '':
-        environ['HTTP_CONTENT_LENGTH'] = '0'
-    
+    path = environ.get('PATH_INFO', '')
     if path.startswith('/api/'):
-        log(f"[API] Req WSGI Recebida: {method} {path}")
-        
-        if path == '/api/ping-wsgi':
-            msg = b'{"status": "WSGI Direto Funciona!"}'
-            start_response('200 OK', [
-                ('Content-Type', 'application/json'),
-                ('Content-Length', str(len(msg))),
-            ])
-            return [msg]
-            
-        app_instance = get_api_app()
-        if app_instance:
-            return app_instance(environ, start_response)
-        else:
-            msg = b'{"erro": "Backend API indisponivel. Verifique passenger_error.log"}'
-            start_response('503 Service Unavailable', [
-                ('Content-Type', 'application/json'),
-                ('Content-Length', str(len(msg))),
-            ])
-            return [msg]
-    else:
-        return serve_static(environ, start_response)
-
-log("[startup] Passenger app iniciado com sucesso")
+        return ASGIMiddleware(fastapi_app)(environ, start_response)
+    return serve_static(environ, start_response)
