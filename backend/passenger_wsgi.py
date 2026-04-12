@@ -3,34 +3,36 @@ import sys
 import traceback
 from a2wsgi import ASGIMiddleware
 
-# Configura o path do Python para o diretório backend
+# 1. Configuração de Diretórios
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
-
-# Adiciona logs de erro para podermos depurar
 log_file = os.path.join(BASE_DIR, 'passenger_error.log')
 
 def log(msg):
     with open(log_file, 'a') as f:
-        f.write(f"[WSGI LOG] {msg}\n")
+        f.write(f"[WSGI] {msg}\n")
 
+# 2. Inicialização ÚNICA (Fora da função principal para evitar Deadlock)
+application = None
 try:
     from main import app as fastapi_app
-    log("FastAPI carregado com sucesso.")
+    # Criamos a ponte WSGI uma única vez no startup do processo
+    wsgi_app = ASGIMiddleware(fastapi_app)
+    log("Backend FastAPI carregado com sucesso.")
 except Exception as e:
-    log(f"Erro ao carregar FastAPI: {e}")
-    fastapi_app = None
+    log(f"ERRO CRÍTICO NO STARTUP: {e}")
+    log(traceback.format_exc())
+    wsgi_app = None
 
 def serve_static(environ, start_response):
     import mimetypes
     path = environ.get('PATH_INFO', '/').lstrip('/')
     if not path: path = 'index.html'
     
-    # PASTA ONDE ESTÁ O SEU FRONTEND (OUT)
+    # Caminho absoluto para o frontend/out
     static_root = '/home1/portald3/public_html/portaldaordem/frontend/out'
     file_path = os.path.join(static_root, path)
     
-    # Suporte a rotas limpas do Next.js
     if not os.path.exists(file_path):
          file_path = os.path.join(static_root, path + '.html')
     if os.path.isdir(file_path):
@@ -44,20 +46,23 @@ def serve_static(environ, start_response):
         return [content]
     
     start_response('404 Not Found', [('Content-Type', 'text/plain')])
-    return [b"Arquivo nao encontrado"]
+    return [b"Arquivo nao encontrado no frontend/out"]
 
 def application(environ, start_response):
-    # Correção Crítica cPanel: Impede loop infinito em requisições sem length definido
+    # Correção obrigatória para POST no cPanel/Passenger
     if environ.get('CONTENT_LENGTH') == '':
         environ['CONTENT_LENGTH'] = '0'
     if environ.get('HTTP_CONTENT_LENGTH') == '':
         environ['HTTP_CONTENT_LENGTH'] = '0'
 
     path = environ.get('PATH_INFO', '')
+    
+    # Roteamento
     if path.startswith('/api/'):
-        if fastapi_app is not None:
-            return ASGIMiddleware(fastapi_app)(environ, start_response)
+        if wsgi_app:
+            return wsgi_app(environ, start_response)
         else:
             start_response('503 Service Unavailable', [('Content-Type', 'text/plain')])
-            return [b"Erro: FastAPI nao pode ser carregado. Verifique passenger_error.log"]
+            return [b"Backend indisponivel. Veja o log."]
+            
     return serve_static(environ, start_response)

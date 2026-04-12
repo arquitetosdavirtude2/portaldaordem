@@ -4,15 +4,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 import os
 
-# CONFIGURAÇÃO DE PRODUÇÃO (FORÇADA E SIMPLIFICADA)
-# Usamos 127.0.0.1 ou localhost com trava de reconexão automática
-DATABASE_URL = "mysql+pymysql://portald3_user:gWh28%40dGcMp@127.0.0.1/portald3_gomb?charset=utf8mb4"
+# CONFIGURAÇÃO PADRÃO CPANEL (ESTÁVEL)
+# Usamos localhost (socket) que é a conexão mais rápida no cPanel
+DATABASE_URL = "mysql+pymysql://portald3_user:gWh28%40dGcMp@localhost/portald3_gomb?charset=utf8mb4"
 
 def get_engine(url):
-    # pool_pre_ping=True ajuda o cPanel a reconectar se o banco cair por inatividade
     return create_engine(
         url, 
-        connect_args={"connect_timeout": 10}, 
+        connect_args={"connect_timeout": 5}, 
         poolclass=NullPool
     )
 
