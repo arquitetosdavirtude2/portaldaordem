@@ -56,3 +56,30 @@ async def ping_db_async():
         return {"db": "ok", "tipo": "async"}
     except Exception as e:
         return {"db": "erro", "mensagem": str(e)}
+
+@app.get("/api/auth/inspect-db")
+def inspect_db():
+    """Rota de diagnóstico total para resolver o problema do Nilton."""
+    from database import DATABASE_URL
+    from sqlalchemy import text
+    import os
+    
+    try:
+        with engine.connect() as conn:
+            # 1. Checar tabelas existentes
+            tables = conn.execute(text("SHOW TABLES")).fetchall()
+            table_names = [t[0] for t in tables]
+            
+            # 2. Checar usuários
+            users = conn.execute(text("SELECT id, login, role FROM usuarios LIMIT 10")).fetchall()
+            user_list = [{"id": u[0], "login": u[1], "role": u[2]} for u in users]
+            
+            return {
+                "status": "Inspecionando banco...",
+                "database_url_redacted": DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else "SQLite/Unknown",
+                "tables_found": table_names,
+                "users_in_db": user_list,
+                "env_DATABASE_URL_exists": os.getenv("DATABASE_URL") is not None
+            }
+    except Exception as e:
+        return {"error": str(e), "trace": "Falha ao conectar ou ler tabelas"}
