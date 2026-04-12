@@ -107,7 +107,10 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             
             # Assign role based on cargo
             user_role = "membro"
-            if pessoa.cargo and "tesoureiro" in pessoa.cargo.lower():
+            # Get cargo name safely
+            cargo_nome = pessoa.cargo_rel.nome if pessoa.cargo_rel else ""
+            
+            if cargo_nome and "tesoureiro" in cargo_nome.lower():
                 user_role = "tesoureiro"
             
             return LoginResponse(
@@ -120,7 +123,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
                 loja_numero=pessoa.loja.numero if pessoa.loja else None,
                 loja_cidade=cidade,
                 nome=pessoa.nome,
-                cargo=pessoa.cargo or "Irmão"
+                cargo=pessoa.cargo_rel.nome if pessoa.cargo_rel else "Irmão"
             )
         return LoginResponse(success=False, message="Senha incorreta")
 
