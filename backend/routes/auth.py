@@ -130,7 +130,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             )
         return LoginResponse(success=False, message="Senha incorreta")
 
-    return LoginResponse(success=False, message="Usuário não encontrado")
+    return LoginResponse(success=False, message="Usuário não encontrado - VER: 2.0")
 
 @router.post("/admin-login", response_model=LoginResponse)
 def admin_login(request: LoginRequest, db: Session = Depends(get_db)):

@@ -27,7 +27,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 async def root():
-    return {"status": "API root funcionando! (Async route)"}
+    return {"status": "API ATUALIZADA - VER: 2.0"}
 
 @app.get("/api/ping-fastapi-sync")
 def ping_fastapi_sync():
