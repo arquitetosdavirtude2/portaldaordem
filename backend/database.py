@@ -11,7 +11,15 @@ ENV_PATH = os.path.join(BASE_DIR, ".env")
 load_dotenv(ENV_PATH)
 
 # 1. Main Database (MySQL for original data)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    # Se estivermos no servidor (Unix), não permitimos rodar sem MySQL configurado
+    if os.name != 'nt':
+        raise RuntimeError("ERRO CRÍTICO: DATABASE_URL não encontrada no ambiente ou arquivo .env!")
+    else:
+        # Apenas localmente mantemos o fallback para desenvolvimento
+        DATABASE_URL = "sqlite:///./database.db"
 
 # cPanel Socket logic for MySQL
 if "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in DATABASE_URL):
