@@ -1,140 +1,117 @@
 import os
 import sys
-import json
-import mimetypes
 import traceback
-import pymysql
+import mimetypes
 
-# 1. Configurações de Path
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, BASE_DIR)
+# Adiciona o diretório atual ao path do Python
+sys.path.insert(0, os.path.dirname(__file__))
 
-# 2. Configurações de Banco (Mapeadas direto de database.py)
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'portald3_user',
-    'password': 'gWh28%40dGcMp',
-    'database': 'portald3_gomb',
-    'charset': 'utf8mb4',
-    'cursorclass': pymysql.cursors.DictCursor
-}
+log_path = os.path.join(os.path.dirname(__file__), 'passenger_error.log')
 
-def handle_direct_login(environ, start_response):
-    """
-    Processa o login SEM passar pelo FastAPI/ASGI.
-    Isso é 100% à prova de travamentos no cPanel.
-    """
-    try:
-        # Lê o corpo do POST (Login e Senha do Frontend)
-        length = int(environ.get('CONTENT_LENGTH', '0'))
-        body = environ['wsgi.input'].read(length)
-        data = json.loads(body.decode('utf-8'))
-        
-        login_input = str(data.get('login', '')).strip().lower()
-        senha_input = str(data.get('senha', ''))
+def log(msg):
+    with open(log_path, 'a') as f:
+        f.write(msg + "\n")
 
-        # A: Bypass MASTER (Acesso de Emergência)
-        if login_input.upper() == "MASTER" and senha_input == "GOMB2024":
-            response = {
-                "success": True, 
-                "tipo": "master", 
-                "role": "admin", 
-                "allowed_states": ["*"], 
-                "nome": "Grão-Mestre (Recuperação)", 
-                "cargo": "Administrador"
-            }
-            return send_json_response(response, start_response)
+# Caminho absoluto para os arquivos estáticos do frontend em public_html
+STATIC_DIR = '/home1/portald3/public_html/portaldaordem/frontend/out'
+log(f"[startup] STATIC_DIR = {STATIC_DIR}")
+log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
-        # B: Consulta Direta ao MySQL (Nilton, Elias, etc)
-        conn = pymysql.connect(**DB_CONFIG)
+# --- APP FastAPI (para /api/) ---
+api_app = None
+asgi_initialized = False
+
+def get_api_app():
+    global api_app, asgi_initialized
+    if not asgi_initialized:
         try:
-            with conn.cursor() as cursor:
-                sql = "SELECT id, login, senha, role, nome, loja_id FROM usuarios WHERE LOWER(login) = %s"
-                cursor.execute(sql, (login_input,))
-                user = cursor.fetchone()
-                
-                if user and user['senha'] == senha_input:
-                    # Normalização de papel para o Frontend
-                    role = user['role']
-                    if role == "Estadual": role = "mestre"
-                    
-                    response = {
-                        "success": True,
-                        "role": role,
-                        "nome": user.get('nome', 'Irmão').strip(),
-                        "loja_id": user.get('loja_id'),
-                        "allowed_states": ["*"] if role == 'admin' or user['role'] == 'Federal' else []
-                    }
-                    return send_json_response(response, start_response)
-                
-                return send_json_response({"success": False, "message": "Usuário ou senha incorretos"}, start_response)
-        finally:
-            conn.close()
+            from dotenv import load_dotenv
+            load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
             
-    except Exception as e:
-        return send_json_response({"success": False, "message": f"Erro interno: {str(e)}"}, start_response)
+            from main import app as fastapi_app
+            from a2wsgi import ASGIMiddleware
+            
+            # Instancia o adaptador ASGI -> WSGI somente AQUI dentro do worker forked
+            api_app = ASGIMiddleware(fastapi_app)
+            log("[startup] FastAPI/ASGI Middleware carregado c/ sucesso dentro do worker process")
+        except Exception as e:
+            log(f"[ERRO] FastAPI/ASGI nao carregou no worker: {str(e)}")
+            log(traceback.format_exc())
+        finally:
+            asgi_initialized = True
+            
+    return api_app
 
-def send_json_response(data, start_response):
-    body = json.dumps(data).encode('utf-8')
-    start_response('200 OK', [
-        ('Content-Type', 'application/json'),
-        ('Content-Length', str(len(body))),
-        ('Access-Control-Allow-Origin', '*'),
-        ('Access-Control-Allow-Methods', 'POST, OPTIONS'),
-        ('Access-Control-Allow-Headers', 'Content-Type')
-    ])
-    return [body]
-
-# 3. Importação do Backend Principal (para outras rotas)
-try:
-    from a2wsgi import ASGIMiddleware
-    from main import app as fastapi_app
-    # Instanciamos UMA VEZ no escopo global para evitar deadlocks
-    backend_app = ASGIMiddleware(fastapi_app)
-except:
-    backend_app = None
+def serve_static(environ, start_response):
+    """Serve arquivos estáticos do frontend/out/"""
+    path = environ.get('PATH_INFO', '/').lstrip('/')
+    
+    # Rota padrão ou rota sem extensão -> tenta servir .html
+    if not path:
+        path = 'index.html'
+    
+    file_path = os.path.join(STATIC_DIR, path)
+    
+    # Se não tem extensão, tenta como .html (Next.js static export)
+    if not os.path.exists(file_path) and '.' not in os.path.basename(path):
+        file_path = os.path.join(STATIC_DIR, path + '.html')
+    
+    # Tenta index.html dentro de subpasta
+    if os.path.isdir(file_path):
+        file_path = os.path.join(file_path, 'index.html')
+    
+    if os.path.isfile(file_path):
+        content_type, _ = mimetypes.guess_type(file_path)
+        if not content_type:
+            content_type = 'application/octet-stream'
+        
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        
+        start_response('200 OK', [
+            ('Content-Type', content_type),
+            ('Content-Length', str(len(content))),
+        ])
+        return [content]
+    
+    # 404
+    msg = b"404 Not Found"
+    start_response('404 Not Found', [('Content-Type', 'text/plain'), ('Content-Length', str(len(msg)))])
+    return [msg]
 
 def application(environ, start_response):
-    path = environ.get('PATH_INFO', '')
+    """Router principal: /api/ vai para FastAPI, o resto serve estático."""
+    path = environ.get('PATH_INFO', '/')
     method = environ.get('REQUEST_METHOD', 'GET')
-
-    # Correção para Passenger/WSGI
+    
+    # Correção crítica para cPanel/Passenger: Headers com string vazia travam requisições HTTP para o a2wsgi (loop infinito)
     if environ.get('CONTENT_LENGTH') == '':
         environ['CONTENT_LENGTH'] = '0'
-
-    # INTERCEPTOR DE LOGIN: A cura definitiva para o carregamento infinito
-    if path == '/api/auth/login/':
-        if method == 'OPTIONS': # Handle CORS preflight
+    if environ.get('HTTP_CONTENT_LENGTH') == '':
+        environ['HTTP_CONTENT_LENGTH'] = '0'
+    
+    if path.startswith('/api/'):
+        log(f"[API] Req WSGI Recebida: {method} {path}")
+        
+        if path == '/api/ping-wsgi':
+            msg = b'{"status": "WSGI Direto Funciona!"}'
             start_response('200 OK', [
-                ('Access-Control-Allow-Origin', '*'),
-                ('Access-Control-Allow-Methods', 'POST, OPTIONS'),
-                ('Access-Control-Allow-Headers', 'Content-Type')
+                ('Content-Type', 'application/json'),
+                ('Content-Length', str(len(msg))),
             ])
-            return [b""]
-        return handle_direct_login(environ, start_response)
+            return [msg]
+            
+        app_instance = get_api_app()
+        if app_instance:
+            return app_instance(environ, start_response)
+        else:
+            msg = b'{"erro": "Backend API indisponivel. Verifique passenger_error.log"}'
+            start_response('503 Service Unavailable', [
+                ('Content-Type', 'application/json'),
+                ('Content-Length', str(len(msg))),
+            ])
+            return [msg]
+    else:
+        return serve_static(environ, start_response)
 
-    # SERVIÇO DE FRONTEND (Static Files)
-    STATIC_ROOT = '/home1/portald3/public_html/portaldaordem/frontend/out'
-    cleaned_path = path.lstrip('/')
-    if not cleaned_path: cleaned_path = 'index.html'
-    
-    potential_files = [
-        os.path.join(STATIC_ROOT, cleaned_path),
-        os.path.join(STATIC_ROOT, cleaned_path + '.html'),
-        os.path.join(STATIC_ROOT, cleaned_path, 'index.html')
-    ]
-    
-    for f_path in potential_files:
-        if os.path.exists(f_path) and os.path.isfile(f_path):
-            ctype, _ = mimetypes.guess_type(f_path)
-            with open(f_path, 'rb') as f:
-                content = f.read()
-            start_response('200 OK', [('Content-Type', ctype or 'text/html'), ('Access-Control-Allow-Origin', '*')])
-            return [content]
-
-    # FALLBACK PARA O BACKEND (Tesouraria, etc)
-    if backend_app:
-        return backend_app(environ, start_response)
-
-    start_response('404 Not Found', [('Content-Type', 'text/plain')])
-    return [b"Caminho nao encontrado"]
+log("[startup] Passenger app iniciado com sucesso")

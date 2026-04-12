@@ -25,63 +25,55 @@ class LoginResponse(BaseModel):
     loja_cidade: Optional[str] = None # Used to display the exact city in the dashboard header
     nome: Optional[str] = None
     cargo: Optional[str] = None
-@router.post("/login/", response_model=LoginResponse)
+
+@router.post("/login/", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    # Clean input
-    login_clean = request.login.strip().lower()
-    
     # Authenticate standard User (Usuario table) first
-    from sqlalchemy import func
-    user = db.query(Usuario).filter(func.lower(Usuario.login) == login_clean).first()
+    user = db.query(Usuario).filter(Usuario.login == request.login).first()
     
     if user:
         if user.senha == request.senha:
             # User is authenticated
             states = []
             cidade = None
-            if user.role in ['admin', 'Federal']: # Grão-Mestrado Federal
+            if user.role == 'admin': # Grão-Mestrado Federal
                 states = ['*'] # All access
             elif user.role == 'loja':
                 if user.loja:
                     if user.loja.estado:
                         states = [user.loja.estado.sigla]
-                    cidade = user.loja.endereco 
+                    cidade = user.loja.endereco # In this system, endereco holds the city name
             else:
                 states = [e.sigla for e in user.estados]
                 
             # Translate internal role to display title
             cargo_display = "Irmão"
-            # Support both internal 'mestre' and production 'Estadual'
-            if user.role in ["admin", "Federal"]:
+            if user.role == "admin":
                 cargo_display = "Grão-Mestre"
-            elif user.role in ["mestre", "Estadual"]:
+            elif user.role == "mestre":
                 cargo_display = "Grão-Mestre Estadual"
             elif user.role == "loja":
                 cargo_display = "Venerável Mestre"
             elif user.role == "tesoureiro":
                 cargo_display = "Tesoureiro"
-            
-            # Normalize role for frontend if it's Estadual
-            normalized_role = user.role
-            if user.role == "Estadual":
-                normalized_role = "mestre"
 
             return LoginResponse(
                 success=True, 
                 tipo="leitor", 
-                role=normalized_role, 
+                role=user.role, 
                 allowed_states=states,
                 loja_id=user.loja_id if user.role == 'loja' else None,
                 loja_nome=user.loja.nome if user.role == 'loja' and user.loja else None,
                 loja_numero=user.loja.numero if user.role == 'loja' and user.loja else None,
                 loja_cidade=cidade,
-                nome=getattr(user, 'nome', 'Irmão').strip(), 
+                nome=getattr(user, 'nome', 'Irmão'), 
                 cargo=cargo_display
             )
         return LoginResponse(success=False, message="Senha incorreta")
     
     # If not a standard user, check if it's the Master Admin
-    if login_clean == "admin":
+    import os
+    if request.login == "admin":
         admin_obj = db.query(Admin).first()
         env_senha = os.getenv("SENHA_MASTER", "admin123")
         
@@ -89,21 +81,22 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         if admin_obj and request.senha == admin_obj.senha_master:
             is_valid = True
         elif not admin_obj and request.senha == env_senha:
+            # Fallback for empty/wiped database
             is_valid = True
             
         if is_valid:
              return LoginResponse(
                  success=True, 
                  tipo="master", 
-                 role="admin", 
-                 allowed_states=['*'],
+                 role="admin", # Give it admin role for unified frontend checks
+                 allowed_states=['*'], # implicit all access
                  nome="Grão Mestre",
                  cargo="Grão Mestre"
              )
         return LoginResponse(success=False, message="Senha incorreta")
 
-    # Check Pessoas table (regular members)
-    pessoa = db.query(Pessoa).filter(func.lower(Pessoa.login) == login_clean).first()
+    # If not found in Usuario, check Pessoas table (regular members)
+    pessoa = db.query(Pessoa).filter(Pessoa.login == request.login).first()
     if pessoa:
         if pessoa.senha == request.senha:
             states = []
@@ -112,6 +105,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             
             cidade = pessoa.loja.endereco if pessoa.loja else None
             
+            # Assign role based on cargo
             user_role = "membro"
             if pessoa.cargo and "tesoureiro" in pessoa.cargo.lower():
                 user_role = "tesoureiro"
@@ -125,11 +119,12 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
                 loja_nome=pessoa.loja.nome if pessoa.loja else None,
                 loja_numero=pessoa.loja.numero if pessoa.loja else None,
                 loja_cidade=cidade,
-                nome=pessoa.nome.strip(),
+                nome=pessoa.nome,
                 cargo=pessoa.cargo or "Irmão"
             )
         return LoginResponse(success=False, message="Senha incorreta")
 
+    # Not found in any table
     return LoginResponse(success=False, message="Usuário não encontrado")
 
 @router.post("/admin-login", response_model=LoginResponse)

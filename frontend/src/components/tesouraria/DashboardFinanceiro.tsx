@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import ModalNovaTransacao from './ModalTransacao';
+import ModalNovaTransacao from './ModalNovaTransacao';
 import ListaTransacoes from './ListaTransacoes';
 
 interface Caixa {
