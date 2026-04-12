@@ -93,7 +93,7 @@ class ResumoFinanceiro(BaseModel):
         from_attributes = True
 
 @router.post("/transacoes/", response_model=TransacaoResponse)
-async def criar_transacao(
+def criar_transacao(
     caixa_id: int = Form(...),
     pessoa_id: Optional[int] = Form(None),
     usuario_id: Optional[int] = Form(None),

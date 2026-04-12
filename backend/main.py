@@ -26,5 +26,5 @@ app.include_router(tesouraria.router, prefix="/api/tesouraria", tags=["Tesourari
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
-async def root():
+def root():
     return {"status": "Sistema Online"}
