@@ -4,22 +4,20 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 import os
 
-# CONFIGURAÇÃO DE PRODUÇÃO (FORÇADA E SIMPLIFICADA)
-# Usamos 127.0.0.1 para evitar problemas de socket no cPanel
-DATABASE_URL = "mysql+pymysql://portald3_user:gWh28%40dGcMp@127.0.0.1/portald3_gomb?charset=utf8mb4"
+# CONFIGURAÇÃO PADRÃO CPANEL
+# Tentamos localhost (padrão) com suporte a timeout para não travar o site
+DATABASE_URL = "mysql+pymysql://portald3_user:gWh28%40dGcMp@localhost/portald3_gomb?charset=utf8mb4"
 
 def get_engine(url):
-    # Connect_timeout curto para não travar o site se o banco cair
     return create_engine(
         url, 
-        connect_args={"connect_timeout": 5}, 
+        connect_args={"connect_timeout": 3}, # 3 segundos e para tudo
         poolclass=NullPool
     )
 
 engine = get_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Unificação de Sessões (Tesouraria + Principal)
 TreasurySessionLocal = SessionLocal
 Base = declarative_base()
 
