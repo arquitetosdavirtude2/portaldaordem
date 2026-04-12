@@ -47,7 +47,17 @@ def serve_static(environ, start_response):
     return [b"Arquivo nao encontrado"]
 
 def application(environ, start_response):
+    # Correção Crítica cPanel: Impede loop infinito em requisições sem length definido
+    if environ.get('CONTENT_LENGTH') == '':
+        environ['CONTENT_LENGTH'] = '0'
+    if environ.get('HTTP_CONTENT_LENGTH') == '':
+        environ['HTTP_CONTENT_LENGTH'] = '0'
+
     path = environ.get('PATH_INFO', '')
     if path.startswith('/api/'):
-        return ASGIMiddleware(fastapi_app)(environ, start_response)
+        if fastapi_app is not None:
+            return ASGIMiddleware(fastapi_app)(environ, start_response)
+        else:
+            start_response('503 Service Unavailable', [('Content-Type', 'text/plain')])
+            return [b"Erro: FastAPI nao pode ser carregado. Verifique passenger_error.log"]
     return serve_static(environ, start_response)
