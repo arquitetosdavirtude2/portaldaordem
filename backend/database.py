@@ -21,20 +21,14 @@ for path in POSSIBLE_ENV_PATHS:
         env_found = True
         break
 
-# 1. Main Database (MySQL for original data)
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    # Se estivermos no servidor (Unix), não permitimos rodar sem MySQL configurado
-    if os.name != 'nt':
-        raise RuntimeError("ERRO CRÍTICO: DATABASE_URL não encontrada no ambiente ou arquivo .env!")
-    else:
-        # Apenas localmente mantemos o fallback para desenvolvimento
-        DATABASE_URL = "sqlite:///./database.db"
+# 1. Main Database (MySQL for Production)
+# Forçamos a URL direta pois o cPanel não está carregando o .env corretamente
+DATABASE_URL = "mysql+pymysql://portald3_user:gWh28%40dGcMp@localhost/portald3_gomb?charset=utf8mb4"
 
 # cPanel Socket logic for MySQL
 if "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in DATABASE_URL):
     DATABASE_URL = DATABASE_URL.replace("@127.0.0.1", "@localhost")
+    # No Linux do cPanel, forçamos o socket se não estiver presente
     if os.name != 'nt':
         if "unix_socket=" not in DATABASE_URL:
             if "?" in DATABASE_URL:
