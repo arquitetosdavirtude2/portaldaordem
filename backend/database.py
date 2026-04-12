@@ -5,10 +5,21 @@ from sqlalchemy.pool import NullPool
 import os
 from dotenv import load_dotenv
 
-# Absolute Path for .env
+# Absolute Path for .env discovery (Aggressive search for cPanel)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ENV_PATH = os.path.join(BASE_DIR, ".env")
-load_dotenv(ENV_PATH)
+POSSIBLE_ENV_PATHS = [
+    os.path.join(BASE_DIR, ".env"), # inside backend/
+    os.path.join(os.path.dirname(BASE_DIR), ".env"), # site root
+    os.path.join(os.path.expanduser("~"), ".env"), # home dir
+    ".env" # current working dir
+]
+
+env_found = False
+for path in POSSIBLE_ENV_PATHS:
+    if os.path.exists(path):
+        load_dotenv(path)
+        env_found = True
+        break
 
 # 1. Main Database (MySQL for original data)
 DATABASE_URL = os.getenv("DATABASE_URL")
