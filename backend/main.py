@@ -57,6 +57,32 @@ async def ping_db_async():
     except Exception as e:
         return {"db": "erro", "mensagem": str(e)}
 
+@app.get("/api/auth/nuclear-debug")
+def nuclear_debug():
+    """Diagnóstico definitivo: Onde diabos este código está rodando?"""
+    import os
+    import sys
+    from database import DATABASE_URL
+    
+    try:
+        # 1. Verificar onde o arquivo atual está localizado no servidor
+        current_file = os.path.abspath(__file__)
+        current_dir = os.getcwd()
+        
+        # 2. Listar arquivos para ver se o database.db fantasma ainda existe
+        files_here = os.listdir('.')
+        
+        return {
+            "onde_estou_rodando": current_file,
+            "pasta_de_trabalho": current_dir,
+            "arquivos_na_pasta": files_here,
+            "python_version": sys.version,
+            "database_url_ativa": DATABASE_URL.split('@')[-1] if DATABASE_URL else "VARIAVEL_VAZIA",
+            "detectou_env": os.path.exists(os.path.join(os.path.dirname(current_file), ".env"))
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/api/auth/inspect-db")
 def inspect_db():
     """Rota de diagnóstico total para resolver o problema do Nilton."""
