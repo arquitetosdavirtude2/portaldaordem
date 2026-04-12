@@ -33,6 +33,13 @@ class CaixaCreate(BaseModel):
 def migrate_db_production():
     """Rota temporária para rodar a migração via navegador se o terminal falhar."""
     try:
+        import sys
+        import os
+        # Adiciona a pasta pai do backend ao path para encontrar o script
+        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if parent_dir not in sys.path:
+            sys.path.append(parent_dir)
+            
         from production_migrate import run_migration
         run_migration()
         return {"status": "success", "message": "Migração executada com sucesso!"}
