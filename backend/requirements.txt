@@ -6,3 +6,4 @@ python-dotenv
 a2wsgi
 PyMySQL
 cryptography
+python-multipart
