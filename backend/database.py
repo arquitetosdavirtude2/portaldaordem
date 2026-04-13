@@ -6,20 +6,23 @@ import os
 from dotenv import load_dotenv
 
 # Absolute Path for .env
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
-# 1. Main Database (MySQL for original data)
+env_exists = os.path.exists(ENV_PATH)
+
 # Load dotenv as early as possible with override
 load_dotenv(ENV_PATH, override=True)
 
 raw_url = os.getenv("DATABASE_URL")
 
-# If on production (linux/cpanel) and no URL is found, we MUST fail early
+# Diagnostic logging for Passenger
+print(f"--- DB DIAGNOSTIC ---")
+print(f"BASE_DIR: {BASE_DIR}")
+print(f"ENV_PATH: {ENV_PATH} (Exists: {env_exists})")
+
+# If on production (linux/cpanel) and no URL is found, we fall back to sqlite BUT we log it clearly
 if not raw_url:
-    if os.name != 'nt':
-        print("CRITICAL ERROR: DATABASE_URL not found in environment!")
-        raise RuntimeError("DATABASE_URL not found in .env file. System cannot start in production without a server database.")
-    # Local fallback only for dev (Windows)
+    print("WARNING: DATABASE_URL not found in environment! Falling back to SQLite.")
     raw_url = "sqlite:///./database.db"
 
 DATABASE_URL = raw_url

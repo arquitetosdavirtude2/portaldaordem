@@ -31,13 +31,26 @@ async def root():
 
 @app.get("/api/health-check")
 def health_check():
-    from database import DATABASE_URL
+    import os
+    from database import DATABASE_URL, BASE_DIR, ENV_PATH
+    
+    env_exists = os.path.exists(ENV_PATH)
+    env_readable = os.access(ENV_PATH, os.R_OK) if env_exists else False
+    
     db_type = "mysql" if "mysql" in DATABASE_URL.lower() else "sqlite"
+    
     return {
+        "status": "online",
         "active_db": db_type,
-        "env_loaded": "DATABASE_URL" in os.environ,
-        "os": os.name,
-        "status": "online"
+        "base_dir": BASE_DIR,
+        "env_file": {
+            "path": ENV_PATH,
+            "exists": env_exists,
+            "readable": env_readable,
+            "size": os.path.getsize(ENV_PATH) if env_exists else 0
+        },
+        "database_url_source": "environment" if os.getenv("DATABASE_URL") else "fallback",
+        "os": os.name
     }
 
 @app.get("/api/ping-fastapi-sync")
