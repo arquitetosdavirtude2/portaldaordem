@@ -3,14 +3,18 @@ import sys
 import traceback
 import mimetypes
 
-# Adiciona o diretório atual ao path do Python
-sys.path.insert(0, os.path.dirname(__file__))
+# Caminho Base Absoluto
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, BASE_DIR)
 
-log_path = os.path.join(os.path.dirname(__file__), 'passenger_error.log')
+log_path = os.path.join(BASE_DIR, 'passenger_error.log')
 
 def log(msg):
-    with open(log_path, 'a') as f:
-        f.write(msg + "\n")
+    try:
+        with open(log_path, 'a') as f:
+            f.write(msg + "\n")
+    except:
+        pass # Silently fail if log is unwritable
 
 # Caminho absoluto para os arquivos estáticos do frontend em public_html
 STATIC_DIR = '/home1/portald3/public_html/portaldaordem/frontend/out'
@@ -18,7 +22,7 @@ log(f"[startup] STATIC_DIR = {STATIC_DIR}")
 log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
 # --- APP FastAPI (para /api/) ---
-# [FORCE RESTART] Last Deploy: 2026-04-12 21:05
+# [FORCE RESTART] Last Deploy: 2026-04-12 21:18 (Fixed Multi-DB Path)
 api_app = None
 asgi_initialized = False
 
@@ -27,7 +31,7 @@ def get_api_app():
     if not asgi_initialized:
         try:
             from dotenv import load_dotenv
-            env_file = os.path.join(os.path.dirname(__file__), '.env')
+            env_file = os.path.join(BASE_DIR, '.env')
             load_dotenv(env_file, override=True)
             log(f"[startup] .env carregado de {env_file}")
             
