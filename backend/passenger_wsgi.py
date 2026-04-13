@@ -3,6 +3,17 @@ import sys
 import traceback
 import mimetypes
 
+# Diagnóstico de Dependências (Para resolver o Erro 500)
+dep_error = None
+try:
+    import fastapi
+    import sqlalchemy
+    import a2wsgi
+    import pymysql
+    import dotenv
+except ImportError as e:
+    dep_error = f"ERRO DE BIBLIOTECA: Faltando '{e.name}'. Por favor, instale-a no cPanel (Setup Python App -> Configuration File -> pip install)."
+
 # Caminho Base Absoluto
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, BASE_DIR)
@@ -96,6 +107,11 @@ def serve_static(environ, start_response):
 
 def application(environ, start_response):
     """Router principal: /api/ vai para FastAPI, o resto serve estático."""
+    # Se houve erro de biblioteca na inicialização, mostra na tela
+    if dep_error:
+         start_response('500 Internal Server Error', [('Content-Type', 'text/plain')])
+         return [dep_error.encode()]
+
     path = environ.get('PATH_INFO', '/')
     method = environ.get('REQUEST_METHOD', 'GET')
     
