@@ -22,7 +22,7 @@ log(f"[startup] STATIC_DIR = {STATIC_DIR}")
 log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
 # --- APP FastAPI (para /api/) ---
-# [FORCE RESTART] Last Deploy: 2026-04-12 21:18 (Fixed Multi-DB Path)
+# [FORCE RESTART] Last Deploy: 2026-04-12 21:32 (Strict MySQL Mode)
 api_app = None
 asgi_initialized = False
 
@@ -31,9 +31,17 @@ def get_api_app():
     if not asgi_initialized:
         try:
             from dotenv import load_dotenv
-            env_file = os.path.join(BASE_DIR, '.env')
-            load_dotenv(env_file, override=True)
-            log(f"[startup] .env carregado de {env_file}")
+            # Exhaustive search for .env in cPanel
+            possible_paths = [
+                os.path.join(BASE_DIR, '.env'),
+                "/home1/portald3/portaldaordem/backend/.env", 
+                ".env"
+            ]
+            for p in possible_paths:
+                if os.path.exists(p):
+                    load_dotenv(p, override=True)
+                    log(f"[startup] .env carregado de {p}")
+                    break
             
             from main import app as fastapi_app
             from a2wsgi import ASGIMiddleware

@@ -7,28 +7,37 @@ from dotenv import load_dotenv
 
 # Absolute Path for .env
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-ENV_PATH = os.path.join(BASE_DIR, ".env")
-env_exists = os.path.exists(ENV_PATH)
 
-# Load dotenv as early as possible with override
-load_dotenv(ENV_PATH, override=True)
+# Exhaustive search for .env in cPanel
+env_paths = [
+    os.path.join(BASE_DIR, ".env"),
+    "/home1/portald3/portaldaordem/backend/.env", # Known cPanel path
+    ".env"
+]
+for p in env_paths:
+    if os.path.exists(p):
+        load_dotenv(p, override=True)
+        break
 
 raw_url = os.getenv("DATABASE_URL")
 
 # Diagnostic logging for Passenger
 print(f"--- DB DIAGNOSTIC ---")
 print(f"BASE_DIR: {BASE_DIR}")
-print(f"ENV_PATH: {ENV_PATH} (Exists: {env_exists})")
+print(f"CWD: {os.getcwd()}")
 
-# If on production (linux/cpanel) and no URL is found, we fall back to sqlite BUT we log it clearly
+# If on production (linux/cpanel) and no URL is found, we MUST NOT fallback to sqlite silently
 if not raw_url:
-    print("WARNING: DATABASE_URL not found in environment! Falling back to SQLite.")
-    raw_url = "sqlite:///./database.db"
+    if os.name != 'nt':
+        # Use a dummy MySQL string instead of raising to allow health-check to run
+        raw_url = "mysql+pymysql://missing_env_error@localhost/missing_db"
+    else:
+        raw_url = "sqlite:///./database.db"
 
 DATABASE_URL = raw_url
 
 # cPanel Socket logic for MySQL
-if "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in DATABASE_URL):
+if DATABASE_URL and "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in DATABASE_URL):
     DATABASE_URL = DATABASE_URL.replace("@127.0.0.1", "@localhost")
     if os.name != 'nt':
         if "unix_socket=" not in DATABASE_URL:
@@ -40,11 +49,12 @@ if "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in 
 
 def get_engine(url, is_sqlite=False):
     connect_args = {}
-    if is_sqlite or "sqlite" in url:
+    url_str = str(url or "")
+    if is_sqlite or "sqlite" in url_str:
         connect_args = {"check_same_thread": False}
-    elif "mysql" in url:
+    elif "mysql" in url_str:
         connect_args = {"connect_timeout": 5}
-    return create_engine(url, connect_args=connect_args, poolclass=NullPool)
+    return create_engine(url_str, connect_args=connect_args, poolclass=NullPool)
 
 engine = get_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
