@@ -32,103 +32,100 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     try:
         # Authenticate standard User (Usuario table) first
         user = db.query(Usuario).filter(Usuario.login == request.login).first()
-    
-    if user:
-        if user.senha == request.senha:
-            # User is authenticated
-            states = []
-            cidade = None
-            if user.role == 'admin': # Grão-Mestrado Federal
-                states = ['*'] # All access
-            elif user.role == 'loja':
-                if user.loja:
-                    if user.loja.estado:
-                        states = [user.loja.estado.sigla]
-                    cidade = user.loja.endereco # In this system, endereco holds the city name
-            else:
-                states = [e.sigla for e in user.estados]
-                
-            # Translate internal role to display title
-            cargo_display = "Irmão"
-            if user.role == "admin":
-                cargo_display = "Grão-Mestre"
-            elif user.role == "mestre":
-                cargo_display = "Grão-Mestre Estadual"
-            elif user.role == "loja":
-                cargo_display = "Venerável Mestre"
-            elif user.role == "tesoureiro":
-                cargo_display = "Tesoureiro"
-
-            return LoginResponse(
-                success=True, 
-                tipo="leitor", 
-                role=user.role, 
-                allowed_states=states,
-                loja_id=user.loja_id if user.role == 'loja' else None,
-                loja_nome=user.loja.nome if user.role == 'loja' and user.loja else None,
-                loja_numero=user.loja.numero if user.role == 'loja' and user.loja else None,
-                loja_cidade=cidade,
-                nome=getattr(user, 'nome', 'Irmão'), 
-                cargo=cargo_display,
-                message=f"DIAG: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DATABASE_URL}"
-            )
-        return LoginResponse(success=False, message="Senha incorreta")
-    
-    # If not a standard user, check if it's the Master Admin
-    import os
-    if request.login == "admin":
-        admin_obj = db.query(Admin).first()
-        env_senha = os.getenv("SENHA_MASTER", "admin123")
         
-        is_valid = False
-        if admin_obj and request.senha == admin_obj.senha_master:
-            is_valid = True
-        elif not admin_obj and request.senha == env_senha:
-            # Fallback for empty/wiped database
-            is_valid = True
-            
-        if is_valid:
-             return LoginResponse(
-                 success=True, 
-                 tipo="master", 
-                 role="admin", # Give it admin role for unified frontend checks
-                 allowed_states=['*'], # implicit all access
-                 nome="Grão Mestre",
-                 cargo="Grão Mestre"
-             )
-        return LoginResponse(success=False, message="Senha incorreta")
+        if user:
+            if user.senha == request.senha:
+                # User is authenticated
+                states = []
+                cidade = None
+                if user.role == 'admin': # Grão-Mestrado Federal
+                    states = ['*'] # All access
+                elif user.role == 'loja':
+                    if user.loja:
+                        if user.loja.estado:
+                            states = [user.loja.estado.sigla]
+                        cidade = user.loja.endereco # In this system, endereco holds the city name
+                else:
+                    states = [e.sigla for e in user.estados]
+                    
+                # Translate internal role to display title
+                cargo_display = "Irmão"
+                if user.role == "admin":
+                    cargo_display = "Grão-Mestre"
+                elif user.role == "mestre":
+                    cargo_display = "Grão-Mestre Estadual"
+                elif user.role == "loja":
+                    cargo_display = "Venerável Mestre"
+                elif user.role == "tesoureiro":
+                    cargo_display = "Tesoureiro"
 
-    # If not found in Usuario, check Pessoas table (regular members)
-    pessoa = db.query(Pessoa).filter(Pessoa.login == request.login).first()
-    if pessoa:
-        if pessoa.senha == request.senha:
-            states = []
-            if pessoa.loja and pessoa.loja.estado:
-                states = [pessoa.loja.estado.sigla]
+                return LoginResponse(
+                    success=True, 
+                    tipo="leitor", 
+                    role=user.role, 
+                    allowed_states=states,
+                    loja_id=user.loja_id if user.role == 'loja' else None,
+                    loja_nome=user.loja.nome if user.role == 'loja' and user.loja else None,
+                    loja_numero=user.loja.numero if user.role == 'loja' and user.loja else None,
+                    loja_cidade=cidade,
+                    nome=getattr(user, 'nome', 'Irmão'), 
+                    cargo=cargo_display,
+                    message=f"DIAG: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DATABASE_URL}"
+                )
+            return LoginResponse(success=False, message="Senha incorreta")
+        
+        # If not a standard user, check if it's the Master Admin
+        if request.login == "admin":
+            admin_obj = db.query(Admin).first()
+            env_senha = os.getenv("SENHA_MASTER", "admin123")
             
-            cidade = pessoa.loja.endereco if pessoa.loja else None
-            
-            # Assign role based on cargo
-            user_role = "membro"
-            # Get cargo name safely
-            cargo_nome = pessoa.cargo_rel.nome if pessoa.cargo_rel else ""
-            
-            if cargo_nome and "tesoureiro" in cargo_nome.lower():
-                user_role = "tesoureiro"
-            
-            return LoginResponse(
-                success=True,
-                tipo="membro",
-                role=user_role,
-                allowed_states=states,
-                loja_id=pessoa.loja_id,
-                loja_nome=pessoa.loja.nome if pessoa.loja else None,
-                loja_numero=pessoa.loja.numero if pessoa.loja else None,
-                loja_cidade=cidade,
-                nome=pessoa.nome,
-                cargo=pessoa.cargo_rel.nome if pessoa.cargo_rel else "Irmão"
-            )
-        return LoginResponse(success=False, message="Senha incorreta")
+            is_valid = False
+            if admin_obj and request.senha == admin_obj.senha_master:
+                is_valid = True
+            elif not admin_obj and request.senha == env_senha:
+                is_valid = True
+                
+            if is_valid:
+                 return LoginResponse(
+                     success=True, 
+                     tipo="master", 
+                     role="admin", 
+                     allowed_states=['*'],
+                     nome="Grão Mestre",
+                     cargo="Grão Mestre"
+                 )
+            return LoginResponse(success=False, message="Senha incorreta")
+
+        # If not found in Usuario, check Pessoas table (regular members)
+        pessoa = db.query(Pessoa).filter(Pessoa.login == request.login).first()
+        if pessoa:
+            if pessoa.senha == request.senha:
+                states = []
+                if pessoa.loja and pessoa.loja.estado:
+                    states = [pessoa.loja.estado.sigla]
+                
+                cidade = pessoa.loja.endereco if pessoa.loja else None
+                user_role = "membro"
+                cargo_nome = pessoa.cargo_rel.nome if pessoa.cargo_rel else ""
+                
+                if cargo_nome and "tesoureiro" in cargo_nome.lower():
+                    user_role = "tesoureiro"
+                
+                return LoginResponse(
+                    success=True,
+                    tipo="membro",
+                    role=user_role,
+                    allowed_states=states,
+                    loja_id=pessoa.loja_id,
+                    loja_nome=pessoa.loja.nome if pessoa.loja else None,
+                    loja_numero=pessoa.loja.numero if pessoa.loja else None,
+                    loja_cidade=cidade,
+                    nome=pessoa.nome,
+                    cargo=pessoa.cargo_rel.nome if pessoa.cargo_rel else "Irmão"
+                )
+            return LoginResponse(success=False, message="Senha incorreta")
+
+        return LoginResponse(success=False, message="Usuário não encontrado")
 
     except Exception as e:
         error_msg = f"RUNTIME ERROR: {str(e)}\n{traceback.format_exc()}"
@@ -136,26 +133,27 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/admin-login", response_model=LoginResponse)
 def admin_login(request: LoginRequest, db: Session = Depends(get_db)):
-    # Authenticate Master Admin (Admin table) - maintained for backward compat
-    import os
-    if request.login != "admin":
-         return LoginResponse(success=False, message="Login administrativo inválido")
+    try:
+        if request.login != "admin":
+             return LoginResponse(success=False, message="Login administrativo inválido")
 
-    admin_obj = db.query(Admin).first()
-    env_senha = os.getenv("SENHA_MASTER", "admin123")
-    
-    is_valid = False
-    if admin_obj and request.senha == admin_obj.senha_master:
-         is_valid = True
-    elif not admin_obj and request.senha == env_senha:
-         is_valid = True
-         
-    if is_valid:
-         return LoginResponse(
-             success=True, 
-             tipo="master",
-             role="admin",
-             allowed_states=['*']
-         )
-    
-    return LoginResponse(success=False, message="Credenciais administrativas inválidas")
+        admin_obj = db.query(Admin).first()
+        env_senha = os.getenv("SENHA_MASTER", "admin123")
+        
+        is_valid = False
+        if admin_obj and request.senha == admin_obj.senha_master:
+             is_valid = True
+        elif not admin_obj and request.senha == env_senha:
+             is_valid = True
+             
+        if is_valid:
+             return LoginResponse(
+                 success=True, 
+                 tipo="master",
+                 role="admin",
+                 allowed_states=['*']
+             )
+        
+        return LoginResponse(success=False, message="Credenciais administrativas inválidas")
+    except Exception as e:
+        return LoginResponse(success=False, message=str(e))
