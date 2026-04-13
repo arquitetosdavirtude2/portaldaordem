@@ -1,4 +1,4 @@
-from sqlalchemy import create_all, text
+from sqlalchemy import text
 from database import engine, Base
 import models # Ensure all models are registered
 
