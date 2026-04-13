@@ -81,5 +81,4 @@ def get_treasury_db():
     finally:
         db.close()
 
-print(f"BANCO PRINCIPAL: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DATABASE_URL}")
-print(f"BANCO TESOURARIA: {TREASURY_DB_URL}")
+# Final do arquivo
