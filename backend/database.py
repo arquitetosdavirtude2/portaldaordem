@@ -8,29 +8,33 @@ from dotenv import load_dotenv
 # Absolute Path for .env
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# CREDENCIAIS DO SERVIDOR (DIRETO NO CÓDIGO PARA EVITAR ERRO DE CAMINHO NO CPANEL)
-PROD_MYSQL_URL = "mysql+pymysql://portald3_user:gWh28%40dGcMp@localhost/portald3_gomb?charset=utf8mb4"
-
 # Exhaustive search for .env in cPanel
+# 1. Caminho absoluto do cPanel (mostrado no print)
+# 2. Caminho relativo ao arquivo database.py
+# 3. Caminho atual de execução
 env_paths = [
-    os.path.join(BASE_DIR, ".env"),
     "/home1/portald3/public_html/portaldaordem/backend/.env", 
+    os.path.join(BASE_DIR, ".env"),
     ".env"
 ]
+
+found_env = False
 for p in env_paths:
     if os.path.exists(p):
         load_dotenv(p, override=True)
+        found_env = True
         break
 
 raw_url = os.getenv("DATABASE_URL")
 
-# FORÇANDO MYSQL NO SERVIDOR (LINUX/POSIX)
+# Diagnostic logging para o log do servidor
 if os.name != 'nt':
-    if not raw_url or "sqlite" in raw_url:
-        print("CPANEL: Forçando conexão MySQL via Hardcode (Env não encontrado ou inválido)")
-        raw_url = PROD_MYSQL_URL
+    print(f"DEBUG: .env encontrado: {found_env}")
+    if not raw_url:
+         # Se não houver URL no linux, avisamos mas não travamos o Python (evita 503)
+         raw_url = "mysql+pymysql://missing_env@localhost/missing_db"
 
-# Fallback para desenvolvimento local
+# Fallback apenas para DEV Local
 if not raw_url:
     raw_url = "sqlite:///./database.db"
 
@@ -39,6 +43,7 @@ DATABASE_URL = raw_url
 # cPanel Socket logic para MySQL Localhost
 if DATABASE_URL and "mysql" in DATABASE_URL and "@localhost" in DATABASE_URL:
     if os.name != 'nt' and "unix_socket=" not in DATABASE_URL:
+        # Padrão cPanel RapidCloud
         DATABASE_URL += ("&" if "?" in DATABASE_URL else "?") + "unix_socket=/var/lib/mysql/mysql.sock"
 
 def get_engine(url, is_sqlite=False):
