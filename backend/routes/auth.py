@@ -67,7 +67,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
                 loja_numero=user.loja.numero if user.role == 'loja' and user.loja else None,
                 loja_cidade=cidade,
                 nome=getattr(user, 'nome', 'Irmão'), 
-                cargo=cargo_display
+                cargo=cargo_display,
+                message=f"DIAG: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DATABASE_URL}"
             )
         return LoginResponse(success=False, message="Senha incorreta")
     
