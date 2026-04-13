@@ -43,10 +43,8 @@ export default function LoginPage() {
             }
 
             const data = await response.json();
-            console.log("Login DIAG:", data.message);
 
             if (data.success) {
-                if (data.message) alert(data.message);
                 // ... same logic ...
                 const userRole = data.role === 'admin' ? 'admin' : (data.role || 'mestre');
                 const userTipo = data.tipo || 'leitor';
