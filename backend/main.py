@@ -29,6 +29,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def root():
     return {"status": "API root funcionando! (Async route)"}
 
+@app.get("/api/health-check")
+def health_check():
+    from database import DATABASE_URL
+    db_type = "mysql" if "mysql" in DATABASE_URL.lower() else "sqlite"
+    return {
+        "active_db": db_type,
+        "env_loaded": "DATABASE_URL" in os.environ,
+        "os": os.name,
+        "status": "online"
+    }
+
 @app.get("/api/ping-fastapi-sync")
 def ping_fastapi_sync():
     """Se esta rota der looping, o threadpool (anyio) do FastAPI está quebrado no cPanel."""

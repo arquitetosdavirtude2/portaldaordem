@@ -8,16 +8,28 @@ from dotenv import load_dotenv
 # Absolute Path for .env
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
-load_dotenv(ENV_PATH)
-
 # 1. Main Database (MySQL for original data)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database.db")
+# Load dotenv as early as possible with override
+load_dotenv(ENV_PATH, override=True)
+
+raw_url = os.getenv("DATABASE_URL")
+
+# If on production (linux/cpanel) and no URL is found, we MUST fail early
+if not raw_url:
+    if os.name != 'nt':
+        print("CRITICAL ERROR: DATABASE_URL not found in environment!")
+        raise RuntimeError("DATABASE_URL not found in .env file. System cannot start in production without a server database.")
+    # Local fallback only for dev (Windows)
+    raw_url = "sqlite:///./database.db"
+
+DATABASE_URL = raw_url
 
 # cPanel Socket logic for MySQL
 if "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in DATABASE_URL):
     DATABASE_URL = DATABASE_URL.replace("@127.0.0.1", "@localhost")
     if os.name != 'nt':
         if "unix_socket=" not in DATABASE_URL:
+            # Check if there are already params
             if "?" in DATABASE_URL:
                 DATABASE_URL += "&unix_socket=/var/lib/mysql/mysql.sock"
             else:

@@ -18,6 +18,7 @@ log(f"[startup] STATIC_DIR = {STATIC_DIR}")
 log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
 # --- APP FastAPI (para /api/) ---
+# [FORCE RESTART] Last Deploy: 2026-04-12 21:05
 api_app = None
 asgi_initialized = False
 
@@ -26,7 +27,9 @@ def get_api_app():
     if not asgi_initialized:
         try:
             from dotenv import load_dotenv
-            load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+            env_file = os.path.join(os.path.dirname(__file__), '.env')
+            load_dotenv(env_file, override=True)
+            log(f"[startup] .env carregado de {env_file}")
             
             from main import app as fastapi_app
             from a2wsgi import ASGIMiddleware
