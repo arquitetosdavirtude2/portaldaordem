@@ -348,7 +348,7 @@ export default function AdminUsersPage() {
                                     className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer">
                                     <option value="mestre">Grão-Mestrado Estadual</option>
                                     <option value="admin">Grão-Mestrado Federal</option>
-                                    <option value="loja">Loja</option>
+                                    <option value="loja">Mestre de Loja</option>
                                 </select>
                             </div>
                             {/* Loja or States depending on role */}
@@ -442,7 +442,7 @@ export default function AdminUsersPage() {
                                                         </span>
                                                     ) : u.role === 'loja' ? (
                                                         <span className="bg-green-900/30 text-green-300 px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-green-500/30 font-bold">
-                                                            🏛️ Loja
+                                                            🏛️ Mestre de Loja
                                                         </span>
                                                     ) : (
                                                         <span className="bg-blue-900/30 text-blue-300 px-2 py-1 rounded text-[10px] uppercase tracking-wider border border-blue-500/30 font-bold">
