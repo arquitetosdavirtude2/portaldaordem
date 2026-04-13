@@ -22,7 +22,7 @@ log(f"[startup] STATIC_DIR = {STATIC_DIR}")
 log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
 # --- APP FastAPI (para /api/) ---
-# [FORCE RESTART] Last Deploy: 2026-04-12 21:44 (Absolute cPanel Path Fixed)
+# [FORCE RESTART] Last Deploy: 2026-04-12 22:08 (HARDCODED MYSQL - FINAL)
 api_app = None
 asgi_initialized = False
 

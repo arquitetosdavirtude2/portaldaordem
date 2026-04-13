@@ -8,10 +8,13 @@ from dotenv import load_dotenv
 # Absolute Path for .env
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+# CREDENCIAIS DO SERVIDOR (DIRETO NO CÓDIGO PARA EVITAR ERRO DE CAMINHO NO CPANEL)
+PROD_MYSQL_URL = "mysql+pymysql://portald3_user:gWh28%40dGcMp@localhost/portald3_gomb?charset=utf8mb4"
+
 # Exhaustive search for .env in cPanel
 env_paths = [
     os.path.join(BASE_DIR, ".env"),
-    "/home1/portald3/public_html/portaldaordem/backend/.env", # FIXED ABSOLUTE PATH FROM CPANEL
+    "/home1/portald3/public_html/portaldaordem/backend/.env", 
     ".env"
 ]
 for p in env_paths:
@@ -21,31 +24,22 @@ for p in env_paths:
 
 raw_url = os.getenv("DATABASE_URL")
 
-# Diagnostic logging for Passenger
-print(f"--- DB DIAGNOSTIC ---")
-print(f"BASE_DIR: {BASE_DIR}")
-print(f"CWD: {os.getcwd()}")
+# FORÇANDO MYSQL NO SERVIDOR (LINUX/POSIX)
+if os.name != 'nt':
+    if not raw_url or "sqlite" in raw_url:
+        print("CPANEL: Forçando conexão MySQL via Hardcode (Env não encontrado ou inválido)")
+        raw_url = PROD_MYSQL_URL
 
-# If on production (linux/cpanel) and no URL is found, we MUST NOT fallback to sqlite silently
+# Fallback para desenvolvimento local
 if not raw_url:
-    if os.name != 'nt':
-        # Use a dummy MySQL string instead of raising to allow health-check to run
-        raw_url = "mysql+pymysql://missing_env_error@localhost/missing_db"
-    else:
-        raw_url = "sqlite:///./database.db"
+    raw_url = "sqlite:///./database.db"
 
 DATABASE_URL = raw_url
 
-# cPanel Socket logic for MySQL
-if DATABASE_URL and "mysql" in DATABASE_URL and ("@localhost" in DATABASE_URL or "@127.0.0.1" in DATABASE_URL):
-    DATABASE_URL = DATABASE_URL.replace("@127.0.0.1", "@localhost")
-    if os.name != 'nt':
-        if "unix_socket=" not in DATABASE_URL:
-            # Check if there are already params
-            if "?" in DATABASE_URL:
-                DATABASE_URL += "&unix_socket=/var/lib/mysql/mysql.sock"
-            else:
-                DATABASE_URL += "?unix_socket=/var/lib/mysql/mysql.sock"
+# cPanel Socket logic para MySQL Localhost
+if DATABASE_URL and "mysql" in DATABASE_URL and "@localhost" in DATABASE_URL:
+    if os.name != 'nt' and "unix_socket=" not in DATABASE_URL:
+        DATABASE_URL += ("&" if "?" in DATABASE_URL else "?") + "unix_socket=/var/lib/mysql/mysql.sock"
 
 def get_engine(url, is_sqlite=False):
     connect_args = {}
