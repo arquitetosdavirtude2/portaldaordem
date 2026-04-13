@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import os
-from database import get_db
+from database import get_db, DATABASE_URL
 from models import Estado, Admin, Usuario, Pessoa
+import traceback
 
 router = APIRouter()
 
@@ -28,8 +29,9 @@ class LoginResponse(BaseModel):
 
 @router.post("/login/", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    # Authenticate standard User (Usuario table) first
-    user = db.query(Usuario).filter(Usuario.login == request.login).first()
+    try:
+        # Authenticate standard User (Usuario table) first
+        user = db.query(Usuario).filter(Usuario.login == request.login).first()
     
     if user:
         if user.senha == request.senha:
@@ -128,8 +130,9 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             )
         return LoginResponse(success=False, message="Senha incorreta")
 
-    # Not found in any table
-    return LoginResponse(success=False, message="Usuário não encontrado")
+    except Exception as e:
+        error_msg = f"RUNTIME ERROR: {str(e)}\n{traceback.format_exc()}"
+        return LoginResponse(success=False, message=error_msg)
 
 @router.post("/admin-login", response_model=LoginResponse)
 def admin_login(request: LoginRequest, db: Session = Depends(get_db)):
