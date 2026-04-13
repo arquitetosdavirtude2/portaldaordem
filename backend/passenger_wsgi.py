@@ -22,7 +22,7 @@ log(f"[startup] STATIC_DIR = {STATIC_DIR}")
 log(f"[startup] STATIC_DIR exists = {os.path.exists(STATIC_DIR)}")
 
 # --- APP FastAPI (para /api/) ---
-# [FORCE RESTART] Last Deploy: 2026-04-12 21:32 (Strict MySQL Mode)
+# [FORCE RESTART] Last Deploy: 2026-04-12 21:44 (Absolute cPanel Path Fixed)
 api_app = None
 asgi_initialized = False
 
@@ -33,8 +33,8 @@ def get_api_app():
             from dotenv import load_dotenv
             # Exhaustive search for .env in cPanel
             possible_paths = [
+                "/home1/portald3/public_html/portaldaordem/backend/.env", # FIXED ABSOLUTE PATH
                 os.path.join(BASE_DIR, '.env'),
-                "/home1/portald3/portaldaordem/backend/.env", 
                 ".env"
             ]
             for p in possible_paths:

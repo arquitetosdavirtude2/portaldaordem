@@ -11,7 +11,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # Exhaustive search for .env in cPanel
 env_paths = [
     os.path.join(BASE_DIR, ".env"),
-    "/home1/portald3/portaldaordem/backend/.env", # Known cPanel path
+    "/home1/portald3/public_html/portaldaordem/backend/.env", # FIXED ABSOLUTE PATH FROM CPANEL
     ".env"
 ]
 for p in env_paths:
