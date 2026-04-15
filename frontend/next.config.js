@@ -2,6 +2,7 @@
 const isBuild = process.env.npm_lifecycle_event === 'build';
 
 const nextConfig = {
+const nextConfig = {
     swcMinify: false,
     eslint: { ignoreDuringBuilds: true },
     images: { unoptimized: true },
@@ -10,6 +11,7 @@ const nextConfig = {
         cpus: 1,
         workerThreads: false
     }
+};
 };
 
 if (isBuild) {
