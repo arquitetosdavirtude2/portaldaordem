@@ -124,7 +124,7 @@ export default function ListaTransacoes({
             <table className="w-full text-left border-collapse font-sans">
                 <thead>
                     <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-bold">
-                        <th className="px-5 py-4 text-[9px]">Data Venc.</th>
+                        <th className="px-5 py-4 text-[9px]">Data</th>
                         <th className="px-5 py-4 text-[9px]">Descrição</th>
                         <th className="px-5 py-4 text-[9px]">Categoria</th>
                         <th className="px-5 py-4 text-[9px]">Valor</th>
@@ -136,7 +136,7 @@ export default function ListaTransacoes({
                     {transacoes.map(t => (
                         <tr key={t.id} className="hover:bg-white/[0.03] transition-colors group">
                             <td className="px-5 py-4 text-[11px] text-gray-300">
-                                {new Date(t.data_vencimento).toLocaleDateString('pt-BR')}
+                                {t.data_vencimento.split('-').reverse().join('/')}
                             </td>
                             <td className="px-5 py-4">
                                 <div className="text-[11px] font-bold text-gray-200">{t.descricao}</div>

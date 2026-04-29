@@ -48,14 +48,15 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         );
     }
 
+    const [irmaoSelecionado, setIrmaoSelecionado] = useState<IrmaoFinanceiro | null>(null);
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div className="flex flex-col gap-1">
                     <h2 className="text-lg font-bold text-yellow-500 uppercase tracking-tight">Situação Financeira por Obreiro</h2>
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                        Extrato de Joias e Mensalidades do período selecionado.
-
+                        Extrato de Joias e Mensalidades. O mês atual é considerado pendente após o dia 10.
                     </p>
                 </div>
 
@@ -87,15 +88,16 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                         <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
                             <th className="px-5 py-4">Obreiro</th>
                             <th className="px-5 py-4">Função</th>
-                            <th className="px-5 py-4 text-center">Joia (Paga / Pendente)</th>
-                            <th className="px-5 py-4 text-center">Mensalidade (Paga / Pendente)</th>
+                            <th className="px-5 py-4 text-center">Joia (Paga / Pend)</th>
+                            <th className="px-5 py-4 text-center">Mensal. (Paga / Pend)</th>
+                            <th className="px-5 py-4 text-center">Detalhes</th>
                             <th className="px-5 py-4 text-right">Saúde Financeira</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {irmaos.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="px-5 py-10 text-center text-gray-500 text-[11px]">
+                                <td colSpan={6} className="px-5 py-10 text-center text-gray-500 text-[11px]">
                                     Nenhum irmão contribuinte encontrado para esta loja.
                                 </td>
                             </tr>
@@ -134,6 +136,18 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         R$ {irmao.mensalidade_pendente.toFixed(0)}
                                     </span>
                                 </td>
+                                <td className="px-5 py-4 text-center">
+                                    {(irmao as any).meses_atraso?.length > 0 ? (
+                                        <button 
+                                            onClick={() => setIrmaoSelecionado(irmao)}
+                                            className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
+                                        >
+                                            Ver Meses ({ (irmao as any).meses_atraso.length })
+                                        </button>
+                                    ) : (
+                                        <span className="text-[9px] text-gray-600 font-bold">—</span>
+                                    )}
+                                </td>
                                 <td className="px-5 py-4 text-right">
                                     {irmao.saude_financeira === 'REGULAR' ? (
                                         <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
@@ -141,11 +155,11 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         </div>
                                     ) : irmao.saude_financeira === 'ATRASADO' ? (
                                         <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
-                                            Atrasado (R$ {(irmao.joia_pendente + irmao.mensalidade_pendente).toLocaleString('pt-BR')})
+                                            Atrasado
                                         </div>
                                     ) : (
                                         <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                                            Pendente (R$ {(irmao.joia_pendente + irmao.mensalidade_pendente).toLocaleString('pt-BR')})
+                                            Pendente
                                         </div>
                                     )}
                                 </td>
@@ -154,6 +168,37 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     </tbody>
                 </table>
             </div>
+
+            {/* Modal Detalhes Meses */}
+            {irmaoSelecionado && (
+                <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
+                    <div className="bg-[#0f1d45] border border-white/20 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center">
+                            <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest">Meses em Aberto</h3>
+                            <button onClick={() => setIrmaoSelecionado(null)} className="text-gray-400 hover:text-white">✕</button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">Obreiro: <span className="text-white">{irmaoSelecionado.nome}</span></div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {(irmaoSelecionado as any).meses_atraso.map((mes: string) => (
+                                    <div key={mes} className="bg-white/5 border border-white/5 rounded-lg p-2 text-center text-[10px] font-bold text-red-400 uppercase">
+                                        {mes}
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-[9px] text-gray-500 italic text-center mt-4 uppercase tracking-tighter">Valores baseados na data de admissão e regra do dia 15.</p>
+                        </div>
+                        <div className="p-4 bg-black/20">
+                            <button 
+                                onClick={() => setIrmaoSelecionado(null)}
+                                className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                            >
+                                Fechar Detalhes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -281,16 +281,35 @@ def listar_transacoes(
 ):
     try:
         db_treasury.expire_all()
-        # Support for consolidated view (caixa_id = 0)
         from sqlalchemy import text
-        raw_sql = "SELECT id, caixa_id, pessoa_id, usuario_id, tipo, categoria, valor, data_vencimento, data_pagamento, descricao, status FROM transacoes"
-        print(f"DEBUG EXECUTING RAW SQL: {raw_sql}")
-        rows = db_treasury.execute(text(raw_sql)).fetchall()
-        print(f"DEBUG ROWS FOUND: {len(rows)}")
+        
+        query = "SELECT id, caixa_id, pessoa_id, usuario_id, tipo, categoria, valor, data_vencimento, data_pagamento, descricao, status FROM transacoes WHERE 1=1"
+        params = {}
+
+        if caixa_id > 0:
+            query += " AND caixa_id = :caixa_id"
+            params["caixa_id"] = caixa_id
+        
+        if status and status != 'todos':
+            query += " AND status = :status"
+            params["status"] = status
+            
+        if mes:
+            # Assumindo data_vencimento no formato YYYY-MM-DD
+            # Usando LIKE para compatibilidade SQLite/MySQL
+            mes_str = f"-{mes:02d}-"
+            query += " AND data_vencimento LIKE :mes"
+            params["mes"] = f"%{mes_str}%"
+            
+        if ano:
+            ano_str = f"{ano}-"
+            query += " AND data_vencimento LIKE :ano"
+            params["ano"] = f"{ano_str}%"
+
+        rows = db_treasury.execute(text(query), params).fetchall()
         
         res = []
         for r in rows:
-            # Match person name manually for safety
             p_nome = "N/A"
             if r[2]: # pessoa_id
                 p = db_treasury.execute(text("SELECT nome FROM pessoas WHERE id = :id"), {"id": r[2]}).fetchone()
@@ -355,14 +374,16 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
             elif c_tipo == 'joias_mensalidade':
                 saldo_jm += float(c_saldo)
         
-        # 2. Calcular Pendências (Tudo que está com status 'pendente')
+        # 2. Calcular Pendências (Apenas da Loja atual)
         query_pend = text("""
-            SELECT tipo, SUM(valor) as total 
-            FROM transacoes 
-            WHERE status = 'pendente' 
-            GROUP BY tipo
+            SELECT t.tipo, SUM(t.valor) as total 
+            FROM transacoes t
+            JOIN caixas c ON t.caixa_id = c.id
+            WHERE t.status = 'pendente' 
+              AND c.loja_id = :lid
+            GROUP BY t.tipo
         """)
-        pend_rows = db_treasury.execute(query_pend).fetchall()
+        pend_rows = db_treasury.execute(query_pend, {"lid": loja_id}).fetchall()
         
         ent_pend = 0.0
         sai_pend = 0.0
@@ -430,17 +451,20 @@ def listar_financeiro_irmaos(
     ano: Optional[int] = None,
     db_treasury: Session = Depends(get_treasury_db)
 ):
-    """Listar situação financeira dos irmãos contribuintes da Loja.
-    Joia: Valor fixo de R$ 2000 total.
-    Mensalidade: R$ 250/mês a partir da admissão (se admitido até dia 15).
-    Saúde Financeira: Atrasado se pendência > 1 mês ou se no mês atual passou do dia 10 sem pagar.
-    """
+    """Listar situação financeira dos irmãos contribuintes da Loja."""
     try:
         from sqlalchemy import text
         from datetime import datetime, date
 
-        # Data atual para cálculos
+        # Data alvo para cálculos (se não informado, usa hoje)
         hoje = date.today()
+        # Se for passado mes/ano, usamos o último dia desse mês para cálculo de pendência
+        if mes and ano:
+            import calendar
+            _, last_day = calendar.monthrange(ano, mes)
+            alvo = date(ano, mes, last_day)
+        else:
+            alvo = hoje
 
         query_pessoas = text("""
             SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao
@@ -462,19 +486,19 @@ def listar_financeiro_irmaos(
             ), {"pid": pid}).fetchone()[0]
             j_pend = max(0.0, 2000.0 - float(j_paga))
 
-            # 2. MENSALIDADE (Cálculo proativo por tempo de filiação)
-            # Valor mensal: R$ 250
+            # 2. MENSALIDADE
             m_paga = db_treasury.execute(text(
                 "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
 
-            # Calcular meses devidos
             m_pend = 0.0
+            detalhes_meses = [] # Para o botão de detalhamento solicitado
+
             if data_adm_str:
                 try:
                     data_adm = datetime.strptime(data_adm_str, "%Y-%m-%d").date()
                     
-                    # Regra do usuário: Se admitido após o dia 15, começa a pagar no mês seguinte
+                    # Regra: Se admitido após o dia 15, começa a pagar no mês seguinte
                     inicio_cobranca = data_adm
                     if data_adm.day > 15:
                         if data_adm.month == 12:
@@ -482,27 +506,52 @@ def listar_financeiro_irmaos(
                         else:
                             inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
                     
-                    # Total de meses desde o início da cobrança até hoje
-                    # (Mesmo ano/mês = 1 mês)
-                    meses_totais = (hoje.year - inicio_cobranca.year) * 12 + (hoje.month - inicio_cobranca.month) + 1
-                    if meses_totais < 0: meses_totais = 0
+                    # Calcular meses devidos até a data 'alvo'
+                    # Mas ignorar o mês atual se for o mês de admissão (conforme solicitado no áudio)
+                    curr = date(inicio_cobranca.year, inicio_cobranca.month, 1)
+                    alvo_limite = date(alvo.year, alvo.month, 1)
                     
-                    valor_esperado = meses_totais * 250.0
-                    m_pend = max(0.0, valor_esperado - float(m_paga))
+                    while curr <= alvo_limite:
+                        # Se o mês atual for o mês de admissão, e o usuário disse para não cobrar como pendente...
+                        # Mas o usuário disse no segundo áudio: "é pra considerar se for cadastrado até dia 15"
+                        # "o que está errado é cobrar previsões de futuro"
+                        
+                        # Vamos verificar se esse mês já foi pago
+                        mes_ref = curr.strftime("%Y-%m")
+                        pago_este_mes = db_treasury.execute(text("""
+                            SELECT COALESCE(SUM(valor),0) 
+                            FROM transacoes 
+                            WHERE pessoa_id = :pid 
+                              AND categoria = 'mensalidade' 
+                              AND status = 'pago'
+                              AND data_vencimento LIKE :ref
+                        """), {"pid": pid, "ref": f"{mes_ref}%"}).fetchone()[0]
+                        
+                        if float(pago_este_mes) < 250.0:
+                            # Se não é o mês futuro e não foi pago
+                            if curr < date(hoje.year, hoje.month, 1):
+                                m_pend += (250.0 - float(pago_este_mes))
+                                detalhes_meses.append(f"{calendar.month_name[curr.month]}/{curr.year}")
+                            elif curr == date(hoje.year, hoje.month, 1):
+                                # Mês atual só é pendente se já passou do dia 10 (regra anterior)
+                                if hoje.day > 10:
+                                    m_pend += (250.0 - float(pago_este_mes))
+                                    detalhes_meses.append(f"{calendar.month_name[curr.month]}/{curr.year}")
+                        
+                        # Avança mês
+                        if curr.month == 12:
+                            curr = date(curr.year + 1, 1, 1)
+                        else:
+                            curr = date(curr.year, curr.month + 1, 1)
                 except:
-                    m_pend = 0.0 # Caso data esteja mal formatada (ex: string vazia)
+                    m_pend = 0.0
 
             # 3. SAÚDE FINANCEIRA
-            # ATRASADO: > 1 mensalidade pendente OU 1 mensalidade pendente e passou do dia 10
-            is_atrasado = False
-            if m_pend > 250:
-                is_atrasado = True
-            elif m_pend >= 250 and hoje.day > 10:
-                is_atrasado = True
-                
+            is_atrasado = (m_pend > 0)
+            
             if is_atrasado:
                 saude = "ATRASADO"
-            elif (j_pend > 0 or m_pend > 0):
+            elif (j_pend > 0):
                 saude = "PENDENTE"
             else:
                 saude = "REGULAR"
@@ -515,7 +564,8 @@ def listar_financeiro_irmaos(
                 "joia_pendente": float(j_pend),
                 "mensalidade_paga": float(m_paga),
                 "mensalidade_pendente": float(m_pend),
-                "saude_financeira": saude
+                "saude_financeira": saude,
+                "meses_atraso": detalhes_meses
             })
 
         return res

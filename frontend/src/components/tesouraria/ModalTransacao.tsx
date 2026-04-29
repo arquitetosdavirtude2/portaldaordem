@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 interface Caixa {
     id: number;
     nome: string;
+    tipo?: string;
 }
 
 interface Pessoa {
@@ -109,6 +110,16 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
             setForm(f => ({ ...f, caixa_id: caixas[0].id }));
         }
     }, [caixas]);
+
+    // Lógica para selecionar banco automaticamente (Banco Pan para Joias/Mensalidades)
+    useEffect(() => {
+        if (form.categoria === 'joia' || form.categoria === 'mensalidade') {
+            const caixaPan = caixas.find(c => c.tipo === 'joias_mensalidade');
+            if (caixaPan && form.caixa_id !== caixaPan.id) {
+                setForm(f => ({ ...f, caixa_id: caixaPan.id }));
+            }
+        }
+    }, [form.categoria, caixas]);
 
     useEffect(() => {
         const carregarPessoas = async () => {
