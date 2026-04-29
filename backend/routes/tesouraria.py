@@ -480,6 +480,8 @@ def listar_financeiro_irmaos(
         for p in pessoas:
             pid, nome, cargo_nome, data_adm_str = p[0], p[1], (p[2] or ""), p[3]
 
+            # Calcular meses devidos a partir da data de admissão
+            meses_devidos = 0
             # 1. JOIA (Total de R$ 2.000)
             j_paga = db_treasury.execute(text(
                 "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'joia' AND status = 'pago'"
@@ -520,6 +522,13 @@ def listar_financeiro_irmaos(
                     alvo_limite = date(alvo.year, alvo.month, 1)
                     
                     while curr <= alvo_limite:
+                        # Conta meses que o irmão deveria pagar
+                        # (meses passados sempre contam; mês atual conta após o dia 10)
+                        if curr < date(hoje.year, hoje.month, 1):
+                            meses_devidos += 1
+                        elif curr == date(hoje.year, hoje.month, 1) and hoje.day > 10:
+                            meses_devidos += 1
+
                         mes_ref = curr.strftime("%Y-%m")
                         pago_este_mes = db_treasury.execute(text("""
                             SELECT COALESCE(SUM(valor),0) 
@@ -549,6 +558,7 @@ def listar_financeiro_irmaos(
                 except Exception as ex:
                     print(f"ERRO no cálculo de mensalidade para pessoa {pid}: {ex}")
                     m_pend = 0.0
+                    meses_devidos = 0
 
             # 3. SAÚDE FINANCEIRA
             is_atrasado = (m_pend > 0)
@@ -564,6 +574,8 @@ def listar_financeiro_irmaos(
                 "id": pid,
                 "nome": nome,
                 "cargo": cargo_nome,
+                "data_admissao": str(data_adm_str) if data_adm_str else None,
+                "meses_devidos": meses_devidos,
                 "joia_paga": float(j_paga),
                 "joia_pendente": float(j_pend),
                 "mensalidade_paga": float(m_paga),

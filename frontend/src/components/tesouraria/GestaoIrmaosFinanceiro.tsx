@@ -6,11 +6,14 @@ interface IrmaoFinanceiro {
     id: number;
     nome: string;
     cargo: string;
+    data_admissao: string | null;
+    meses_devidos: number;
     joia_paga: number;
     joia_pendente: number;
     mensalidade_paga: number;
     mensalidade_pendente: number;
     saude_financeira: string;
+    meses_atraso?: string[];
 }
 
 export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
@@ -24,7 +27,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         setCarregando(true);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            let url = `${apiUrl}/api/tesouraria/irmaos/${acesso.loja_id}?ano=${anoAtivo}&mes=${mesAtivo}`;
+            const url = `${apiUrl}/api/tesouraria/irmaos/${acesso.loja_id}?ano=${anoAtivo}&mes=${mesAtivo}`;
             const res = await fetch(url);
             if (res.ok) {
                 setIrmaos(await res.json());
@@ -39,6 +42,13 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     useEffect(() => {
         carregarFinanceiroIrmaos();
     }, [acesso.loja_id, mesAtivo, anoAtivo]);
+
+    const formatarData = (dataStr: string | null) => {
+        if (!dataStr) return '—';
+        const partes = dataStr.split('-');
+        if (partes.length !== 3) return '—';
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    };
 
     if (carregando) {
         return (
@@ -86,7 +96,9 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     <thead>
                         <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
                             <th className="px-5 py-4">Obreiro</th>
-                            <th className="px-5 py-4">Função</th>
+                            <th className="px-5 py-4">Cargo</th>
+                            <th className="px-5 py-4 text-center">Iniciação</th>
+                            <th className="px-5 py-4 text-center">Meses Devidos</th>
                             <th className="px-5 py-4 text-center">Joia (Paga / Pend)</th>
                             <th className="px-5 py-4 text-center">Mensal. (Paga / Pend)</th>
                             <th className="px-5 py-4 text-center">Detalhes</th>
@@ -96,74 +108,90 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     <tbody className="divide-y divide-white/5">
                         {irmaos.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-5 py-10 text-center text-gray-500 text-[11px]">
+                                <td colSpan={8} className="px-5 py-10 text-center text-gray-500 text-[11px]">
                                     Nenhum irmão contribuinte encontrado para esta loja.
                                 </td>
                             </tr>
                         )}
-                        {irmaos.map(irmao => (
-                            <tr key={irmao.id} className="hover:bg-white/[0.02] transition-colors group">
-                                <td className="px-5 py-4">
-                                    <div className="text-[12px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
-                                        {irmao.nome}
-                                    </div>
-                                </td>
-                                <td className="px-5 py-4">
-                                    {irmao.cargo ? (
-                                        <span className="text-[9px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">
-                                            {irmao.cargo}
+                        {irmaos.map(irmao => {
+                            const mensalidadesPagas = Math.round(irmao.mensalidade_paga / 250);
+                            return (
+                                <tr key={irmao.id} className="hover:bg-white/[0.02] transition-colors group">
+                                    <td className="px-5 py-4">
+                                        <div className="text-[12px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
+                                            {irmao.nome}
+                                        </div>
+                                    </td>
+                                    <td className="px-5 py-4">
+                                        {irmao.cargo ? (
+                                            <span className="text-[9px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">
+                                                {irmao.cargo}
+                                            </span>
+                                        ) : (
+                                            <span className="text-[9px] text-gray-600 italic">—</span>
+                                        )}
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                        <span className="text-[11px] text-gray-300 font-mono">
+                                            {formatarData(irmao.data_admissao)}
                                         </span>
-                                    ) : (
-                                        <span className="text-[9px] text-gray-600 italic">—</span>
-                                    )}
-                                </td>
-                                <td className="px-5 py-4 text-center font-sans text-[11px]">
-                                    <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
-                                    <span className="mx-1 text-gray-600">/</span>
-                                    <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
-                                        R$ {irmao.joia_pendente.toFixed(0)}
-                                    </span>
-                                </td>
-                                <td className="px-5 py-4 text-center font-sans text-[11px]">
-                                    <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
-                                    <span className="mx-1 text-gray-600">/</span>
-                                    <span className={
-                                        irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' : 
-                                        irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' : 
-                                        'text-gray-500 italic'
-                                    }>
-                                        R$ {irmao.mensalidade_pendente.toFixed(0)}
-                                    </span>
-                                </td>
-                                <td className="px-5 py-4 text-center">
-                                    {(irmao as any).meses_atraso?.length > 0 ? (
-                                        <button 
-                                            onClick={() => setIrmaoSelecionado(irmao)}
-                                            className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
-                                        >
-                                            Ver Meses ({ (irmao as any).meses_atraso.length })
-                                        </button>
-                                    ) : (
-                                        <span className="text-[9px] text-gray-600 font-bold">—</span>
-                                    )}
-                                </td>
-                                <td className="px-5 py-4 text-right">
-                                    {irmao.saude_financeira === 'REGULAR' ? (
-                                        <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
-                                            Regular
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <span className="text-[12px] font-bold text-white">{irmao.meses_devidos}</span>
+                                            <span className="text-[9px] text-gray-500 uppercase">
+                                                {mensalidadesPagas}/{irmao.meses_devidos} pagos
+                                            </span>
                                         </div>
-                                    ) : irmao.saude_financeira === 'ATRASADO' ? (
-                                        <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
-                                            Atrasado
-                                        </div>
-                                    ) : (
-                                        <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                                            Pendente
-                                        </div>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
+                                    </td>
+                                    <td className="px-5 py-4 text-center font-sans text-[11px]">
+                                        <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
+                                        <span className="mx-1 text-gray-600">/</span>
+                                        <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
+                                            R$ {irmao.joia_pendente.toFixed(0)}
+                                        </span>
+                                    </td>
+                                    <td className="px-5 py-4 text-center font-sans text-[11px]">
+                                        <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
+                                        <span className="mx-1 text-gray-600">/</span>
+                                        <span className={
+                                            irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' : 
+                                            irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' : 
+                                            'text-gray-500 italic'
+                                        }>
+                                            R$ {irmao.mensalidade_pendente.toFixed(0)}
+                                        </span>
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                        {irmao.meses_atraso && irmao.meses_atraso.length > 0 ? (
+                                            <button 
+                                                onClick={() => setIrmaoSelecionado(irmao)}
+                                                className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
+                                            >
+                                                Ver Meses ({irmao.meses_atraso.length})
+                                            </button>
+                                        ) : (
+                                            <span className="text-[9px] text-gray-600 font-bold">—</span>
+                                        )}
+                                    </td>
+                                    <td className="px-5 py-4 text-right">
+                                        {irmao.saude_financeira === 'REGULAR' ? (
+                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
+                                                Regular
+                                            </div>
+                                        ) : irmao.saude_financeira === 'ATRASADO' ? (
+                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
+                                                Atrasado
+                                            </div>
+                                        ) : (
+                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
+                                                Pendente
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -177,15 +205,24 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             <button onClick={() => setIrmaoSelecionado(null)} className="text-gray-400 hover:text-white">✕</button>
                         </div>
                         <div className="p-6 space-y-4">
-                            <div className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">Obreiro: <span className="text-white">{irmaoSelecionado.nome}</span></div>
+                            <div className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">
+                                Obreiro: <span className="text-white">{irmaoSelecionado.nome}</span>
+                            </div>
+                            <div className="text-[10px] text-gray-500 uppercase">
+                                Iniciado em: <span className="text-gray-300">{formatarData(irmaoSelecionado.data_admissao)}</span>
+                                &nbsp;·&nbsp;
+                                {irmaoSelecionado.meses_devidos} meses devidos
+                            </div>
                             <div className="grid grid-cols-2 gap-2">
-                                {(irmaoSelecionado as any).meses_atraso.map((mes: string) => (
+                                {irmaoSelecionado.meses_atraso!.map((mes: string) => (
                                     <div key={mes} className="bg-white/5 border border-white/5 rounded-lg p-2 text-center text-[10px] font-bold text-red-400 uppercase">
                                         {mes}
                                     </div>
                                 ))}
                             </div>
-                            <p className="text-[9px] text-gray-500 italic text-center mt-4 uppercase tracking-tighter">Valores baseados na data de admissão e regra do dia 15.</p>
+                            <p className="text-[9px] text-gray-500 italic text-center uppercase tracking-tighter">
+                                Valores baseados na data de admissão e regra do dia 15.
+                            </p>
                         </div>
                         <div className="p-4 bg-black/20">
                             <button 
