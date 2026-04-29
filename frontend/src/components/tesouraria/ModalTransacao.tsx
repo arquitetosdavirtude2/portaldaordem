@@ -48,6 +48,15 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
 
     const [arquivo, setArquivo] = useState<File | null>(null);
     const [enviando, setEnviando] = useState(false);
+    // Mês de referência: somente para mensalidade e joia
+    // Formato: 'YYYY-MM' ou vazio (usa data_vencimento normal)
+    const [mesReferencia, setMesReferencia] = useState<string>(() => {
+        if (transacaoInicial?.data_vencimento) {
+            return transacaoInicial.data_vencimento.substring(0, 7);
+        }
+        const hoje = new Date();
+        return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+    });
 
     // Hierarquia de categorias por tipo
     const categoriasHierarquicas: Record<string, { nome: string, categorias: { id: string, label: string }[] }[]> = {
@@ -149,12 +158,16 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
             const usuarioId = acesso?.loja_id || 1;
             
             if (isEdit) {
+                const isMensalidadeOrJoiaEdit = form.categoria === 'mensalidade' || form.categoria === 'joia';
+                const dataVencimentoEdit = isMensalidadeOrJoiaEdit && mesReferencia
+                    ? `${mesReferencia}-01`
+                    : form.data_vencimento;
                 const payload = {
                     caixa_id: form.caixa_id,
                     tipo: form.tipo,
                     categoria: form.categoria,
                     valor: parseFloat(form.valor),
-                    data_vencimento: form.data_vencimento,
+                    data_vencimento: dataVencimentoEdit,
                     descricao: form.descricao,
                     notas: form.notas,
                     status: form.status,
@@ -172,12 +185,18 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     setErro(body.detail || `Erro ${res.status} ao editar lançamento`);
                 }
             } else {
+                const isMensalidadeOrJoia = form.categoria === 'mensalidade' || form.categoria === 'joia';
+                // Se for mensalidade/joia e tiver mês de referência, usa o 1º dia do mês como data_vencimento
+                const dataVencimentoFinal = isMensalidadeOrJoia && mesReferencia
+                    ? `${mesReferencia}-01`
+                    : form.data_vencimento;
+
                 const formData = new FormData();
                 formData.append('caixa_id', form.caixa_id.toString());
                 formData.append('tipo', form.tipo);
                 formData.append('categoria', form.categoria);
                 formData.append('valor', form.valor);
-                formData.append('data_vencimento', form.data_vencimento);
+                formData.append('data_vencimento', dataVencimentoFinal);
                 formData.append('descricao', form.descricao);
                 formData.append('notas', form.notas || '');
                 formData.append('status', form.status || 'pendente');
@@ -406,16 +425,37 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="space-y-1.5 relative">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Vencimento</label>
-                            <input 
-                                type="date"
-                                required
-                                value={form.data_vencimento}
-                                onChange={e => setForm({...form, data_vencimento: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark"
-                            />
-                        </div>
+                        {/* Mês de Referência — somente para mensalidade e joia */}
+                        {(form.categoria === 'mensalidade' || form.categoria === 'joia') ? (
+                            <div className="sm:col-span-2 space-y-1.5">
+                                <label className="text-[10px] uppercase font-bold text-yellow-500/80 tracking-wider">
+                                    Mês de Referência
+                                    <span className="ml-2 text-gray-500 normal-case font-normal">— a qual mês este pagamento se refere?</span>
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="month"
+                                        value={mesReferencia}
+                                        onChange={e => setMesReferencia(e.target.value)}
+                                        className="flex-1 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-xs text-yellow-200 outline-none focus:border-yellow-500/70 cursor-pointer color-scheme-dark"
+                                    />
+                                    <span className="text-[9px] text-gray-500 uppercase leading-tight max-w-[120px]">
+                                        Se pago adiantado ou atrasado, ajuste o mês aqui
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-1.5 relative">
+                                <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Vencimento</label>
+                                <input 
+                                    type="date"
+                                    required
+                                    value={form.data_vencimento}
+                                    onChange={e => setForm({...form, data_vencimento: e.target.value})}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-1.5">
