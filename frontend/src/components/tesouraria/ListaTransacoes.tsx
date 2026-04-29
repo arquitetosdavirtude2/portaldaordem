@@ -18,6 +18,14 @@ interface Transacao {
     status: 'pago' | 'pendente' | 'atrasado';
 }
 
+type SortKey = 'data_vencimento' | 'descricao' | 'categoria' | 'valor' | 'status';
+type SortDir = 'asc' | 'desc';
+
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+    if (!active) return <span className="ml-1 opacity-30">↕</span>;
+    return <span className="ml-1 text-yellow-400">{dir === 'asc' ? '↑' : '↓'}</span>;
+}
+
 export default function ListaTransacoes({ 
     acesso,
     caixaId, 
@@ -38,6 +46,8 @@ export default function ListaTransacoes({
     const [transacoes, setTransacoes] = useState<Transacao[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [itemParaExcluir, setItemParaExcluir] = useState<number | null>(null);
+    const [sortKey, setSortKey] = useState<SortKey>('data_vencimento');
+    const [sortDir, setSortDir] = useState<SortDir>('desc');
 
     const carregarTransacoes = async () => {
         setCarregando(true);
@@ -100,6 +110,39 @@ export default function ListaTransacoes({
         }
     };
 
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDir(key === 'data_vencimento' ? 'desc' : 'asc');
+        }
+    };
+
+    const transacoesOrdenadas = [...transacoes].sort((a, b) => {
+        let aVal: any = a[sortKey];
+        let bVal: any = b[sortKey];
+
+        if (sortKey === 'data_vencimento') {
+            aVal = aVal || '';
+            bVal = bVal || '';
+            return sortDir === 'asc' 
+                ? aVal.localeCompare(bVal) 
+                : bVal.localeCompare(aVal);
+        }
+
+        if (sortKey === 'valor') {
+            return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+
+        // String comparisons
+        aVal = (aVal || '').toString().toLowerCase();
+        bVal = (bVal || '').toString().toLowerCase();
+        return sortDir === 'asc' 
+            ? aVal.localeCompare(bVal) 
+            : bVal.localeCompare(aVal);
+    });
+
     useEffect(() => {
         carregarTransacoes();
     }, [caixaId, mes, ano, statusFiltro]);
@@ -118,24 +161,36 @@ export default function ListaTransacoes({
 
     const podeEditar = acesso.role === 'admin' || acesso.role === 'loja' || acesso.role === 'tesoureiro';
 
+    const thClass = "px-5 py-4 text-[9px] cursor-pointer select-none hover:text-yellow-400 transition-colors whitespace-nowrap";
+
     return (
         <>
             <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm">
             <table className="w-full text-left border-collapse font-sans">
                 <thead>
                     <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-bold">
-                        <th className="px-5 py-4 text-[9px]">Data</th>
-                        <th className="px-5 py-4 text-[9px]">Descrição</th>
-                        <th className="px-5 py-4 text-[9px]">Categoria</th>
-                        <th className="px-5 py-4 text-[9px]">Valor</th>
-                        <th className="px-5 py-4 text-[9px]">Status</th>
+                        <th className={thClass} onClick={() => handleSort('data_vencimento')}>
+                            Data <SortIcon active={sortKey === 'data_vencimento'} dir={sortDir} />
+                        </th>
+                        <th className={thClass} onClick={() => handleSort('descricao')}>
+                            Descrição <SortIcon active={sortKey === 'descricao'} dir={sortDir} />
+                        </th>
+                        <th className={thClass} onClick={() => handleSort('categoria')}>
+                            Categoria <SortIcon active={sortKey === 'categoria'} dir={sortDir} />
+                        </th>
+                        <th className={thClass} onClick={() => handleSort('valor')}>
+                            Valor <SortIcon active={sortKey === 'valor'} dir={sortDir} />
+                        </th>
+                        <th className={thClass} onClick={() => handleSort('status')}>
+                            Status <SortIcon active={sortKey === 'status'} dir={sortDir} />
+                        </th>
                         {podeEditar && <th className="px-5 py-4 text-[9px] text-right">Ações</th>}
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                    {transacoes.map(t => (
+                    {transacoesOrdenadas.map(t => (
                         <tr key={t.id} className="hover:bg-white/[0.03] transition-colors group">
-                            <td className="px-5 py-4 text-[11px] text-gray-300">
+                            <td className="px-5 py-4 text-[11px] text-gray-300 whitespace-nowrap">
                                 {t.data_vencimento.split('-').reverse().join('/')}
                             </td>
                             <td className="px-5 py-4">
@@ -147,7 +202,7 @@ export default function ListaTransacoes({
                             <td className="px-5 py-4 text-[10px] uppercase tracking-wider text-gray-500 font-bold italic">
                                 {t.categoria}
                             </td>
-                            <td className={`px-5 py-4 text-xs font-bold ${t.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'}`}>
+                            <td className={`px-5 py-4 text-xs font-bold whitespace-nowrap ${t.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'}`}>
                                 {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="px-5 py-4">
@@ -208,7 +263,6 @@ export default function ListaTransacoes({
             </table>
         </div>
 
-        {/* Modal de Confirmação de Exclusão Premium - Agora fora do container de overflow */}
         <ModalConfirmacao 
             isOpen={itemParaExcluir !== null}
             onClose={() => setItemParaExcluir(null)}
