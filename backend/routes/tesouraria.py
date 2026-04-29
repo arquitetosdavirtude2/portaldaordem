@@ -496,27 +496,30 @@ def listar_financeiro_irmaos(
 
             if data_adm_str:
                 try:
-                    data_adm = datetime.strptime(data_adm_str, "%Y-%m-%d").date()
+                    import calendar
+                    MESES_PT = {
+                        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+                        5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+                        9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+                    }
+
+                    data_adm = datetime.strptime(str(data_adm_str).strip(), "%Y-%m-%d").date()
                     
-                    # Regra: Se admitido após o dia 15, começa a pagar no mês seguinte
-                    inicio_cobranca = data_adm
+                    # Regra do dia 15:
+                    # - Admitido até o dia 15: paga a mensalidade do próprio mês de admissão
+                    # - Admitido após o dia 15: começa a pagar no mês seguinte
                     if data_adm.day > 15:
                         if data_adm.month == 12:
                             inicio_cobranca = date(data_adm.year + 1, 1, 1)
                         else:
                             inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
+                    else:
+                        inicio_cobranca = date(data_adm.year, data_adm.month, 1)
                     
-                    # Calcular meses devidos até a data 'alvo'
-                    # Mas ignorar o mês atual se for o mês de admissão (conforme solicitado no áudio)
                     curr = date(inicio_cobranca.year, inicio_cobranca.month, 1)
                     alvo_limite = date(alvo.year, alvo.month, 1)
                     
                     while curr <= alvo_limite:
-                        # Se o mês atual for o mês de admissão, e o usuário disse para não cobrar como pendente...
-                        # Mas o usuário disse no segundo áudio: "é pra considerar se for cadastrado até dia 15"
-                        # "o que está errado é cobrar previsões de futuro"
-                        
-                        # Vamos verificar se esse mês já foi pago
                         mes_ref = curr.strftime("%Y-%m")
                         pago_este_mes = db_treasury.execute(text("""
                             SELECT COALESCE(SUM(valor),0) 
@@ -528,22 +531,23 @@ def listar_financeiro_irmaos(
                         """), {"pid": pid, "ref": f"{mes_ref}%"}).fetchone()[0]
                         
                         if float(pago_este_mes) < 250.0:
-                            # Se não é o mês futuro e não foi pago
+                            # Meses passados: sempre pendente se não pago
                             if curr < date(hoje.year, hoje.month, 1):
                                 m_pend += (250.0 - float(pago_este_mes))
-                                detalhes_meses.append(f"{calendar.month_name[curr.month]}/{curr.year}")
+                                detalhes_meses.append(f"{MESES_PT[curr.month]}/{curr.year}")
+                            # Mês atual: pendente somente após o dia 10
                             elif curr == date(hoje.year, hoje.month, 1):
-                                # Mês atual só é pendente se já passou do dia 10 (regra anterior)
                                 if hoje.day > 10:
                                     m_pend += (250.0 - float(pago_este_mes))
-                                    detalhes_meses.append(f"{calendar.month_name[curr.month]}/{curr.year}")
+                                    detalhes_meses.append(f"{MESES_PT[curr.month]}/{curr.year}")
                         
                         # Avança mês
                         if curr.month == 12:
                             curr = date(curr.year + 1, 1, 1)
                         else:
                             curr = date(curr.year, curr.month + 1, 1)
-                except:
+                except Exception as ex:
+                    print(f"ERRO no cálculo de mensalidade para pessoa {pid}: {ex}")
                     m_pend = 0.0
 
             # 3. SAÚDE FINANCEIRA
