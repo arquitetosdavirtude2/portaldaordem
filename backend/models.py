@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -74,10 +74,23 @@ class Pessoa(Base):
     login = Column(String(100), unique=True, index=True, nullable=True)
     senha = Column(String(100), nullable=True)
     data_admissao = Column(String(20), nullable=True)  # YYYY-MM-DD
+    ativo = Column(Integer, default=1)  # 1=ativo, 0=adormecido
+    data_adormecimento = Column(String(20), nullable=True)  # YYYY-MM-DD
 
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")
     cargo_rel = relationship("Cargo", back_populates="pessoas")
+
+class MensalidadeExcecao(Base):
+    __tablename__ = "mensalidade_excecoes"
+    id = Column(Integer, primary_key=True, index=True)
+    pessoa_id = Column(Integer, ForeignKey("pessoas.id"), nullable=False)
+    mes_ref = Column(String(7), nullable=False)  # formato: 'YYYY-MM'
+    justificativa = Column(String(500), nullable=True)
+    criado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    criado_em = Column(String(30), nullable=True)
+
+    pessoa = relationship("Pessoa")
 
 class Admin(Base):
     __tablename__ = "admin"

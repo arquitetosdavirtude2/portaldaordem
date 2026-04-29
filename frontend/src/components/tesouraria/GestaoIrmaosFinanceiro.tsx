@@ -2,18 +2,29 @@
 
 import { useEffect, useState } from 'react';
 
+interface MesAtraso {
+    mes_ref: string;
+    label: string;
+    ignorado: boolean;
+    excecao_id: number | null;
+    justificativa: string | null;
+}
+
 interface IrmaoFinanceiro {
     id: number;
     nome: string;
     cargo: string;
     data_admissao: string | null;
+    data_adormecimento: string | null;
+    ativo: number;
     meses_devidos: number;
+    meses_pagos: number;
     joia_paga: number;
     joia_pendente: number;
     mensalidade_paga: number;
     mensalidade_pendente: number;
     saude_financeira: string;
-    meses_atraso?: string[];
+    meses_atraso: MesAtraso[];
 }
 
 export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
@@ -22,12 +33,18 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [anoAtivo, setAnoAtivo] = useState<number>(new Date().getFullYear());
     const [carregando, setCarregando] = useState(true);
     const [irmaoSelecionado, setIrmaoSelecionado] = useState<IrmaoFinanceiro | null>(null);
+    const [mostrarAdormecidos, setMostrarAdormecidos] = useState(false);
+    // Estado local dos meses no modal (para atualizar sem reload completo)
+    const [mesesModal, setMesesModal] = useState<MesAtraso[]>([]);
+    const [justificativaTemp, setJustificativaTemp] = useState<{[key: string]: string}>({});
+    const [salvando, setSalvando] = useState<string | null>(null);
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
     const carregarFinanceiroIrmaos = async () => {
         setCarregando(true);
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            const url = `${apiUrl}/api/tesouraria/irmaos/${acesso.loja_id}?ano=${anoAtivo}&mes=${mesAtivo}`;
+            const url = `${apiUrl}/api/tesouraria/irmaos/${acesso.loja_id}?ano=${anoAtivo}&mes=${mesAtivo}&incluir_adormecidos=${mostrarAdormecidos}`;
             const res = await fetch(url);
             if (res.ok) {
                 setIrmaos(await res.json());
@@ -41,13 +58,78 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     useEffect(() => {
         carregarFinanceiroIrmaos();
-    }, [acesso.loja_id, mesAtivo, anoAtivo]);
+    }, [acesso.loja_id, mesAtivo, anoAtivo, mostrarAdormecidos]);
+
+    useEffect(() => {
+        if (irmaoSelecionado) {
+            setMesesModal([...irmaoSelecionado.meses_atraso]);
+        }
+    }, [irmaoSelecionado]);
 
     const formatarData = (dataStr: string | null) => {
         if (!dataStr) return '—';
         const partes = dataStr.split('-');
         if (partes.length !== 3) return '—';
         return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    };
+
+    const handleIgnorarMes = async (mes: MesAtraso) => {
+        if (mes.excecao_id) {
+            // Remover exceção
+            setSalvando(mes.mes_ref);
+            try {
+                const res = await fetch(`${apiUrl}/api/tesouraria/excecoes/${mes.excecao_id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    setMesesModal(prev => prev.map(m =>
+                        m.mes_ref === mes.mes_ref
+                            ? { ...m, ignorado: false, excecao_id: null, justificativa: null }
+                            : m
+                    ));
+                }
+            } finally {
+                setSalvando(null);
+            }
+        } else {
+            // Mostrar campo de justificativa (toggle pendente)
+            setJustificativaTemp(prev => ({
+                ...prev,
+                [mes.mes_ref]: prev[mes.mes_ref] === undefined ? '' : prev[mes.mes_ref]
+            }));
+        }
+    };
+
+    const handleSalvarExcecao = async (mes: MesAtraso) => {
+        if (!irmaoSelecionado) return;
+        setSalvando(mes.mes_ref);
+        try {
+            const res = await fetch(`${apiUrl}/api/tesouraria/excecoes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pessoa_id: irmaoSelecionado.id,
+                    mes_ref: mes.mes_ref,
+                    justificativa: justificativaTemp[mes.mes_ref] || '',
+                    usuario_id: acesso.usuario_id || null
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setMesesModal(prev => prev.map(m =>
+                    m.mes_ref === mes.mes_ref
+                        ? { ...m, ignorado: true, excecao_id: data.id, justificativa: justificativaTemp[mes.mes_ref] || '' }
+                        : m
+                ));
+                setJustificativaTemp(prev => {
+                    const copy = { ...prev };
+                    delete copy[mes.mes_ref];
+                    return copy;
+                });
+                // Recarrega os dados gerais para atualizar a saúde financeira na tabela
+                carregarFinanceiroIrmaos();
+            }
+        } finally {
+            setSalvando(null);
+        }
     };
 
     if (carregando) {
@@ -69,7 +151,19 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {/* Toggle Adormecidos */}
+                    <button
+                        onClick={() => setMostrarAdormecidos(!mostrarAdormecidos)}
+                        className={`px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                            mostrarAdormecidos
+                                ? 'bg-gray-500/20 border-gray-400/40 text-gray-300'
+                                : 'bg-black/40 border-white/10 text-gray-500 hover:border-white/20'
+                        }`}
+                    >
+                        {mostrarAdormecidos ? '● Adormecidos Visíveis' : '○ Ocultar Adormecidos'}
+                    </button>
+
                     <select 
                         value={mesAtivo}
                         onChange={(e) => setMesAtivo(Number(e.target.value))}
@@ -114,16 +208,25 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             </tr>
                         )}
                         {irmaos.map(irmao => {
-                            const mensalidadesPagas = Math.round(irmao.mensalidade_paga / 250);
+                            const isAdormecido = irmao.ativo === 0;
                             return (
-                                <tr key={irmao.id} className="hover:bg-white/[0.02] transition-colors group">
+                                <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
                                     <td className="px-5 py-4">
                                         <div className="text-[12px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
                                             {irmao.nome}
                                         </div>
+                                        {isAdormecido && (
+                                            <div className="text-[9px] text-gray-500 uppercase tracking-tighter mt-0.5">
+                                                Adormecido desde {formatarData(irmao.data_adormecimento)}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-5 py-4">
-                                        {irmao.cargo ? (
+                                        {isAdormecido ? (
+                                            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-500 bg-gray-400/10 border border-gray-400/20 px-2 py-0.5 rounded-full">
+                                                ADORMECIDO
+                                            </span>
+                                        ) : irmao.cargo ? (
                                             <span className="text-[9px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">
                                                 {irmao.cargo}
                                             </span>
@@ -140,7 +243,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         <div className="flex flex-col items-center gap-0.5">
                                             <span className="text-[12px] font-bold text-white">{irmao.meses_devidos}</span>
                                             <span className="text-[9px] text-gray-500 uppercase">
-                                                {mensalidadesPagas}/{irmao.meses_devidos} pagos
+                                                {irmao.meses_pagos}/{irmao.meses_devidos} pagos
                                             </span>
                                         </div>
                                     </td>
@@ -175,7 +278,11 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         )}
                                     </td>
                                     <td className="px-5 py-4 text-right">
-                                        {irmao.saude_financeira === 'REGULAR' ? (
+                                        {isAdormecido ? (
+                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full border border-gray-500/20">
+                                                Adormecido
+                                            </div>
+                                        ) : irmao.saude_financeira === 'REGULAR' ? (
                                             <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
                                                 Regular
                                             </div>
@@ -196,37 +303,91 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                 </table>
             </div>
 
-            {/* Modal Detalhes Meses */}
+            {/* Modal Detalhes Meses — Interativo */}
             {irmaoSelecionado && (
                 <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
-                    <div className="bg-[#0f1d45] border border-white/20 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+                    <div className="bg-[#0f1d45] border border-white/20 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in duration-300">
                         <div className="p-4 border-b border-white/10 flex justify-between items-center">
-                            <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest">Meses em Aberto</h3>
-                            <button onClick={() => setIrmaoSelecionado(null)} className="text-gray-400 hover:text-white">✕</button>
+                            <div>
+                                <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest">Meses em Aberto</h3>
+                                <p className="text-[9px] text-gray-500 mt-0.5 uppercase">Clique em um mês vermelho para justificar e ignorar</p>
+                            </div>
+                            <button onClick={() => { setIrmaoSelecionado(null); setJustificativaTemp({}); }} className="text-gray-400 hover:text-white">✕</button>
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">
+                        <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
+                            <div className="text-[11px] text-gray-400 uppercase font-bold tracking-wider mb-4">
                                 Obreiro: <span className="text-white">{irmaoSelecionado.nome}</span>
+                                <span className="ml-3 text-gray-600">·</span>
+                                <span className="ml-3 text-gray-400">Iniciado: {formatarData(irmaoSelecionado.data_admissao)}</span>
+                                <span className="ml-3 text-gray-600">·</span>
+                                <span className="ml-3 text-gray-400">{irmaoSelecionado.meses_devidos} meses devidos</span>
                             </div>
-                            <div className="text-[10px] text-gray-500 uppercase">
-                                Iniciado em: <span className="text-gray-300">{formatarData(irmaoSelecionado.data_admissao)}</span>
-                                &nbsp;·&nbsp;
-                                {irmaoSelecionado.meses_devidos} meses devidos
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                {irmaoSelecionado.meses_atraso!.map((mes: string) => (
-                                    <div key={mes} className="bg-white/5 border border-white/5 rounded-lg p-2 text-center text-[10px] font-bold text-red-400 uppercase">
-                                        {mes}
+
+                            {mesesModal.map((mes) => {
+                                const isPendingInput = justificativaTemp[mes.mes_ref] !== undefined;
+                                return (
+                                    <div key={mes.mes_ref} className="space-y-2">
+                                        {/* Botão do mês */}
+                                        <button
+                                            onClick={() => handleIgnorarMes(mes)}
+                                            disabled={salvando === mes.mes_ref}
+                                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-bold text-[11px] uppercase tracking-wider transition-all ${
+                                                mes.excecao_id
+                                                    ? 'bg-green-400/10 border-green-400/30 text-green-400 hover:bg-green-400/20'
+                                                    : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                                            }`}
+                                        >
+                                            <span>{mes.label}</span>
+                                            <span className="text-[9px] normal-case font-normal">
+                                                {salvando === mes.mes_ref ? 'Salvando...' :
+                                                    mes.excecao_id
+                                                        ? `✓ Ignorado — ${mes.justificativa || 'sem justificativa'} (clique para remover)`
+                                                        : '✗ Não pago — clique para justificar e ignorar'
+                                                }
+                                            </span>
+                                        </button>
+
+                                        {/* Campo de justificativa (aparece ao clicar no mês pendente) */}
+                                        {isPendingInput && !mes.excecao_id && (
+                                            <div className="flex gap-2 pl-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Justificativa (ex: desconto de empréstimo)"
+                                                    value={justificativaTemp[mes.mes_ref]}
+                                                    onChange={(e) => setJustificativaTemp(prev => ({ ...prev, [mes.mes_ref]: e.target.value }))}
+                                                    className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-yellow-500/50"
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    onClick={() => handleSalvarExcecao(mes)}
+                                                    disabled={salvando === mes.mes_ref}
+                                                    className="px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 hover:bg-yellow-500/30 text-yellow-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
+                                                >
+                                                    Salvar
+                                                </button>
+                                                <button
+                                                    onClick={() => setJustificativaTemp(prev => {
+                                                        const copy = { ...prev };
+                                                        delete copy[mes.mes_ref];
+                                                        return copy;
+                                                    })}
+                                                    className="px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
-                                ))}
-                            </div>
-                            <p className="text-[9px] text-gray-500 italic text-center uppercase tracking-tighter">
-                                Valores baseados na data de admissão e regra do dia 15.
-                            </p>
+                                );
+                            })}
+
+                            {mesesModal.length === 0 && (
+                                <p className="text-center text-gray-500 text-[11px] italic py-4">Nenhum mês em aberto.</p>
+                            )}
                         </div>
-                        <div className="p-4 bg-black/20">
+                        <div className="p-4 bg-black/20 border-t border-white/5">
                             <button 
-                                onClick={() => setIrmaoSelecionado(null)}
+                                onClick={() => { setIrmaoSelecionado(null); setJustificativaTemp({}); }}
                                 className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
                             >
                                 Fechar Detalhes

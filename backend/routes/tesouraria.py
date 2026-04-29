@@ -449,6 +449,7 @@ def listar_financeiro_irmaos(
     loja_id: int, 
     mes: Optional[int] = None, 
     ano: Optional[int] = None,
+    incluir_adormecidos: bool = False,
     db_treasury: Session = Depends(get_treasury_db)
 ):
     """Listar situação financeira dos irmãos contribuintes da Loja."""
@@ -467,18 +468,21 @@ def listar_financeiro_irmaos(
             alvo = hoje
 
         query_pessoas = text("""
-            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao
+            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
               AND (c.isento_contribuicao = 0 OR p.cargo_id IS NULL)
+              AND (:incl_adorm = 1 OR COALESCE(p.ativo, 1) = 1)
             ORDER BY c.id, p.nome
         """)
-        pessoas = db_treasury.execute(query_pessoas, {"lid": loja_id}).fetchall()
+        pessoas = db_treasury.execute(query_pessoas, {"lid": loja_id, "incl_adorm": 1 if incluir_adormecidos else 0}).fetchall()
 
         res = []
         for p in pessoas:
             pid, nome, cargo_nome, data_adm_str = p[0], p[1], (p[2] or ""), p[3]
+            ativo = p[4] if len(p) > 4 else 1
+            data_adormecimento = p[5] if len(p) > 5 else None
 
             # Calcular meses devidos a partir da data de admissão
             meses_devidos = 0
@@ -489,9 +493,19 @@ def listar_financeiro_irmaos(
             j_pend = max(0.0, 2000.0 - float(j_paga))
 
             # 2. MENSALIDADE
+            # Contamos quantas mensalidades foram pagas (qualquer valor, inclusive R$0 por desconto)
+            m_pagas_count = db_treasury.execute(text(
+                "SELECT COUNT(id) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
+            ), {"pid": pid}).fetchone()[0]
             m_paga = db_treasury.execute(text(
                 "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
+
+            # Buscar exceções cadastradas para esse obreiro
+            excecoes_rows = db_treasury.execute(text(
+                "SELECT id, mes_ref, justificativa FROM mensalidade_excecoes WHERE pessoa_id = :pid"
+            ), {"pid": pid}).fetchall()
+            excecoes_map = {r[1]: {"id": r[0], "justificativa": r[2]} for r in excecoes_rows}
 
             m_pend = 0.0
             detalhes_meses = [] # Para o botão de detalhamento solicitado
@@ -521,34 +535,62 @@ def listar_financeiro_irmaos(
                     curr = date(inicio_cobranca.year, inicio_cobranca.month, 1)
                     alvo_limite = date(alvo.year, alvo.month, 1)
                     
+                    # Para adormecidos, limitar até a data de adormecimento
+                    if data_adormecimento and not ativo:
+                        try:
+                            data_adorm = datetime.strptime(str(data_adormecimento).strip(), "%Y-%m-%d").date()
+                            alvo_limite = min(alvo_limite, date(data_adorm.year, data_adorm.month, 1))
+                        except:
+                            pass
+
                     while curr <= alvo_limite:
-                        # Conta meses que o irmão deveria pagar
-                        # (meses passados sempre contam; mês atual conta após o dia 10)
+                        mes_ref_str = curr.strftime("%Y-%m")
+                        
+                        # Conta meses devidos
                         if curr < date(hoje.year, hoje.month, 1):
                             meses_devidos += 1
                         elif curr == date(hoje.year, hoje.month, 1) and hoje.day > 10:
                             meses_devidos += 1
 
-                        mes_ref = curr.strftime("%Y-%m")
-                        pago_este_mes = db_treasury.execute(text("""
-                            SELECT COALESCE(SUM(valor),0) 
+                        # Verifica exceção (ignorar este mês)
+                        if mes_ref_str in excecoes_map:
+                            if curr.month == 12:
+                                curr = date(curr.year + 1, 1, 1)
+                            else:
+                                curr = date(curr.year, curr.month + 1, 1)
+                            continue
+
+                        # Verifica se existe algum lançamento de mensalidade pago neste mês
+                        # (COUNT > 0: qualquer valor conta, inclusive R$0 por desconto/empréstimo)
+                        count_pago = db_treasury.execute(text("""
+                            SELECT COUNT(id)
                             FROM transacoes 
                             WHERE pessoa_id = :pid 
                               AND categoria = 'mensalidade' 
                               AND status = 'pago'
                               AND data_vencimento LIKE :ref
-                        """), {"pid": pid, "ref": f"{mes_ref}%"}).fetchone()[0]
+                        """), {"pid": pid, "ref": f"{mes_ref_str}%"}).fetchone()[0]
                         
-                        if float(pago_este_mes) < 250.0:
-                            # Meses passados: sempre pendente se não pago
+                        if count_pago == 0:
+                            # Não foi pago e não tem exceção
                             if curr < date(hoje.year, hoje.month, 1):
-                                m_pend += (250.0 - float(pago_este_mes))
-                                detalhes_meses.append(f"{MESES_PT[curr.month]}/{curr.year}")
-                            # Mês atual: pendente somente após o dia 10
-                            elif curr == date(hoje.year, hoje.month, 1):
-                                if hoje.day > 10:
-                                    m_pend += (250.0 - float(pago_este_mes))
-                                    detalhes_meses.append(f"{MESES_PT[curr.month]}/{curr.year}")
+                                m_pend += 250.0
+                                detalhes_meses.append({
+                                    "mes_ref": mes_ref_str,
+                                    "label": f"{MESES_PT[curr.month]}/{curr.year}",
+                                    "ignorado": False,
+                                    "excecao_id": None,
+                                    "justificativa": None
+                                })
+                            elif curr == date(hoje.year, hoje.month, 1) and hoje.day > 10:
+                                m_pend += 250.0
+                                detalhes_meses.append({
+                                    "mes_ref": mes_ref_str,
+                                    "label": f"{MESES_PT[curr.month]}/{curr.year}",
+                                    "ignorado": False,
+                                    "excecao_id": None,
+                                    "justificativa": None
+                                })
                         
                         # Avança mês
                         if curr.month == 12:
@@ -575,7 +617,10 @@ def listar_financeiro_irmaos(
                 "nome": nome,
                 "cargo": cargo_nome,
                 "data_admissao": str(data_adm_str) if data_adm_str else None,
+                "data_adormecimento": str(data_adormecimento) if data_adormecimento else None,
+                "ativo": int(ativo) if ativo is not None else 1,
                 "meses_devidos": meses_devidos,
+                "meses_pagos": int(m_pagas_count),
                 "joia_paga": float(j_paga),
                 "joia_pendente": float(j_pend),
                 "mensalidade_paga": float(m_paga),
@@ -591,3 +636,62 @@ def listar_financeiro_irmaos(
         print(traceback.format_exc())
         return []
 
+
+# ─── ENDPOINTS DE EXCEÇÕES DE MENSALIDADE ─────────────────────────────────────
+
+class ExcecaoCreate(BaseModel):
+    pessoa_id: int
+    mes_ref: str  # YYYY-MM
+    justificativa: Optional[str] = None
+    usuario_id: Optional[int] = None
+
+@router.post("/excecoes")
+def criar_excecao(
+    body: ExcecaoCreate,
+    db_treasury: Session = Depends(get_treasury_db)
+):
+    """Registra uma exceção para um mês de mensalidade (ignorar cobrança)."""
+    try:
+        from sqlalchemy import text
+        from datetime import datetime
+        # Evitar duplicatas
+        exists = db_treasury.execute(text(
+            "SELECT id FROM mensalidade_excecoes WHERE pessoa_id = :pid AND mes_ref = :mr"
+        ), {"pid": body.pessoa_id, "mr": body.mes_ref}).fetchone()
+        if exists:
+            return {"id": exists[0], "message": "ja existe"}
+        
+        db_treasury.execute(text(
+            "INSERT INTO mensalidade_excecoes (pessoa_id, mes_ref, justificativa, criado_por_id, criado_em) VALUES (:pid, :mr, :just, :uid, :em)"
+        ), {
+            "pid": body.pessoa_id,
+            "mr": body.mes_ref,
+            "just": body.justificativa,
+            "uid": body.usuario_id,
+            "em": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+        db_treasury.commit()
+        new_id = db_treasury.execute(text(
+            "SELECT id FROM mensalidade_excecoes WHERE pessoa_id = :pid AND mes_ref = :mr"
+        ), {"pid": body.pessoa_id, "mr": body.mes_ref}).fetchone()[0]
+        return {"id": new_id, "message": "criado"}
+    except Exception as e:
+        db_treasury.rollback()
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/excecoes/{excecao_id}")
+def remover_excecao(
+    excecao_id: int,
+    db_treasury: Session = Depends(get_treasury_db)
+):
+    """Remove uma exceção de mensalidade."""
+    try:
+        from sqlalchemy import text
+        db_treasury.execute(text("DELETE FROM mensalidade_excecoes WHERE id = :id"), {"id": excecao_id})
+        db_treasury.commit()
+        return {"message": "removido"}
+    except Exception as e:
+        db_treasury.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
