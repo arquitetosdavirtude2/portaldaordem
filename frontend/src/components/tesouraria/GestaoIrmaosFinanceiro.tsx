@@ -18,6 +18,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [mesAtivo, setMesAtivo] = useState<number>(new Date().getMonth() + 1);
     const [anoAtivo, setAnoAtivo] = useState<number>(new Date().getFullYear());
     const [carregando, setCarregando] = useState(true);
+    const [irmaoSelecionado, setIrmaoSelecionado] = useState<IrmaoFinanceiro | null>(null);
 
     const carregarFinanceiroIrmaos = async () => {
         setCarregando(true);
@@ -47,8 +48,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
             </div>
         );
     }
-
-    const [irmaoSelecionado, setIrmaoSelecionado] = useState<IrmaoFinanceiro | null>(null);
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
