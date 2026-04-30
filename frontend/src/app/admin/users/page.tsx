@@ -60,6 +60,7 @@ export default function AdminUsersPage() {
 
     // Dropdown state
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isModalAberto, setIsModalAberto] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const [msg, setMsg] = useState('');
@@ -158,19 +159,18 @@ export default function AdminUsersPage() {
             .map(e => e.id);
         setSelectedEstados(userStateIds);
         setSelectedLoja(user.loja_id);
-
-        // Scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsModalAberto(true);
     };
 
     const handleCancelEdit = () => {
+        setSelectedLoja(null);
+        setIsModalAberto(false);
         setEditingId(null);
         setNome('');
         setLogin('');
         setSenha('');
         setRole('mestre');
         setSelectedEstados([]);
-        setSelectedLoja(null);
     };
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -312,110 +312,149 @@ export default function AdminUsersPage() {
                     </div>
                 </div>
 
-                {/* Form - Horizontal across the top */}
-                <div className={`relative z-20 bg-black/30 backdrop-blur-xl rounded-2xl p-6 border mb-8 ${editingId ? 'border-masonic-gold/50 shadow-[0_0_30px_rgba(212,175,55,0.1)]' : 'border-white/10'} transition-all duration-300`}>
-                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-white/5">
-                        <h2 className={`text-sm font-bold uppercase tracking-widest flex items-center gap-2 ${editingId ? 'text-masonic-gold' : 'text-gray-200'}`}>
-                            {editingId ? <><span>✏️</span> Editar Usuário</> : <><span>➕</span> Novo Cadastro</>}
-                        </h2>
-                        {editingId && (
-                            <button onClick={handleCancelEdit} className="text-[10px] text-red-400 hover:text-red-300 uppercase tracking-wider border border-red-900/50 px-2 py-1 rounded hover:bg-red-900/20 transition-colors">
-                                Cancelar
-                            </button>
-                        )}
-                    </div>
+                <div className="flex justify-between items-center mb-6 px-2">
+                    <h2 className="text-sm font-bold text-masonic-gold uppercase tracking-[0.2em] flex items-center gap-2">
+                        <span className="w-2 h-2 bg-masonic-gold rounded-full animate-pulse"></span>
+                        Base de Usuários
+                    </h2>
+                    <button
+                        onClick={() => {
+                            handleCancelEdit();
+                            setIsModalAberto(true);
+                        }}
+                        className="px-6 py-2.5 bg-masonic-gold hover:bg-yellow-500 text-masonic-blue rounded-lg font-bold text-[11px] uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(212,175,55,0.2)] flex items-center gap-2 active:scale-95"
+                    >
+                        <span>➕</span> Novo Usuário
+                    </button>
+                </div>
 
-                    <form onSubmit={handleCreate}>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
-                            <div className="space-y-1 lg:col-span-2">
-                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Nome Completo</label>
-                                <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Ir. João"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
+                {/* Modal de Cadastro/Edição via Portal */}
+                {isMounted && isModalAberto && createPortal(
+                    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+                        <div className={`relative z-20 bg-[#0f1d45] border rounded-2xl p-0 w-full max-w-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] ${editingId ? 'border-masonic-gold shadow-[0_0_30px_rgba(212,175,55,0.1)]' : 'border-white/10'} transition-all duration-300 animate-in zoom-in duration-300`}>
+                            <div className="flex justify-between items-center p-6 border-b border-white/5 bg-black/20">
+                                <h2 className={`text-sm font-bold uppercase tracking-widest flex items-center gap-2 ${editingId ? 'text-masonic-gold' : 'text-gray-200'}`}>
+                                    {editingId ? <><span>✏️</span> Editar Usuário</> : <><span>➕</span> Novo Cadastro</>}
+                                </h2>
+                                <button 
+                                    onClick={() => {
+                                        setIsModalAberto(false);
+                                        handleCancelEdit();
+                                    }} 
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                >
+                                    ✕
+                                </button>
                             </div>
-                            <div className="space-y-1">
-                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Login</label>
-                                <input type="text" value={login} onChange={e => setLogin(e.target.value)} placeholder="Ex: joao.silva"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">{editingId ? 'Nova Senha' : 'Senha'}</label>
-                                <input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder={editingId ? "Manter atual" : "******"}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Perfil</label>
-                                <select value={role} onChange={e => setRole(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer">
-                                    <option value="mestre">Grão-Mestrado Estadual</option>
-                                    <option value="admin">Grão-Mestrado Federal</option>
-                                    <option value="loja">Mestre de Loja</option>
-                                </select>
-                            </div>
-                            {/* Loja or States depending on role */}
-                            {role === 'loja' && (
-                                <div className="space-y-1">
-                                    <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Loja</label>
-                                    <select value={selectedLoja || ''} onChange={e => setSelectedLoja(Number(e.target.value))}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer">
-                                        <option value="" disabled>Selecione...</option>
-                                        {lojas.map(loja => (
-                                            <option key={loja.id} value={loja.id}>
-                                                {loja.nome} N° {loja.numero} ({loja.estado_sigla})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                            {role === 'mestre' && (
-                                <div className="space-y-1 relative" ref={dropdownRef}>
-                                    <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Estados</label>
-                                    <button type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-left text-white focus:border-masonic-gold focus:outline-none flex justify-between items-center cursor-pointer min-h-[42px] hover:bg-black/50 transition-colors">
-                                        <span className="truncate pr-2 text-xs">
-                                            {selectedEstados.length > 0
-                                                ? estados.filter(e => selectedEstados.includes(e.id)).map(e => e.sigla).join(', ')
-                                                : <span className="text-gray-500 italic">Selecione...</span>}
-                                        </span>
-                                        <span className="text-masonic-gold text-xs flex-shrink-0">▼</span>
-                                    </button>
-                                    {isDropdownOpen && (
-                                        <div className="absolute z-50 w-64 mt-2 bg-gray-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] max-h-60 overflow-y-auto p-2">
-                                            <div className="grid grid-cols-2 gap-1">
-                                                {estados.map(est => (
-                                                    <label key={est.id} className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors border border-transparent ${selectedEstados.includes(est.id) ? 'bg-masonic-gold/20 border-masonic-gold/30' : 'hover:bg-white/5'}`}>
-                                                        <div className={`w-3 h-3 rounded-sm border flex items-center justify-center mr-2 flex-shrink-0 ${selectedEstados.includes(est.id) ? 'bg-masonic-gold border-masonic-gold' : 'border-gray-600 bg-transparent'}`}>
-                                                            {selectedEstados.includes(est.id) && <span className="text-black text-[8px] font-bold">✓</span>}
-                                                        </div>
-                                                        <span className={`text-xs ${selectedEstados.includes(est.id) ? 'text-masonic-gold font-bold' : 'text-gray-400'}`}>{est.nome}</span>
-                                                        <input type="checkbox" checked={selectedEstados.includes(est.id)} onChange={() => toggleEstado(est.id)} className="hidden" />
-                                                    </label>
+
+                            <form onSubmit={handleCreate} className="p-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Nome Completo</label>
+                                        <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Ir. João"
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Login</label>
+                                        <input type="text" value={login} onChange={e => setLogin(e.target.value)} placeholder="Ex: joao.silva"
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">{editingId ? 'Nova Senha' : 'Senha'}</label>
+                                        <input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder={editingId ? "Manter atual" : "******"}
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none focus:bg-black/60 transition-all placeholder-gray-600 text-sm font-sans" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Perfil</label>
+                                        <select value={role} onChange={e => setRole(e.target.value)}
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer">
+                                            <option value="mestre">Grão-Mestrado Estadual</option>
+                                            <option value="admin">Grão-Mestrado Federal</option>
+                                            <option value="loja">Mestre de Loja</option>
+                                        </select>
+                                    </div>
+                                    
+                                    {role === 'loja' && (
+                                        <div className="space-y-2 md:col-span-2">
+                                            <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Loja Vinculada</label>
+                                            <select value={selectedLoja || ''} onChange={e => setSelectedLoja(Number(e.target.value))}
+                                                className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-masonic-gold focus:outline-none appearance-none transition-all text-sm font-sans cursor-pointer">
+                                                <option value="" disabled>Selecione a loja...</option>
+                                                {lojas.map(loja => (
+                                                    <option key={loja.id} value={loja.id}>
+                                                        {loja.nome} N° {loja.numero} ({loja.estado_sigla})
+                                                    </option>
                                                 ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {role === 'mestre' && (
+                                        <div className="space-y-2 md:col-span-2 relative" ref={dropdownRef}>
+                                            <label className="block text-[10px] text-masonic-gold/80 uppercase tracking-widest font-bold">Orientes Permitidos</label>
+                                            <button type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                                className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-left text-white focus:border-masonic-gold focus:outline-none flex justify-between items-center cursor-pointer min-h-[46px] hover:bg-black/50 transition-colors">
+                                                <span className="truncate pr-2 text-xs">
+                                                    {selectedEstados.length > 0
+                                                        ? estados.filter(e => selectedEstados.includes(e.id)).map(e => e.sigla).join(', ')
+                                                        : <span className="text-gray-500 italic">Selecione os estados...</span>}
+                                                </span>
+                                                <span className="text-masonic-gold text-xs flex-shrink-0">▼</span>
+                                            </button>
+                                            {isDropdownOpen && (
+                                                <div className="absolute z-[1100] w-full mt-2 bg-gray-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto p-3">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                        {estados.map(est => (
+                                                            <label key={est.id} className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors border border-transparent ${selectedEstados.includes(est.id) ? 'bg-masonic-gold/20 border-masonic-gold/30' : 'hover:bg-white/5'}`}>
+                                                                <div className={`w-3 h-3 rounded-sm border flex items-center justify-center mr-2 flex-shrink-0 ${selectedEstados.includes(est.id) ? 'bg-masonic-gold border-masonic-gold' : 'border-gray-600 bg-transparent'}`}>
+                                                                    {selectedEstados.includes(est.id) && <span className="text-black text-[8px] font-bold">✓</span>}
+                                                                </div>
+                                                                <span className={`text-[10px] ${selectedEstados.includes(est.id) ? 'text-masonic-gold font-bold' : 'text-gray-400'}`}>{est.nome}</span>
+                                                                <input type="checkbox" checked={selectedEstados.includes(est.id)} onChange={() => toggleEstado(est.id)} className="hidden" />
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {role === 'admin' && (
+                                        <div className="md:col-span-2">
+                                            <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/20 text-center">
+                                                <p className="text-blue-300 text-xs leading-relaxed">👑 <strong>Administrador Federal</strong> — Este usuário terá acesso total a todos os estados e lojas do sistema.</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
-                            )}
-                            {role === 'admin' && (
-                                <div className="flex items-end">
-                                    <div className="bg-blue-900/20 p-3 rounded-lg border border-blue-500/20 text-center w-full">
-                                        <p className="text-blue-300 text-[10px] leading-relaxed">👑 <strong>Federal</strong> — acesso irrestrito</p>
+
+                                <div className="flex flex-col gap-4">
+                                    {msg && (
+                                        <div className={`p-4 rounded-xl text-xs text-center border font-bold animate-in fade-in slide-in-from-top-2 ${msg.includes('✅') ? 'bg-green-900/20 text-green-400 border-green-500/30' : 'bg-red-900/20 text-red-400 border-red-500/30'}`}>
+                                            {msg}
+                                        </div>
+                                    )}
+                                    <div className="flex gap-3">
+                                        <button 
+                                            type="button"
+                                            onClick={() => {
+                                                setIsModalAberto(false);
+                                                handleCancelEdit();
+                                            }}
+                                            className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 text-gray-400 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border border-white/10"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" className={`flex-[2] px-8 py-3 font-bold rounded-xl uppercase tracking-[0.2em] transition-all cursor-pointer text-xs shadow-lg whitespace-nowrap ${editingId ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-gradient-to-r from-yellow-700 to-yellow-600 hover:from-yellow-600 hover:to-yellow-500 text-white border border-yellow-500/20'}`}>
+                                            {editingId ? 'Salvar Alterações' : 'Finalizar Cadastro'}
+                                        </button>
                                     </div>
                                 </div>
-                            )}
+                            </form>
                         </div>
-
-                        <div className="flex items-center gap-4">
-                            {msg && (
-                                <div className={`flex-1 p-2.5 rounded text-xs text-center border font-bold ${msg.includes('✅') ? 'bg-green-900/20 text-green-400 border-green-500/30' : 'bg-red-900/20 text-red-400 border-red-500/30'}`}>
-                                    {msg}
-                                </div>
-                            )}
-                            <button type="submit" className={`px-8 py-2.5 font-bold rounded-lg uppercase tracking-[0.2em] transition-all cursor-pointer text-xs shadow-lg whitespace-nowrap ${editingId ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-gradient-to-r from-yellow-700 to-yellow-600 hover:from-yellow-600 hover:to-yellow-500 text-white border border-yellow-500/20'}`}>
-                                {editingId ? 'Salvar Alterações' : 'Cadastrar Usuário'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    </div>,
+                    document.body
+                )}
                 {/* Table - Full width */}
                 <div className="relative z-10 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
                     <div className="overflow-x-auto">
