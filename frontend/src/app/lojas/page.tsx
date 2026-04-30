@@ -64,13 +64,14 @@ export default function LojasDashboardPage() {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
             
             // Fetch Pessoas
-            const resPessoas = await fetch(`${apiUrl}/api/pessoas/${sigla}`);
+            const endpoint = lojaId 
+                ? `${apiUrl}/api/pessoas/loja/${lojaId}`
+                : `${apiUrl}/api/pessoas/${sigla}`;
+                
+            const resPessoas = await fetch(endpoint);
             if (resPessoas.ok) {
                 const data = await resPessoas.json();
-                const filteredPessoas = (lojaId) 
-                    ? (data as Pessoa[]).filter(p => p.loja_id === lojaId)
-                    : (Array.isArray(data) ? data : []);
-                setPessoas(filteredPessoas);
+                setPessoas(Array.isArray(data) ? data : []);
             }
 
             // Fetch Stores for the state
