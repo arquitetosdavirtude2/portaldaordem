@@ -77,15 +77,16 @@ export default function ListaPessoas({
     const storeId = acesso?.loja_id;
 
     const pessoasFiltradas = pessoasSafe.filter(p => {
-        // Strict Family Separation
+        // Se estivermos na aba de candidatos, mostrar apenas Profanos/Candidatos
+        // Se estivermos na aba de obreiros, mostrar tudo que NÃO for Profano/Candidato
         const isCandidateStatus = ['Profano', 'Candidato'].includes(p.status);
-        if (isCandidato && !isCandidateStatus) return false;
-        if (!isCandidato && isCandidateStatus) return false;
+        if (isCandidato) {
+            if (!isCandidateStatus) return false;
+        } else {
+            if (isCandidateStatus) return false;
+        }
 
-        // Enforce Loja isolation safely
-        if (isLojaUser && storeId && p.loja_id != storeId) return false;
-        
-        // Then apply status filter from the UI dropdown
+        // Filtro de Grau selecionado no Dropdown
         if (filtroStatus === 'todos') return true;
         return p.status === filtroStatus;
     });

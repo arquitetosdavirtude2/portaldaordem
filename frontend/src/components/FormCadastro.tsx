@@ -177,7 +177,7 @@ export default function FormCadastro({
           estado_sigla: estadoSigla,
           status,
           cargo_id: isCandidato ? null : (cargoId || null),
-          loja_id: isCandidato ? null : (lojaId || null),
+          loja_id: isCandidato ? null : (lojaId || acesso?.loja_id || null),
           login: isCandidato ? null : (login.trim() || null),
           senha: isCandidato ? null : (senha.trim() || (isEditing ? null : "")),
           data_admissao: isCandidato ? null : dataAdmissao,

@@ -76,7 +76,7 @@ def _build_response(p: Pessoa) -> PessoaResponse:
         id=p.id,
         nome=p.nome,
         telefone=p.telefone or "",
-        status=p.status or "",
+        status=(p.status or "Aprendiz").strip(),
         cargo_id=p.cargo_id,
         cargo_nome=p.cargo_rel.nome if p.cargo_rel else None,
         loja_id=p.loja_id,
@@ -114,7 +114,7 @@ def listar_pessoas_loja(loja_id: int, db: Session = Depends(get_db)):
     """), {"lid": loja_id}).fetchall()
 
     return [{
-        "id": r[0], "nome": r[1], "status": r[2] or "",
+        "id": r[0], "nome": r[1], "status": (r[2] or "Aprendiz").strip(),
         "cargo_id": r[3], "cargo_nome": r[4] or "",
         "loja_id": r[5], "telefone": r[6] or "",
         "login": r[7], "senha": r[8],

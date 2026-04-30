@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import GestaoAcademia from './GestaoAcademia';
 
 interface MesAtraso {
     mes_ref: string;
@@ -35,11 +34,9 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [carregando, setCarregando] = useState(true);
     const [irmaoSelecionado, setIrmaoSelecionado] = useState<IrmaoFinanceiro | null>(null);
     const [mostrarAdormecidos, setMostrarAdormecidos] = useState(false);
-    // Estado local dos meses no modal (para atualizar sem reload completo)
     const [mesesModal, setMesesModal] = useState<MesAtraso[]>([]);
     const [justificativaTemp, setJustificativaTemp] = useState<{[key: string]: string}>({});
     const [salvando, setSalvando] = useState<string | null>(null);
-    const [apenasInadimplentes, setApenasInadimplentes] = useState(false);
     const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
     const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes' | 'adormecidos'>('ativos');
 
@@ -79,7 +76,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     const handleIgnorarMes = async (mes: MesAtraso) => {
         if (mes.excecao_id) {
-            // Remover exceção
             setSalvando(mes.mes_ref);
             try {
                 const res = await fetch(`${apiUrl}/api/tesouraria/excecoes/${mes.excecao_id}`, { method: 'DELETE' });
@@ -94,7 +90,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                 setSalvando(null);
             }
         } else {
-            // Mostrar campo de justificativa (toggle pendente)
             setJustificativaTemp(prev => ({
                 ...prev,
                 [mes.mes_ref]: prev[mes.mes_ref] === undefined ? '' : prev[mes.mes_ref]
@@ -128,7 +123,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     delete copy[mes.mes_ref];
                     return copy;
                 });
-                // Recarrega os dados gerais para atualizar a saúde financeira na tabela
                 carregarFinanceiroIrmaos();
             }
         } finally {
@@ -160,13 +154,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     };
 
     const irmaosFiltrados = irmaos.filter(i => {
-        if (visaoAtiva === 'inadimplentes') {
-            return i.saude_financeira !== 'REGULAR' && i.ativo !== 0;
-        }
-        if (visaoAtiva === 'adormecidos') {
-            return i.ativo === 0;
-        }
-        // Visão 'ativos' - mostra todos que não estão explicitamente adormecidos
+        if (visaoAtiva === 'inadimplentes') return i.saude_financeira !== 'REGULAR' && i.ativo !== 0;
+        if (visaoAtiva === 'adormecidos') return i.ativo === 0;
         return i.ativo !== 0;
     });
 
@@ -181,34 +170,47 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-bold text-yellow-500 uppercase tracking-tighter">Joias & Mensalidades</h1>
-                </div>
 
+            {/* ── Linha do cabeçalho: Título + Controles ── */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+
+                {/* Título */}
+                <h1 className="text-2xl font-bold text-yellow-500 uppercase tracking-tighter">
+                    Joias & Mensalidades
+                </h1>
+
+                {/* Controles: filtros + relatório + mês/ano */}
                 <div className="flex items-center gap-2 flex-wrap justify-end">
-                    {/* Seletor de Visão (Segmented Control) */}
-                    <div className="bg-black/40 p-1 rounded-xl border border-white/10 flex items-center gap-1 mb-2 sm:mb-0">
-                        <button
-                            onClick={() => setVisaoAtiva('ativos')}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${visaoAtiva === 'ativos' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Ativos
-                        </button>
-                        <button
-                            onClick={() => setVisaoAtiva('inadimplentes')}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${visaoAtiva === 'inadimplentes' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Inadimplentes
-                        </button>
-                        <button
-                            onClick={() => setVisaoAtiva('adormecidos')}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${visaoAtiva === 'adormecidos' ? 'bg-gray-500/20 text-gray-300 border border-gray-400/30' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Adormecidos
-                        </button>
+
+                    {/* Segmented control de visão */}
+                    <div className="flex flex-col items-end gap-1">
+                        <span className="text-[9px] text-gray-500 uppercase font-black tracking-widest">
+                            Filtrar por Situação:
+                        </span>
+                        <div className="bg-black/40 p-1 rounded-xl border border-white/10 flex items-center gap-1">
+                            <button
+                                onClick={() => setVisaoAtiva('ativos')}
+                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'ativos' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'ativos' ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'}`}></span>
+                                Ativos
+                            </button>
+                            <button
+                                onClick={() => setVisaoAtiva('inadimplentes')}
+                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'inadimplentes' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'inadimplentes' ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></span>
+                                Inadimplentes
+                            </button>
+                            <button
+                                onClick={() => setVisaoAtiva('adormecidos')}
+                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'adormecidos' ? 'bg-gray-500/20 text-gray-300 border border-gray-400/30' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'adormecidos' ? 'bg-gray-300 animate-pulse' : 'bg-gray-600'}`}></span>
+                                Adormecidos
+                            </button>
+                        </div>
                     </div>
-                    
 
                     {/* Botão Relatório CSV */}
                     <button
@@ -219,21 +221,26 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                         {baixandoRelatorio ? (
                             <div className="w-3 h-3 border border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin"></div>
                         ) : (
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
                         )}
                         {baixandoRelatorio ? 'Baixando...' : 'Baixar Relatório'}
                     </button>
 
-                    <select 
+                    {/* Seletor de Mês */}
+                    <select
                         value={mesAtivo}
                         onChange={(e) => setMesAtivo(Number(e.target.value))}
                         className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase"
                     >
-                        {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+                        {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
                             <option key={m} value={i + 1}>{m}</option>
                         ))}
                     </select>
-                    <select 
+
+                    {/* Seletor de Ano */}
+                    <select
                         value={anoAtivo}
                         onChange={(e) => setAnoAtivo(Number(e.target.value))}
                         className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors"
@@ -242,128 +249,116 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             <option key={val} value={val}>{val}</option>
                         ))}
                     </select>
-                </div>
 
-                <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-md">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
-                                <th className="px-5 py-4">Obreiro</th>
-                                <th className="px-5 py-4">Cargo</th>
-                                <th className="px-5 py-4 text-center">Iniciação</th>
-                                <th className="px-5 py-4 text-center">Meses Devidos</th>
-                                <th className="px-5 py-4 text-center">Joia (Paga / Pend)</th>
-                                <th className="px-5 py-4 text-center">Mensal. (Paga / Pend)</th>
-                                <th className="px-5 py-4 text-center">Detalhes</th>
-                                <th className="px-5 py-4 text-right">Saúde Financeira</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {irmaosFiltrados.length === 0 && (
-                                <tr>
-                                    <td colSpan={8} className="px-5 py-10 text-center text-gray-500 text-[11px]">
-                                        Nenhum registro encontrado para os filtros selecionados.
-                                    </td>
-                                </tr>
-                            )}
-                            {irmaosFiltrados.map(irmao => {
-                                const isAdormecido = irmao.ativo === 0;
-                                return (
-                                    <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
-                                        <td className="px-5 py-4">
-                                            <div className="text-[12px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
-                                                {irmao.nome}
-                                            </div>
-                                            {isAdormecido && (
-                                                <div className="text-[9px] text-gray-500 uppercase tracking-tighter mt-0.5">
-                                                    Adormecido desde {formatarData(irmao.data_adormecimento)}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-4">
-                                            {isAdormecido ? (
-                                                <span className="text-[9px] font-bold uppercase tracking-wider text-gray-500 bg-gray-400/10 border border-gray-400/20 px-2 py-0.5 rounded-full">
-                                                    ADORMECIDO
-                                                </span>
-                                            ) : irmao.cargo ? (
-                                                <span className="text-[9px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">
-                                                    {irmao.cargo}
-                                                </span>
-                                            ) : (
-                                                <span className="text-[9px] text-gray-600 italic">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-4 text-center">
-                                            <span className="text-[11px] text-gray-300 font-mono">
-                                                {formatarData(irmao.data_admissao)}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-4 text-center">
-                                            <div className="flex flex-col items-center gap-0.5">
-                                                <span className="text-[12px] font-bold text-white">{irmao.meses_devidos}</span>
-                                                <span className="text-[9px] text-gray-500 uppercase">
-                                                    {irmao.meses_pagos}/{irmao.meses_devidos} pagos
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-4 text-center font-sans text-[11px]">
-                                            <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
-                                            <span className="mx-1 text-gray-600">/</span>
-                                            <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
-                                                R$ {irmao.joia_pendente.toFixed(0)}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-4 text-center font-sans text-[11px]">
-                                            <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
-                                            <span className="mx-1 text-gray-600">/</span>
-                                            <span className={
-                                                irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' : 
-                                                irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' : 
-                                                'text-gray-500 italic'
-                                            }>
-                                                R$ {irmao.mensalidade_pendente.toFixed(0)}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-4 text-center">
-                                            {irmao.meses_atraso && irmao.meses_atraso.length > 0 ? (
-                                                <button 
-                                                    onClick={() => setIrmaoSelecionado(irmao)}
-                                                    className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
-                                                >
-                                                    Ver Meses ({irmao.meses_atraso.length})
-                                                </button>
-                                            ) : (
-                                                <span className="text-[9px] text-gray-600 font-bold">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-4 text-right">
-                                            {isAdormecido ? (
-                                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full border border-gray-500/20">
-                                                    Adormecido
-                                                </div>
-                                            ) : irmao.saude_financeira === 'REGULAR' ? (
-                                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
-                                                    Regular
-                                                </div>
-                                            ) : irmao.saude_financeira === 'ATRASADO' ? (
-                                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
-                                                    Atrasado
-                                                </div>
-                                            ) : (
-                                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                                                    Pendente
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
                 </div>
             </div>
+            {/* ── FIM do cabeçalho ── */}
 
-            {/* Modal Detalhes Meses — Interativo */}
+            {/* ── Tabela ── (irmã do cabeçalho, dentro de space-y-6) */}
+            <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-md">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
+                            <th className="px-5 py-4">Obreiro</th>
+                            <th className="px-5 py-4">Cargo</th>
+                            <th className="px-5 py-4 text-center">Iniciação</th>
+                            <th className="px-5 py-4 text-center">Meses Devidos</th>
+                            <th className="px-5 py-4 text-center">Joia (Paga / Pend)</th>
+                            <th className="px-5 py-4 text-center">Mensal. (Paga / Pend)</th>
+                            <th className="px-5 py-4 text-center">Detalhes</th>
+                            <th className="px-5 py-4 text-right">Saúde Financeira</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {irmaosFiltrados.length === 0 && (
+                            <tr>
+                                <td colSpan={8} className="px-5 py-10 text-center text-gray-500 text-[11px]">
+                                    Nenhum registro encontrado para os filtros selecionados.
+                                </td>
+                            </tr>
+                        )}
+                        {irmaosFiltrados.map(irmao => {
+                            const isAdormecido = irmao.ativo === 0;
+                            return (
+                                <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
+                                    <td className="px-5 py-4">
+                                        <div className="text-[12px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
+                                            {irmao.nome}
+                                        </div>
+                                        {isAdormecido && (
+                                            <div className="text-[9px] text-gray-500 uppercase tracking-tighter mt-0.5">
+                                                Adormecido desde {formatarData(irmao.data_adormecimento)}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-5 py-4">
+                                        {isAdormecido ? (
+                                            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-500 bg-gray-400/10 border border-gray-400/20 px-2 py-0.5 rounded-full">ADORMECIDO</span>
+                                        ) : irmao.cargo ? (
+                                            <span className="text-[9px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">{irmao.cargo}</span>
+                                        ) : (
+                                            <span className="text-[9px] text-gray-600 italic">—</span>
+                                        )}
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                        <span className="text-[11px] text-gray-300 font-mono">{formatarData(irmao.data_admissao)}</span>
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <span className="text-[12px] font-bold text-white">{irmao.meses_devidos}</span>
+                                            <span className="text-[9px] text-gray-500 uppercase">{irmao.meses_pagos}/{irmao.meses_devidos} pagos</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-5 py-4 text-center font-sans text-[11px]">
+                                        <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
+                                        <span className="mx-1 text-gray-600">/</span>
+                                        <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
+                                            R$ {irmao.joia_pendente.toFixed(0)}
+                                        </span>
+                                    </td>
+                                    <td className="px-5 py-4 text-center font-sans text-[11px]">
+                                        <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
+                                        <span className="mx-1 text-gray-600">/</span>
+                                        <span className={
+                                            irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' :
+                                            irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' :
+                                            'text-gray-500 italic'
+                                        }>
+                                            R$ {irmao.mensalidade_pendente.toFixed(0)}
+                                        </span>
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                        {irmao.meses_atraso && irmao.meses_atraso.length > 0 ? (
+                                            <button
+                                                onClick={() => setIrmaoSelecionado(irmao)}
+                                                className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
+                                            >
+                                                Ver Meses ({irmao.meses_atraso.length})
+                                            </button>
+                                        ) : (
+                                            <span className="text-[9px] text-gray-600 font-bold">—</span>
+                                        )}
+                                    </td>
+                                    <td className="px-5 py-4 text-right">
+                                        {isAdormecido ? (
+                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full border border-gray-500/20">Adormecido</div>
+                                        ) : irmao.saude_financeira === 'REGULAR' ? (
+                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">Regular</div>
+                                        ) : irmao.saude_financeira === 'ATRASADO' ? (
+                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">Atrasado</div>
+                                        ) : (
+                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">Pendente</div>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+            {/* ── FIM da Tabela ── */}
+
+            {/* ── Modal Detalhes Meses ── */}
             {irmaoSelecionado && (
                 <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
                     <div className="bg-[#0f1d45] border border-white/20 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in duration-300">
@@ -387,7 +382,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 const isPendingInput = justificativaTemp[mes.mes_ref] !== undefined;
                                 return (
                                     <div key={mes.mes_ref} className="space-y-2">
-                                        {/* Botão do mês */}
                                         <button
                                             onClick={() => handleIgnorarMes(mes)}
                                             disabled={salvando === mes.mes_ref}
@@ -407,7 +401,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                             </span>
                                         </button>
 
-                                        {/* Campo de justificativa (aparece ao clicar no mês pendente) */}
                                         {isPendingInput && !mes.excecao_id && (
                                             <div className="flex gap-2 pl-2">
                                                 <input
@@ -446,7 +439,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             )}
                         </div>
                         <div className="p-4 bg-black/20 border-t border-white/5">
-                            <button 
+                            <button
                                 onClick={() => { setIrmaoSelecionado(null); setJustificativaTemp({}); }}
                                 className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
                             >
@@ -456,6 +449,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     </div>
                 </div>
             )}
+
         </div>
     );
 }

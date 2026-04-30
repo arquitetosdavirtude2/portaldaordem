@@ -52,8 +52,11 @@ export default function LojasDashboardPage() {
         const acessoObj: Acesso = JSON.parse(acessoSalvo);
         setAcesso(acessoObj);
         
-        if (acessoObj.estado) {
-            carregarDados(acessoObj.estado.toUpperCase(), acessoObj.loja_id);
+        // Normalize state from allowed_states if needed
+        const siglaEstado = acessoObj.estado || (acessoObj as any).allowed_states?.[0];
+        
+        if (siglaEstado || acessoObj.loja_id) {
+            carregarDados((siglaEstado || '').toUpperCase(), acessoObj.loja_id);
         } else {
             router.push('/dashboard');
         }

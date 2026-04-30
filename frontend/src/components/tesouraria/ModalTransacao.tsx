@@ -427,22 +427,28 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         {/* Mês de Referência — somente para mensalidade e joia */}
                         {(form.categoria === 'mensalidade' || form.categoria === 'joia') ? (
-                            <div className="sm:col-span-2 space-y-1.5">
-                                <label className="text-[10px] uppercase font-bold text-yellow-500/80 tracking-wider">
-                                    Mês de Referência
-                                    <span className="ml-2 text-gray-500 normal-case font-normal">— a qual mês este pagamento se refere?</span>
-                                </label>
-                                <div className="flex items-center gap-3">
+                            <div className="sm:col-span-2 space-y-1.5 animate-in slide-in-from-top-1">
+                                <div className="flex justify-between items-end mb-1">
+                                    <label className="text-[10px] uppercase font-black text-yellow-500 tracking-[0.1em] flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
+                                        Mês de Referência
+                                    </label>
+                                    <span className="text-[9px] text-gray-500 uppercase font-bold">A qual mês se refere?</span>
+                                </div>
+                                <div className="relative group">
                                     <input
                                         type="month"
                                         value={mesReferencia}
                                         onChange={e => setMesReferencia(e.target.value)}
-                                        className="flex-1 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-xs text-yellow-200 outline-none focus:border-yellow-500/70 cursor-pointer color-scheme-dark"
+                                        className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3.5 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 focus:bg-yellow-500/10 cursor-pointer color-scheme-dark transition-all font-bold"
                                     />
-                                    <span className="text-[9px] text-gray-500 uppercase leading-tight max-w-[120px]">
-                                        Se pago adiantado ou atrasado, ajuste o mês aqui
-                                    </span>
+                                    <div className="absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity">
+                                        📅
+                                    </div>
                                 </div>
+                                <p className="text-[9px] text-gray-500 uppercase leading-relaxed mt-1.5 italic font-medium">
+                                    * Se não alterar, o sistema considera o <span className="text-yellow-500/70 font-bold">Mês Atual</span> como referência.
+                                </p>
                             </div>
                         ) : (
                             <div className="space-y-1.5 relative">
