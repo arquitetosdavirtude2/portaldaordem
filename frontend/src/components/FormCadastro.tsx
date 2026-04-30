@@ -13,6 +13,8 @@ interface Pessoa {
   ativo?: number;
   data_adormecimento?: string | null;
   data_admissao?: string | null;
+  tipo_ingresso?: string;
+  indicador_id?: number | null;
 }
 
 interface Cargo {
@@ -31,6 +33,11 @@ interface Acesso {
   tipo: string;
   role?: string;
   loja_id?: number | null;
+}
+
+interface Indicador {
+  id: number;
+  nome: string;
 }
 
 interface FormCadastroProps {
@@ -71,6 +78,11 @@ export default function FormCadastro({
   const [ativo, setAtivo] = useState(1);
   const [dataAdormecimento, setDataAdormecimento] = useState<string>('');
 
+  // Academia e Ingresso
+  const [tipoIngresso, setTipoIngresso] = useState<'iniciacao' | 'transferencia'>('iniciacao');
+  const [indicadorId, setIndicadorId] = useState<number | ''>('');
+  const [indicadores, setIndicadores] = useState<Indicador[]>([]);
+
   // Carregar cargos da API
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -78,7 +90,13 @@ export default function FormCadastro({
       .then(r => r.ok ? r.json() : [])
       .then(setCargos)
       .catch(() => {});
-  }, []);
+
+    // Carregar indicadores
+    fetch(`${apiUrl}/api/academia/indicadores/${acesso?.loja_id || 0}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setIndicadores)
+      .catch(() => {});
+  }, [acesso?.loja_id]);
   
   // New financial fields for registration
   const [dataAdmissao, setDataAdmissao] = useState(new Date().toISOString().split('T')[0]);
@@ -98,6 +116,8 @@ export default function FormCadastro({
       setAtivo(pessoaParaEditar.ativo ?? 1);
       setDataAdormecimento(pessoaParaEditar.data_adormecimento || '');
       setDataAdmissao(pessoaParaEditar.data_admissao || new Date().toISOString().split('T')[0]);
+      setTipoIngresso(pessoaParaEditar.tipo_ingresso as any || 'iniciacao');
+      setIndicadorId(pessoaParaEditar.indicador_id || '');
     } else {
         setNome('');
         setTelefone('');
@@ -111,6 +131,8 @@ export default function FormCadastro({
         setComprovante(null);
         setAtivo(1);
         setDataAdormecimento('');
+        setTipoIngresso('iniciacao');
+        setIndicadorId('');
     }
   }, [pessoaParaEditar, isCandidato, isLojaUser, acesso]);
 
@@ -161,6 +183,8 @@ export default function FormCadastro({
           data_admissao: isCandidato ? null : dataAdmissao,
           ativo: isCandidato ? 1 : ativo,
           data_adormecimento: (isCandidato || ativo === 1) ? null : dataAdormecimento,
+          tipo_ingresso: tipoIngresso,
+          indicador_id: indicadorId || null,
         }),
       });
 
@@ -278,6 +302,51 @@ export default function FormCadastro({
             />
           </div>
         </div>
+
+        {!isCandidato && (
+          <div className="bg-yellow-500/5 rounded-xl p-4 border border-yellow-500/10 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Tipo de Ingresso na Loja
+                </label>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setTipoIngresso('iniciacao')}
+                    className={`flex-1 p-3 rounded-lg border text-xs font-bold transition-all ${tipoIngresso === 'iniciacao' ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500' : 'bg-black/20 border-white/10 text-gray-500'}`}
+                  >
+                    🌱 INICIAÇÃO
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTipoIngresso('transferencia')}
+                    className={`flex-1 p-3 rounded-lg border text-xs font-bold transition-all ${tipoIngresso === 'transferencia' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-black/20 border-white/10 text-gray-500'}`}
+                  >
+                    ✈️ TRANSFERÊNCIA
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                  Indicador (Academia)
+                </label>
+                <select
+                  value={indicadorId}
+                  onChange={(e) => setIndicadorId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+                >
+                  <option value="">Ninguém (Indicação Direta)</option>
+                  {indicadores.map(ind => (
+                    <option key={ind.id} value={ind.id}>{ind.nome}</option>
+                  ))}
+                </select>
+                <p className="text-[9px] text-gray-500 mt-1 uppercase italic">* Se for transferência, a Joia não será cobrada.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {!isCandidato && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-1 duration-300">

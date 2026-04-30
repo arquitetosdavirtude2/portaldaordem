@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import GestaoAcademia from './GestaoAcademia';
 
 interface MesAtraso {
     mes_ref: string;
@@ -40,6 +41,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [salvando, setSalvando] = useState<string | null>(null);
     const [apenasInadimplentes, setApenasInadimplentes] = useState(false);
     const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
+    const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes' | 'adormecidos'>('ativos');
+    const [abaAtiva, setAbaAtiva] = useState<'caixa' | 'mensalidades' | 'academia' | 'pagar'>('mensalidades');
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -60,7 +63,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     useEffect(() => {
         carregarFinanceiroIrmaos();
-    }, [acesso.loja_id, mesAtivo, anoAtivo, mostrarAdormecidos]);
+    }, [acesso.loja_id, mesAtivo, anoAtivo, visaoAtiva]);
 
     useEffect(() => {
         if (irmaoSelecionado) {
@@ -158,10 +161,14 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     };
 
     const irmaosFiltrados = irmaos.filter(i => {
-        if (apenasInadimplentes) {
-            return i.saude_financeira !== 'REGULAR';
+        if (visaoAtiva === 'inadimplentes') {
+            return i.saude_financeira !== 'REGULAR' && i.ativo === 1;
         }
-        return true;
+        if (visaoAtiva === 'adormecidos') {
+            return i.ativo === 0;
+        }
+        // Visão 'ativos'
+        return i.ativo === 1;
     });
 
     if (carregando) {
@@ -177,35 +184,58 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                    <h2 className="text-lg font-bold text-yellow-500 uppercase tracking-tight">Situação Financeira por Obreiro</h2>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                        Extrato de Joias e Mensalidades. O mês atual é considerado pendente após o dia 10.
-                    </p>
+                    <h1 className="text-2xl font-bold text-yellow-500 uppercase tracking-tighter">Financeiro Loja</h1>
+                    <div className="flex gap-4 border-b border-white/10 mb-4">
+                        <button 
+                            onClick={() => setAbaAtiva('caixa')}
+                            className={`pb-2 text-[10px] font-bold uppercase tracking-widest transition-all ${abaAtiva === 'caixa' ? 'text-yellow-500 border-b-2 border-yellow-500' : 'text-gray-500'}`}
+                        >
+                            Fluxo de Caixa
+                        </button>
+                        <button 
+                            onClick={() => setAbaAtiva('mensalidades')}
+                            className={`pb-2 text-[10px] font-bold uppercase tracking-widest transition-all ${abaAtiva === 'mensalidades' ? 'text-yellow-500 border-b-2 border-yellow-500' : 'text-gray-500'}`}
+                        >
+                            Joias & Mensalidades
+                        </button>
+                        <button 
+                            onClick={() => setAbaAtiva('academia')}
+                            className={`pb-2 text-[10px] font-bold uppercase tracking-widest transition-all ${abaAtiva === 'academia' ? 'text-yellow-500 border-b-2 border-yellow-500' : 'text-gray-500'}`}
+                        >
+                            Academia (Indicações)
+                        </button>
+                        <button 
+                            onClick={() => setAbaAtiva('pagar')}
+                            className={`pb-2 text-[10px] font-bold uppercase tracking-widest transition-all ${abaAtiva === 'pagar' ? 'text-yellow-500 border-b-2 border-yellow-500' : 'text-gray-500'}`}
+                        >
+                            Contas a Pagar
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <button
-                        onClick={() => setMostrarAdormecidos(!mostrarAdormecidos)}
-                        className={`px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                            mostrarAdormecidos
-                                ? 'bg-gray-500/20 border-gray-400/40 text-gray-300'
-                                : 'bg-black/40 border-white/10 text-gray-500 hover:border-white/20'
-                        }`}
-                    >
-                        {mostrarAdormecidos ? '● Adormecidos Visíveis' : '○ Ocultar Adormecidos'}
-                    </button>
+                    {/* Seletor de Visão (Segmented Control) */}
+                    <div className="bg-black/40 p-1 rounded-xl border border-white/10 flex items-center gap-1 mb-2 sm:mb-0">
+                        <button
+                            onClick={() => setVisaoAtiva('ativos')}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${visaoAtiva === 'ativos' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Ativos
+                        </button>
+                        <button
+                            onClick={() => setVisaoAtiva('inadimplentes')}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${visaoAtiva === 'inadimplentes' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Inadimplentes
+                        </button>
+                        <button
+                            onClick={() => setVisaoAtiva('adormecidos')}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${visaoAtiva === 'adormecidos' ? 'bg-gray-500/20 text-gray-300 border border-gray-400/30' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Adormecidos
+                        </button>
+                    </div>
                     
-                    {/* Toggle Inadimplentes */}
-                    <button
-                        onClick={() => setApenasInadimplentes(!apenasInadimplentes)}
-                        className={`px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                            apenasInadimplentes
-                                ? 'bg-red-500/20 border-red-400/40 text-red-300'
-                                : 'bg-black/40 border-white/10 text-gray-500 hover:border-white/20'
-                        }`}
-                    >
-                        {apenasInadimplentes ? '● Somente Inadimplentes' : '○ Ver Todos'}
-                    </button>
 
                     {/* Botão Relatório CSV */}
                     <button
@@ -242,7 +272,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                 </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-md">
+            {abaAtiva === 'mensalidades' && (
+                <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-md">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
@@ -359,6 +390,23 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     </tbody>
                 </table>
             </div>
+            )}
+
+            {abaAtiva === 'academia' && (
+                <GestaoAcademia acesso={acesso} />
+            )}
+
+            {abaAtiva === 'caixa' && (
+                <div className="py-20 text-center text-gray-500 uppercase text-xs italic bg-black/20 rounded-2xl border border-white/10">
+                    O Fluxo de Caixa está disponível na aba principal do Painel.
+                </div>
+            )}
+
+            {abaAtiva === 'pagar' && (
+                <div className="py-20 text-center text-gray-500 uppercase text-xs italic bg-black/20 rounded-2xl border border-white/10">
+                    Contas a Pagar será implementado em breve.
+                </div>
+            )}
 
             {/* Modal Detalhes Meses — Interativo */}
             {irmaoSelecionado && (

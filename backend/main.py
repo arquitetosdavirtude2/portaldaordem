@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import APIRouter
 from fastapi.staticfiles import StaticFiles
-from routes import auth, pessoas, admin, lojas, tesouraria
+from routes import auth, pessoas, admin, lojas, tesouraria, academia
 from database import engine
 
 app = FastAPI(title="Sistema Mapa Estados")
@@ -21,6 +21,7 @@ app.include_router(pessoas.router, prefix="/api/pessoas", tags=["Pessoas"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(lojas.router, prefix="/api/lojas", tags=["Lojas"])
 app.include_router(tesouraria.router, prefix="/api/tesouraria", tags=["Tesouraria"])
+app.include_router(academia.router, tags=["Academia"])
 
 # Mount static files for receipts
 app.mount("/static", StaticFiles(directory="static"), name="static")

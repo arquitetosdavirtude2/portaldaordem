@@ -474,7 +474,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             alvo = hoje
 
         query_pessoas = text("""
-            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento
+            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
@@ -489,6 +489,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             pid, nome, cargo_nome, data_adm_str = p[0], p[1], (p[2] or ""), p[3]
             ativo = p[4] if len(p) > 4 else 1
             data_adormecimento = p[5] if len(p) > 5 else None
+            tipo_ingresso = p[6] if len(p) > 6 else 'iniciacao'
 
             # Calcular meses devidos a partir da data de admissão
             meses_devidos = 0
@@ -496,7 +497,10 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             j_paga = db_treasury.execute(text(
                 "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'joia' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
-            j_pend = max(0.0, 2000.0 - float(j_paga))
+            if tipo_ingresso == 'transferencia':
+                j_pend = 0.0
+            else:
+                j_pend = max(0.0, 2000.0 - float(j_paga))
 
             # 2. MENSALIDADE
             # Contamos quantas mensalidades foram pagas (qualquer valor, inclusive R$0 por desconto)

@@ -25,6 +25,7 @@ class Loja(Base):
     usuarios = relationship("Usuario", back_populates="loja")
     pessoas = relationship("Pessoa", back_populates="loja")
     caixas = relationship("Caixa", back_populates="loja")
+    indicadores = relationship("Indicador", back_populates="loja")
 
 class Estado(Base):
     __tablename__ = "estados"
@@ -76,10 +77,13 @@ class Pessoa(Base):
     data_admissao = Column(String(20), nullable=True)  # YYYY-MM-DD
     ativo = Column(Integer, default=1)  # 1=ativo, 0=adormecido
     data_adormecimento = Column(String(20), nullable=True)  # YYYY-MM-DD
+    tipo_ingresso = Column(String(30), default="iniciacao") # 'iniciacao', 'transferencia'
+    indicador_id = Column(Integer, ForeignKey("indicadores.id"), nullable=True)
 
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")
     cargo_rel = relationship("Cargo", back_populates="pessoas")
+    indicador = relationship("Indicador", back_populates="indicados")
 
 class MensalidadeExcecao(Base):
     __tablename__ = "mensalidade_excecoes"
@@ -91,6 +95,18 @@ class MensalidadeExcecao(Base):
     criado_em = Column(String(30), nullable=True)
 
     pessoa = relationship("Pessoa")
+
+class Indicador(Base):
+    __tablename__ = "indicadores"
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(100), nullable=False)
+    telefone = Column(String(20), nullable=True)
+    pix = Column(String(100), nullable=True)
+    banco_info = Column(String(500), nullable=True)
+    loja_id = Column(Integer, ForeignKey("lojas.id"), nullable=True)
+
+    loja = relationship("Loja", back_populates="indicadores")
+    indicados = relationship("Pessoa", back_populates="indicador")
 
 class Admin(Base):
     __tablename__ = "admin"
