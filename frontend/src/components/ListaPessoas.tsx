@@ -82,8 +82,8 @@ export default function ListaPessoas({
         if (isCandidato && !isCandidateStatus) return false;
         if (!isCandidato && isCandidateStatus) return false;
 
-        // Enforce Loja isolation first
-        if (isLojaUser && p.loja_id !== storeId) return false;
+        // Enforce Loja isolation safely
+        if (isLojaUser && storeId && p.loja_id != storeId) return false;
         
         // Then apply status filter from the UI dropdown
         if (filtroStatus === 'todos') return true;
