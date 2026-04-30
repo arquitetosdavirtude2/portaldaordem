@@ -38,6 +38,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [mesesModal, setMesesModal] = useState<MesAtraso[]>([]);
     const [justificativaTemp, setJustificativaTemp] = useState<{[key: string]: string}>({});
     const [salvando, setSalvando] = useState<string | null>(null);
+    const [apenasInadimplentes, setApenasInadimplentes] = useState(false);
+    const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -132,6 +134,36 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         }
     };
 
+    const handleDownloadRelatorio = async () => {
+        setBaixandoRelatorio(true);
+        try {
+            const url = `${apiUrl}/api/tesouraria/relatorio/inadimplentes/${acesso.loja_id}`;
+            const res = await fetch(url);
+            if (res.ok) {
+                const blob = await res.blob();
+                const urlObj = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = urlObj;
+                a.download = `relatorio_inadimplentes_${acesso.loja_id}_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(urlObj);
+            }
+        } catch (error) {
+            console.error('Erro ao baixar relatório:', error);
+        } finally {
+            setBaixandoRelatorio(false);
+        }
+    };
+
+    const irmaosFiltrados = irmaos.filter(i => {
+        if (apenasInadimplentes) {
+            return i.saude_financeira !== 'REGULAR';
+        }
+        return true;
+    });
+
     if (carregando) {
         return (
             <div className="text-center py-20 text-yellow-500/50 flex flex-col items-center gap-4">
@@ -152,7 +184,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap justify-end">
-                    {/* Toggle Adormecidos */}
                     <button
                         onClick={() => setMostrarAdormecidos(!mostrarAdormecidos)}
                         className={`px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
@@ -162,6 +193,32 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                         }`}
                     >
                         {mostrarAdormecidos ? '● Adormecidos Visíveis' : '○ Ocultar Adormecidos'}
+                    </button>
+                    
+                    {/* Toggle Inadimplentes */}
+                    <button
+                        onClick={() => setApenasInadimplentes(!apenasInadimplentes)}
+                        className={`px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                            apenasInadimplentes
+                                ? 'bg-red-500/20 border-red-400/40 text-red-300'
+                                : 'bg-black/40 border-white/10 text-gray-500 hover:border-white/20'
+                        }`}
+                    >
+                        {apenasInadimplentes ? '● Somente Inadimplentes' : '○ Ver Todos'}
+                    </button>
+
+                    {/* Botão Relatório CSV */}
+                    <button
+                        onClick={handleDownloadRelatorio}
+                        disabled={baixandoRelatorio}
+                        className="px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-500 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                        {baixandoRelatorio ? (
+                            <div className="w-3 h-3 border border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin"></div>
+                        ) : (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        )}
+                        {baixandoRelatorio ? 'Baixando...' : 'Baixar Relatório'}
                     </button>
 
                     <select 
@@ -200,14 +257,14 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                        {irmaos.length === 0 && (
+                        {irmaosFiltrados.length === 0 && (
                             <tr>
                                 <td colSpan={8} className="px-5 py-10 text-center text-gray-500 text-[11px]">
-                                    Nenhum irmão contribuinte encontrado para esta loja.
+                                    Nenhum registro encontrado para os filtros selecionados.
                                 </td>
                             </tr>
                         )}
-                        {irmaos.map(irmao => {
+                        {irmaosFiltrados.map(irmao => {
                             const isAdormecido = irmao.ativo === 0;
                             return (
                                 <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>

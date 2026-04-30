@@ -1,6 +1,9 @@
 import os
 import shutil
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, Response
+from fastapi.responses import StreamingResponse
+import io
+import csv
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
@@ -453,6 +456,9 @@ def listar_financeiro_irmaos(
     db_treasury: Session = Depends(get_treasury_db)
 ):
     """Listar situação financeira dos irmãos contribuintes da Loja."""
+    return _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db_treasury)
+
+def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db_treasury):
     try:
         from sqlalchemy import text
         from datetime import datetime, date
@@ -636,7 +642,6 @@ def listar_financeiro_irmaos(
         print(traceback.format_exc())
         return []
 
-
 # ─── ENDPOINTS DE EXCEÇÕES DE MENSALIDADE ─────────────────────────────────────
 
 class ExcecaoCreate(BaseModel):
@@ -695,3 +700,46 @@ def remover_excecao(
     except Exception as e:
         db_treasury.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/relatorio/inadimplentes/{loja_id}")
+def relatorio_inadimplentes(
+    loja_id: int,
+    db_treasury: Session = Depends(get_treasury_db)
+):
+    """Gera um relatório CSV consolidado de irmãos inadimplentes."""
+    # Obter dados financeiros (sempre incluindo adormecidos para o relatório ser completo)
+    dados = _calcular_financeiro_irmaos_logic(loja_id, None, None, True, db_treasury)
+    
+    # Filtrar apenas inadimplentes (Atrasados ou Pendentes)
+    inadimplentes = [d for d in dados if d['saude_financeira'] in ['ATRASADO', 'PENDENTE']]
+    
+    output = io.StringIO()
+    # Usar BOM para o Excel abrir corretamente com acentos
+    output.write('\ufeff')
+    writer = csv.writer(output, delimiter=';')
+    
+    # Cabeçalho
+    writer.writerow(['Obreiro', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
+    
+    for d in inadimplentes:
+        meses_aberto = ", ".join([m['label'] for m in d['meses_atraso']])
+        status_txt = "Ativo" if d['ativo'] == 1 else f"Adormecido ({d['data_adormecimento']})"
+        
+        writer.writerow([
+            d['nome'],
+            d['cargo'],
+            status_txt,
+            d['data_admissao'],
+            f"R$ {d['joia_pendente']:.2f}",
+            f"R$ {d['mensalidade_pendente']:.2f}",
+            meses_aberto,
+            d['saude_financeira']
+        ])
+    
+    output.seek(0)
+    
+    headers = {
+        'Content-Disposition': f'attachment; filename="inadimplentes_loja_{loja_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
+    }
+    
+    return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
