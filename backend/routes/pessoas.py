@@ -153,7 +153,6 @@ def criar_pessoa(pessoa: PessoaCreate, db: Session = Depends(get_db)):
         tipo_ingresso=pessoa.tipo_ingresso or "iniciacao",
         indicador_id=pessoa.indicador_id,
     )
-    )
     db.add(nova)
     db.commit()
     db.refresh(nova)
