@@ -14,6 +14,9 @@ interface Pessoa {
     loja_nome?: string | null;
     login?: string | null;
     senha?: string | null;
+    ativo?: number;
+    data_adormecimento?: string | null;
+    data_admissao?: string | null;
 }
 
 interface Cargo {
@@ -310,12 +313,19 @@ export default function ListaPessoas({
                                                 {isCandidato ? (
                                                     <span className="text-gray-200 font-bold">{pessoa.nome}</span>
                                                 ) : (
-                                                    <div className="flex flex-col">
-                                                        <span className="text-gray-200 font-bold">{pessoa.nome}</span>
-                                                        {(!isLojaUser && pessoa.loja_nome) && (
-                                                            <span className="text-[10px] text-masonic-gold uppercase tracking-tighter">{pessoa.loja_nome}</span>
-                                                        )}
-                                                    </div>
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-gray-200 font-bold ${pessoa.ativo === 0 ? 'opacity-50 line-through' : ''}`}>{pessoa.nome}</span>
+                                                                {pessoa.ativo === 0 && (
+                                                                    <span className="text-[8px] bg-red-900/40 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 font-black uppercase tracking-tighter">
+                                                                        Adormecido
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {(!isLojaUser && pessoa.loja_nome) && (
+                                                                <span className="text-[10px] text-masonic-gold uppercase tracking-tighter">{pessoa.loja_nome}</span>
+                                                            )}
+                                                        </div>
                                                 )}
                                             </div>
                                         </td>

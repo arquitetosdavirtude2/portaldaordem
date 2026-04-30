@@ -10,6 +10,9 @@ interface Pessoa {
   login?: string | null;
   senha?: string | null;
   loja_id?: number | null;
+  ativo?: number;
+  data_adormecimento?: string | null;
+  data_admissao?: string | null;
 }
 
 interface Cargo {
@@ -63,6 +66,10 @@ export default function FormCadastro({
   const [senha, setSenha] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState('');
+  
+  // Status de Atividade (Adormecido)
+  const [ativo, setAtivo] = useState(1);
+  const [dataAdormecimento, setDataAdormecimento] = useState<string>('');
 
   // Carregar cargos da API
   useEffect(() => {
@@ -88,6 +95,9 @@ export default function FormCadastro({
       setLojaId(pessoaParaEditar.loja_id || (isLojaUser && acesso?.loja_id ? acesso.loja_id : ''));
       setLogin(pessoaParaEditar.login || '');
       setSenha('');
+      setAtivo(pessoaParaEditar.ativo ?? 1);
+      setDataAdormecimento(pessoaParaEditar.data_adormecimento || '');
+      setDataAdmissao(pessoaParaEditar.data_admissao || new Date().toISOString().split('T')[0]);
     } else {
         setNome('');
         setTelefone('');
@@ -99,6 +109,8 @@ export default function FormCadastro({
         setDataAdmissao(new Date().toISOString().split('T')[0]);
         setJoiaPaga('');
         setComprovante(null);
+        setAtivo(1);
+        setDataAdormecimento('');
     }
   }, [pessoaParaEditar, isCandidato, isLojaUser, acesso]);
 
@@ -147,6 +159,8 @@ export default function FormCadastro({
           login: isCandidato ? null : (login.trim() || null),
           senha: isCandidato ? null : (senha.trim() || (isEditing ? null : "")),
           data_admissao: isCandidato ? null : dataAdmissao,
+          ativo: isCandidato ? 1 : ativo,
+          data_adormecimento: (isCandidato || ativo === 1) ? null : dataAdormecimento,
         }),
       });
 
@@ -362,6 +376,58 @@ export default function FormCadastro({
             </div>
           )}
         </div>
+
+        {pessoaParaEditar && !isCandidato && (
+          <div className="bg-blue-500/5 rounded-xl p-4 border border-blue-500/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🌙</span>
+                <h3 className="text-[11px] font-black text-blue-400 uppercase tracking-widest">Status de Atividade</h3>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${ativo === 1 ? 'text-green-400' : 'text-gray-500'}`}>Ativo</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const novoAtivo = ativo === 1 ? 0 : 1;
+                    setAtivo(novoAtivo);
+                    if (novoAtivo === 0 && !dataAdormecimento) {
+                      setDataAdormecimento(new Date().toISOString().split('T')[0]);
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${ativo === 1 ? 'bg-green-500/40' : 'bg-gray-700'}`}
+                >
+                  <span
+                    className={`${ativo === 1 ? 'translate-x-6 bg-green-400' : 'translate-x-1 bg-gray-400'} inline-block h-4 w-4 transform rounded-full transition-transform`}
+                  />
+                </button>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${ativo === 0 ? 'text-red-400' : 'text-gray-500'}`}>Adormecido</span>
+              </div>
+            </div>
+
+            {ativo === 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-left-2 duration-300">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Data de Adormecimento
+                  </label>
+                  <input
+                    type="date"
+                    value={dataAdormecimento}
+                    onChange={(e) => setDataAdormecimento(e.target.value)}
+                    className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-red-500/50 transition-all text-sm"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <p className="text-[9px] text-gray-500 uppercase italic leading-tight">
+                    * Ao adormecer um irmão, o sistema interrompe a geração de novas mensalidades a partir desta data.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {!isCandidato && !pessoaParaEditar && (
           <div className="bg-yellow-500/5 rounded-xl p-6 border border-yellow-500/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500 mb-6">

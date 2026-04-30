@@ -29,6 +29,8 @@ class PessoaCreate(BaseModel):
     login: Optional[str] = None
     senha: Optional[str] = None
     data_admissao: Optional[str] = None
+    ativo: Optional[int] = 1
+    data_adormecimento: Optional[str] = None
 
 class PessoaUpdate(BaseModel):
     nome: Optional[str] = None
@@ -39,6 +41,8 @@ class PessoaUpdate(BaseModel):
     login: Optional[str] = None
     senha: Optional[str] = None
     data_admissao: Optional[str] = None
+    ativo: Optional[int] = None
+    data_adormecimento: Optional[str] = None
 
 class PessoaResponse(BaseModel):
     id: int
@@ -52,6 +56,8 @@ class PessoaResponse(BaseModel):
     login: Optional[str] = None
     senha: Optional[str] = None
     data_admissao: Optional[str] = None
+    ativo: Optional[int] = 1
+    data_adormecimento: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -72,6 +78,8 @@ def _build_response(p: Pessoa) -> PessoaResponse:
         login=p.login,
         senha=p.senha,
         data_admissao=p.data_admissao,
+        ativo=p.ativo,
+        data_adormecimento=p.data_adormecimento,
     )
 
 
@@ -89,7 +97,7 @@ def listar_pessoas_loja(loja_id: int, db: Session = Depends(get_db)):
     """Lista pessoas de uma loja específica via Raw SQL para máxima confiabilidade."""
     rows = db.execute(text("""
         SELECT p.id, p.nome, p.status, p.cargo_id, c.nome as cargo_nome,
-               p.loja_id, p.telefone, p.login, p.senha
+               p.loja_id, p.telefone, p.login, p.senha, p.ativo, p.data_adormecimento, p.data_admissao
         FROM pessoas p
         LEFT JOIN cargos c ON p.cargo_id = c.id
         WHERE p.loja_id = :lid
@@ -100,7 +108,8 @@ def listar_pessoas_loja(loja_id: int, db: Session = Depends(get_db)):
         "id": r[0], "nome": r[1], "status": r[2] or "",
         "cargo_id": r[3], "cargo_nome": r[4] or "",
         "loja_id": r[5], "telefone": r[6] or "",
-        "login": r[7], "senha": r[8]
+        "login": r[7], "senha": r[8],
+        "ativo": r[9], "data_adormecimento": r[10], "data_admissao": r[11]
     } for r in rows]
 
 
@@ -129,6 +138,9 @@ def criar_pessoa(pessoa: PessoaCreate, db: Session = Depends(get_db)):
         login=pessoa.login,
         senha=pessoa.senha,
         data_admissao=pessoa.data_admissao or datetime.now().strftime("%Y-%m-%d"),
+        ativo=pessoa.ativo if pessoa.ativo is not None else 1,
+        data_adormecimento=pessoa.data_adormecimento,
+    )
     )
     db.add(nova)
     db.commit()
@@ -158,6 +170,10 @@ def atualizar_pessoa(pessoa_id: int, dados: PessoaUpdate, db: Session = Depends(
         pessoa.senha = dados.senha
     if dados.data_admissao is not None:
         pessoa.data_admissao = dados.data_admissao
+    if dados.ativo is not None:
+        pessoa.ativo = dados.ativo
+    if dados.data_adormecimento is not None:
+        pessoa.data_adormecimento = dados.data_adormecimento
 
     db.commit()
     db.refresh(pessoa)
