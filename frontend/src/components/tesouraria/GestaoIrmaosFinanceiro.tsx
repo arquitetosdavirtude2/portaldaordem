@@ -42,7 +42,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [apenasInadimplentes, setApenasInadimplentes] = useState(false);
     const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
     const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes' | 'adormecidos'>('ativos');
-    const [abaAtiva, setAbaAtiva] = useState<'caixa' | 'mensalidades' | 'academia' | 'pagar'>('mensalidades');
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -162,13 +161,13 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     const irmaosFiltrados = irmaos.filter(i => {
         if (visaoAtiva === 'inadimplentes') {
-            return i.saude_financeira !== 'REGULAR' && i.ativo === 1;
+            return i.saude_financeira !== 'REGULAR' && i.ativo !== 0;
         }
         if (visaoAtiva === 'adormecidos') {
             return i.ativo === 0;
         }
-        // Visão 'ativos'
-        return i.ativo === 1;
+        // Visão 'ativos' - mostra todos que não estão explicitamente adormecidos
+        return i.ativo !== 0;
     });
 
     if (carregando) {
@@ -184,33 +183,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-bold text-yellow-500 uppercase tracking-tighter">Financeiro Loja</h1>
-                    <div className="flex gap-4 border-b border-white/10 mb-4">
-                        <button 
-                            onClick={() => setAbaAtiva('caixa')}
-                            className={`pb-2 text-[10px] font-bold uppercase tracking-widest transition-all ${abaAtiva === 'caixa' ? 'text-yellow-500 border-b-2 border-yellow-500' : 'text-gray-500'}`}
-                        >
-                            Fluxo de Caixa
-                        </button>
-                        <button 
-                            onClick={() => setAbaAtiva('mensalidades')}
-                            className={`pb-2 text-[10px] font-bold uppercase tracking-widest transition-all ${abaAtiva === 'mensalidades' ? 'text-yellow-500 border-b-2 border-yellow-500' : 'text-gray-500'}`}
-                        >
-                            Joias & Mensalidades
-                        </button>
-                        <button 
-                            onClick={() => setAbaAtiva('academia')}
-                            className={`pb-2 text-[10px] font-bold uppercase tracking-widest transition-all ${abaAtiva === 'academia' ? 'text-yellow-500 border-b-2 border-yellow-500' : 'text-gray-500'}`}
-                        >
-                            Academia (Indicações)
-                        </button>
-                        <button 
-                            onClick={() => setAbaAtiva('pagar')}
-                            className={`pb-2 text-[10px] font-bold uppercase tracking-widest transition-all ${abaAtiva === 'pagar' ? 'text-yellow-500 border-b-2 border-yellow-500' : 'text-gray-500'}`}
-                        >
-                            Contas a Pagar
-                        </button>
-                    </div>
+                    <h1 className="text-2xl font-bold text-yellow-500 uppercase tracking-tighter">Joias & Mensalidades</h1>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -270,143 +243,125 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                         ))}
                     </select>
                 </div>
-            </div>
 
-            {abaAtiva === 'mensalidades' && (
                 <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-md">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
-                            <th className="px-5 py-4">Obreiro</th>
-                            <th className="px-5 py-4">Cargo</th>
-                            <th className="px-5 py-4 text-center">Iniciação</th>
-                            <th className="px-5 py-4 text-center">Meses Devidos</th>
-                            <th className="px-5 py-4 text-center">Joia (Paga / Pend)</th>
-                            <th className="px-5 py-4 text-center">Mensal. (Paga / Pend)</th>
-                            <th className="px-5 py-4 text-center">Detalhes</th>
-                            <th className="px-5 py-4 text-right">Saúde Financeira</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                        {irmaosFiltrados.length === 0 && (
-                            <tr>
-                                <td colSpan={8} className="px-5 py-10 text-center text-gray-500 text-[11px]">
-                                    Nenhum registro encontrado para os filtros selecionados.
-                                </td>
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
+                                <th className="px-5 py-4">Obreiro</th>
+                                <th className="px-5 py-4">Cargo</th>
+                                <th className="px-5 py-4 text-center">Iniciação</th>
+                                <th className="px-5 py-4 text-center">Meses Devidos</th>
+                                <th className="px-5 py-4 text-center">Joia (Paga / Pend)</th>
+                                <th className="px-5 py-4 text-center">Mensal. (Paga / Pend)</th>
+                                <th className="px-5 py-4 text-center">Detalhes</th>
+                                <th className="px-5 py-4 text-right">Saúde Financeira</th>
                             </tr>
-                        )}
-                        {irmaosFiltrados.map(irmao => {
-                            const isAdormecido = irmao.ativo === 0;
-                            return (
-                                <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
-                                    <td className="px-5 py-4">
-                                        <div className="text-[12px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
-                                            {irmao.nome}
-                                        </div>
-                                        {isAdormecido && (
-                                            <div className="text-[9px] text-gray-500 uppercase tracking-tighter mt-0.5">
-                                                Adormecido desde {formatarData(irmao.data_adormecimento)}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="px-5 py-4">
-                                        {isAdormecido ? (
-                                            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-500 bg-gray-400/10 border border-gray-400/20 px-2 py-0.5 rounded-full">
-                                                ADORMECIDO
-                                            </span>
-                                        ) : irmao.cargo ? (
-                                            <span className="text-[9px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">
-                                                {irmao.cargo}
-                                            </span>
-                                        ) : (
-                                            <span className="text-[9px] text-gray-600 italic">—</span>
-                                        )}
-                                    </td>
-                                    <td className="px-5 py-4 text-center">
-                                        <span className="text-[11px] text-gray-300 font-mono">
-                                            {formatarData(irmao.data_admissao)}
-                                        </span>
-                                    </td>
-                                    <td className="px-5 py-4 text-center">
-                                        <div className="flex flex-col items-center gap-0.5">
-                                            <span className="text-[12px] font-bold text-white">{irmao.meses_devidos}</span>
-                                            <span className="text-[9px] text-gray-500 uppercase">
-                                                {irmao.meses_pagos}/{irmao.meses_devidos} pagos
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-5 py-4 text-center font-sans text-[11px]">
-                                        <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
-                                        <span className="mx-1 text-gray-600">/</span>
-                                        <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
-                                            R$ {irmao.joia_pendente.toFixed(0)}
-                                        </span>
-                                    </td>
-                                    <td className="px-5 py-4 text-center font-sans text-[11px]">
-                                        <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
-                                        <span className="mx-1 text-gray-600">/</span>
-                                        <span className={
-                                            irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' : 
-                                            irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' : 
-                                            'text-gray-500 italic'
-                                        }>
-                                            R$ {irmao.mensalidade_pendente.toFixed(0)}
-                                        </span>
-                                    </td>
-                                    <td className="px-5 py-4 text-center">
-                                        {irmao.meses_atraso && irmao.meses_atraso.length > 0 ? (
-                                            <button 
-                                                onClick={() => setIrmaoSelecionado(irmao)}
-                                                className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
-                                            >
-                                                Ver Meses ({irmao.meses_atraso.length})
-                                            </button>
-                                        ) : (
-                                            <span className="text-[9px] text-gray-600 font-bold">—</span>
-                                        )}
-                                    </td>
-                                    <td className="px-5 py-4 text-right">
-                                        {isAdormecido ? (
-                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full border border-gray-500/20">
-                                                Adormecido
-                                            </div>
-                                        ) : irmao.saude_financeira === 'REGULAR' ? (
-                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
-                                                Regular
-                                            </div>
-                                        ) : irmao.saude_financeira === 'ATRASADO' ? (
-                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
-                                                Atrasado
-                                            </div>
-                                        ) : (
-                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                                                Pendente
-                                            </div>
-                                        )}
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {irmaosFiltrados.length === 0 && (
+                                <tr>
+                                    <td colSpan={8} className="px-5 py-10 text-center text-gray-500 text-[11px]">
+                                        Nenhum registro encontrado para os filtros selecionados.
                                     </td>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                            )}
+                            {irmaosFiltrados.map(irmao => {
+                                const isAdormecido = irmao.ativo === 0;
+                                return (
+                                    <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
+                                        <td className="px-5 py-4">
+                                            <div className="text-[12px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
+                                                {irmao.nome}
+                                            </div>
+                                            {isAdormecido && (
+                                                <div className="text-[9px] text-gray-500 uppercase tracking-tighter mt-0.5">
+                                                    Adormecido desde {formatarData(irmao.data_adormecimento)}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {isAdormecido ? (
+                                                <span className="text-[9px] font-bold uppercase tracking-wider text-gray-500 bg-gray-400/10 border border-gray-400/20 px-2 py-0.5 rounded-full">
+                                                    ADORMECIDO
+                                                </span>
+                                            ) : irmao.cargo ? (
+                                                <span className="text-[9px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">
+                                                    {irmao.cargo}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[9px] text-gray-600 italic">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-5 py-4 text-center">
+                                            <span className="text-[11px] text-gray-300 font-mono">
+                                                {formatarData(irmao.data_admissao)}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-4 text-center">
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <span className="text-[12px] font-bold text-white">{irmao.meses_devidos}</span>
+                                                <span className="text-[9px] text-gray-500 uppercase">
+                                                    {irmao.meses_pagos}/{irmao.meses_devidos} pagos
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 py-4 text-center font-sans text-[11px]">
+                                            <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
+                                            <span className="mx-1 text-gray-600">/</span>
+                                            <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
+                                                R$ {irmao.joia_pendente.toFixed(0)}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-4 text-center font-sans text-[11px]">
+                                            <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
+                                            <span className="mx-1 text-gray-600">/</span>
+                                            <span className={
+                                                irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' : 
+                                                irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' : 
+                                                'text-gray-500 italic'
+                                            }>
+                                                R$ {irmao.mensalidade_pendente.toFixed(0)}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-4 text-center">
+                                            {irmao.meses_atraso && irmao.meses_atraso.length > 0 ? (
+                                                <button 
+                                                    onClick={() => setIrmaoSelecionado(irmao)}
+                                                    className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
+                                                >
+                                                    Ver Meses ({irmao.meses_atraso.length})
+                                                </button>
+                                            ) : (
+                                                <span className="text-[9px] text-gray-600 font-bold">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-5 py-4 text-right">
+                                            {isAdormecido ? (
+                                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full border border-gray-500/20">
+                                                    Adormecido
+                                                </div>
+                                            ) : irmao.saude_financeira === 'REGULAR' ? (
+                                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
+                                                    Regular
+                                                </div>
+                                            ) : irmao.saude_financeira === 'ATRASADO' ? (
+                                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
+                                                    Atrasado
+                                                </div>
+                                            ) : (
+                                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
+                                                    Pendente
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            )}
-
-            {abaAtiva === 'academia' && (
-                <GestaoAcademia acesso={acesso} />
-            )}
-
-            {abaAtiva === 'caixa' && (
-                <div className="py-20 text-center text-gray-500 uppercase text-xs italic bg-black/20 rounded-2xl border border-white/10">
-                    O Fluxo de Caixa está disponível na aba principal do Painel.
-                </div>
-            )}
-
-            {abaAtiva === 'pagar' && (
-                <div className="py-20 text-center text-gray-500 uppercase text-xs italic bg-black/20 rounded-2xl border border-white/10">
-                    Contas a Pagar será implementado em breve.
-                </div>
-            )}
 
             {/* Modal Detalhes Meses — Interativo */}
             {irmaoSelecionado && (
