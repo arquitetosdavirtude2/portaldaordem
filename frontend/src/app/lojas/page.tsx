@@ -180,11 +180,39 @@ export default function LojasDashboardPage() {
 
                     <div className="p-8 border-t border-white/5">
                         <div className="flex flex-row justify-between items-center mb-8 gap-4 flex-nowrap overflow-hidden">
-                            <h2 className="text-lg md:text-xl font-black text-gray-200 uppercase tracking-[0.2em] flex items-center gap-3 whitespace-nowrap">
+                            <h2 className="text-lg md:text-xl font-black text-gray-200 uppercase tracking-[0.2em] flex items-center gap-3 whitespace-nowrap shrink-0">
                                 <span className="w-2 h-2 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]"></span>
                                 Lista de Obreiros
                             </h2>
 
+                            {/* Summary Chips - Restored & Aligned */}
+                            <div className="hidden lg:flex items-center gap-3 overflow-hidden flex-nowrap mx-4">
+                                <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full flex items-center gap-2 whitespace-nowrap">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Total</span>
+                                    <span className="text-xs font-black text-white">{pessoas.length}</span>
+                                </div>
+                                <div className="px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full flex items-center gap-2 whitespace-nowrap">
+                                    <span className="text-[9px] font-bold text-green-500/70 uppercase tracking-widest">Ativos</span>
+                                    <span className="text-xs font-black text-green-400">
+                                        {pessoas.filter(p => (p as any).ativo !== 0).length}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-1.5 bg-gray-500/10 border border-gray-500/20 rounded-full flex items-center gap-2 whitespace-nowrap">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Adormecidos</span>
+                                    <span className="text-xs font-black text-gray-400">
+                                        {pessoas.filter(p => (p as any).ativo === 0).length}
+                                    </span>
+                                </div>
+                                <div className="px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full flex items-center gap-2 whitespace-nowrap">
+                                    <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest">Luzes</span>
+                                    <span className="text-xs font-black text-yellow-400">
+                                        {pessoas.filter(p => {
+                                            const cargo = (p as any).cargo_nome?.toLowerCase() || '';
+                                            return cargo.includes('venerável') || cargo.includes('vigilante');
+                                        }).length}
+                                    </span>
+                                </div>
+                            </div>
                             
                             <button
                                 onClick={() => {
@@ -197,6 +225,7 @@ export default function LojasDashboardPage() {
                                 Novo Obreiro
                             </button>
                         </div>
+
 
 
                         <ListaPessoas

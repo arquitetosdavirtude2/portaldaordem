@@ -166,10 +166,11 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         if (i.ativo === 0) return true;
 
         if (visaoAtiva === 'inadimplentes') {
-            return i.saude_financeira === 'PENDENTE' || i.saude_financeira === 'ATRASADO';
+            return i.mensalidade_pendente > 0 || i.joia_pendente > 0;
         }
         return true;
     });
+
 
     const totais = irmaosFiltrados.reduce((acc, i) => ({
         joia_paga: acc.joia_paga + i.joia_paga,
@@ -193,10 +194,9 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
             {/* ── Linha do cabeçalho: Título + Controles ── */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
 
-                {/* Título */}
-                <h1 className="text-2xl font-bold text-yellow-500 uppercase tracking-tighter shrink-0">
-                    Joias & Mensalidades
-                </h1>
+                {/* Título removido - já está na aba do dashboard financeiro */}
+                <div></div>
+
 
                 <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-end w-full">
 
@@ -301,11 +301,12 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             <th className="px-5 py-4 whitespace-nowrap">Cargo</th>
                             <th className="px-5 py-4 text-center whitespace-nowrap">Iniciação</th>
                             {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
-                                <th className="px-5 py-4 text-center whitespace-nowrap">Joia (Paga / Pend)</th>
+                                <th className="px-5 py-4 text-center whitespace-nowrap">Joia</th>
                             )}
                             {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
-                                <th className="px-5 py-4 text-center whitespace-nowrap">Mensal. (Paga / Pend)</th>
+                                <th className="px-5 py-4 text-center whitespace-nowrap">Mensalidade</th>
                             )}
+
                             <th className="px-5 py-4 text-center whitespace-nowrap">Ações</th>
                             <th className="px-5 py-4 text-right whitespace-nowrap">Saúde Financeira</th>
                         </tr>
