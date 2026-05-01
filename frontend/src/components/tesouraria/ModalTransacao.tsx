@@ -168,6 +168,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     categoria: form.categoria,
                     valor: parseFloat(form.valor),
                     data_vencimento: dataVencimentoEdit,
+                    data_pagamento: form.data_pagamento || new Date().toISOString().split('T')[0],
                     descricao: form.descricao,
                     notas: form.notas,
                     status: form.status,
@@ -197,12 +198,14 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 formData.append('categoria', form.categoria);
                 formData.append('valor', form.valor);
                 formData.append('data_vencimento', dataVencimentoFinal);
+                formData.append('data_pagamento', form.data_pagamento || new Date().toISOString().split('T')[0]);
                 formData.append('descricao', form.descricao);
                 formData.append('notas', form.notas || '');
                 formData.append('status', form.status || 'pendente');
                 formData.append('usuario_id', String(usuarioId));
                 if (form.pessoa_id) formData.append('pessoa_id', form.pessoa_id);
                 if (arquivo) formData.append('comprovante', arquivo);
+
 
                 const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/`, {
                     method: 'POST',
@@ -427,42 +430,66 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         {/* Mês de Referência — somente para mensalidade e joia */}
                         {(form.categoria === 'mensalidade' || form.categoria === 'joia') ? (
-                            <div className="sm:col-span-2 space-y-1.5 animate-in slide-in-from-top-1">
-                                <div className="flex justify-between items-end mb-1">
-                                    <label className="text-[10px] uppercase font-black text-yellow-500 tracking-[0.1em] flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
-                                        Mês de Referência
-                                    </label>
-                                    <span className="text-[9px] text-gray-500 uppercase font-bold">A qual mês se refere?</span>
-                                </div>
-                                <div className="relative group">
-                                    <input
-                                        type="month"
-                                        value={mesReferencia}
-                                        onChange={e => setMesReferencia(e.target.value)}
-                                        className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3.5 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 focus:bg-yellow-500/10 cursor-pointer color-scheme-dark transition-all font-bold"
-                                    />
-                                    <div className="absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity">
-                                        📅
+                            <>
+                                <div className="space-y-1.5 animate-in slide-in-from-top-1">
+                                    <div className="flex justify-between items-end mb-1">
+                                        <label className="text-[10px] uppercase font-black text-yellow-500 tracking-[0.1em] flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
+                                            Mês de Referência
+                                        </label>
                                     </div>
+                                    <div className="relative group">
+                                        <input
+                                            type="month"
+                                            value={mesReferencia}
+                                            onChange={e => setMesReferencia(e.target.value)}
+                                            className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3.5 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 focus:bg-yellow-500/10 cursor-pointer color-scheme-dark transition-all font-bold"
+                                        />
+                                    </div>
+                                    <p className="text-[8px] text-gray-500 uppercase leading-relaxed mt-1 italic font-medium">
+                                        * Refere-se à mensalidade de qual mês?
+                                    </p>
                                 </div>
-                                <p className="text-[9px] text-gray-500 uppercase leading-relaxed mt-1.5 italic font-medium">
-                                    * Se não alterar, o sistema considera o <span className="text-yellow-500/70 font-bold">Mês Atual</span> como referência.
-                                </p>
-                            </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Lançamento (Pagamento)</label>
+                                    <input 
+                                        type="date"
+                                        required
+                                        value={form.data_pagamento || new Date().toISOString().split('T')[0]}
+                                        onChange={e => setForm({...form, data_pagamento: e.target.value})}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark transition-all"
+                                    />
+                                    <p className="text-[8px] text-gray-500 uppercase leading-relaxed mt-1 italic font-medium">
+                                        * Quando o dinheiro entrou de fato?
+                                    </p>
+                                </div>
+                            </>
                         ) : (
-                            <div className="space-y-1.5 relative">
-                                <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Vencimento</label>
-                                <input 
-                                    type="date"
-                                    required
-                                    value={form.data_vencimento}
-                                    onChange={e => setForm({...form, data_vencimento: e.target.value})}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark"
-                                />
-                            </div>
+                            <>
+                                <div className="space-y-1.5 relative">
+                                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Vencimento</label>
+                                    <input 
+                                        type="date"
+                                        required
+                                        value={form.data_vencimento}
+                                        onChange={e => setForm({...form, data_vencimento: e.target.value})}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark"
+                                    />
+                                </div>
+                                <div className="space-y-1.5 relative">
+                                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Lançamento (Pagamento)</label>
+                                    <input 
+                                        type="date"
+                                        required
+                                        value={form.data_pagamento || new Date().toISOString().split('T')[0]}
+                                        onChange={e => setForm({...form, data_pagamento: e.target.value})}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark"
+                                    />
+                                </div>
+                            </>
                         )}
                     </div>
+
 
                     <div className="space-y-1.5">
                         <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Descrição / Título do Lançamento</label>
