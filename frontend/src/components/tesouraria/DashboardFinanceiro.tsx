@@ -36,6 +36,8 @@ export default function DashboardFinanceiro({
     const [saldoPeriodo, setSaldoPeriodo] = useState<number>(0);
     const [carregando, setCarregando] = useState(true);
 
+    const [buscaLocal, setBuscaLocal] = useState<string>('');
+
     const carregarResumo = async () => {
         setCarregando(true);
         try {
@@ -69,9 +71,15 @@ export default function DashboardFinanceiro({
     useEffect(() => {
         carregarResumo();
     }, [acesso.loja_id, caixaAtivo, mesAtivo, anoAtivo, statusFiltro, busca, chaveAtualizacao]);
-    
-    // Remove the default selection logic since we default to 0 (consolidated)
 
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setBusca(buscaLocal);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [buscaLocal]);
+    
     if (carregando) {
         return <div className="text-center py-20 text-yellow-500/50 flex flex-col items-center gap-4">
             <div className="w-8 h-8 border-2 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin"></div>
@@ -171,14 +179,14 @@ export default function DashboardFinanceiro({
             </div>
 
             {/* Filters Bar */}
-            <div className="flex flex-wrap items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-                <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold text-gray-500 tracking-widest ml-1">Período</label>
+            <div className="flex flex-wrap items-end gap-6 p-6 rounded-2xl bg-white/5 border border-white/10 shadow-lg">
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Período</label>
                     <div className="flex items-center gap-2">
                         <select 
                             value={mesAtivo}
                             onChange={(e) => setMesAtivo(Number(e.target.value))}
-                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase"
+                            className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
                         >
                             <option value={0}>Tudo (Sem Filtro)</option>
                             {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
@@ -190,7 +198,7 @@ export default function DashboardFinanceiro({
                             <select 
                                 value={anoAtivo}
                                 onChange={(e) => setAnoAtivo(Number(e.target.value))}
-                                className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors"
+                                className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all cursor-pointer hover:bg-black/60"
                             >
                                 {[2024, 2025, 2026].map(val => (
                                     <option key={val} value={val}>{val}</option>
@@ -200,26 +208,26 @@ export default function DashboardFinanceiro({
                     </div>
                 </div>
 
-                <div className="flex-1 min-w-[200px]">
-                    <label className="text-[9px] uppercase font-bold text-gray-500 tracking-widest ml-1">Pesquisar</label>
-                    <div className="relative">
+                <div className="flex-1 min-w-[300px] max-w-2xl flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Pesquisar</label>
+                    <div className="relative group">
                         <input 
                             type="text"
-                            value={busca}
-                            onChange={(e) => setBusca(e.target.value)}
+                            value={buscaLocal}
+                            onChange={(e) => setBuscaLocal(e.target.value)}
                             placeholder="Nome, descrição ou categoria..."
-                            className="w-full bg-black/40 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-[11px] font-medium text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-11 pr-4 py-2.5 text-[11px] font-medium text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all placeholder:text-gray-600 hover:bg-black/60"
                         />
-                        <svg className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-yellow-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold text-gray-500 tracking-widest ml-1">Status</label>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Status</label>
                     <select 
                         value={statusFiltro}
                         onChange={(e) => setStatusFiltro(e.target.value)}
-                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
                     >
                         <option value="todos">Todos</option>
                         <option value="pendente">Pendente</option>

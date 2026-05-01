@@ -39,6 +39,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [salvando, setSalvando] = useState<string | null>(null);
     const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
     const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes' | 'adormecidos'>('ativos');
+    const [categoriaFiltro, setCategoriaFiltro] = useState<'todas' | 'joia' | 'mensalidade'>('todas');
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -196,6 +197,28 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
                 <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-end w-full">
 
+                    {/* Sub-filtro de Categoria */}
+                    <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 shadow-inner mr-2">
+                        <button
+                            onClick={() => setCategoriaFiltro('todas')}
+                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${categoriaFiltro === 'todas' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Todas
+                        </button>
+                        <button
+                            onClick={() => setCategoriaFiltro('joia')}
+                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${categoriaFiltro === 'joia' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Joia
+                        </button>
+                        <button
+                            onClick={() => setCategoriaFiltro('mensalidade')}
+                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${categoriaFiltro === 'mensalidade' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Mensalidade
+                        </button>
+                    </div>
+
                     <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10 shadow-inner">
                         <button
                             onClick={() => setVisaoAtiva('ativos')}
@@ -279,8 +302,12 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             <th className="px-5 py-4 whitespace-nowrap">Obreiro</th>
                             <th className="px-5 py-4 whitespace-nowrap">Cargo</th>
                             <th className="px-5 py-4 text-center whitespace-nowrap">Iniciação</th>
-                            <th className="px-5 py-4 text-center whitespace-nowrap">Joia (Paga / Pend)</th>
-                            <th className="px-5 py-4 text-center whitespace-nowrap">Mensal. (Paga / Pend)</th>
+                            {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
+                                <th className="px-5 py-4 text-center whitespace-nowrap">Joia (Paga / Pend)</th>
+                            )}
+                            {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
+                                <th className="px-5 py-4 text-center whitespace-nowrap">Mensal. (Paga / Pend)</th>
+                            )}
                             <th className="px-5 py-4 text-center whitespace-nowrap">Ações</th>
                             <th className="px-5 py-4 text-right whitespace-nowrap">Saúde Financeira</th>
                         </tr>
@@ -319,24 +346,28 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
                                         <span className="text-[10px] text-gray-300 font-mono">{formatarData(irmao.data_admissao)}</span>
                                     </td>
-                                    <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
-                                        <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
-                                        <span className="mx-1 text-gray-600">/</span>
-                                        <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
-                                            R$ {irmao.joia_pendente.toFixed(0)}
-                                        </span>
-                                    </td>
-                                    <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
-                                        <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
-                                        <span className="mx-1 text-gray-600">/</span>
-                                        <span className={
-                                            irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' :
-                                            irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' :
-                                            'text-gray-500 italic'
-                                        }>
-                                            R$ {irmao.mensalidade_pendente.toFixed(0)}
-                                        </span>
-                                    </td>
+                                    {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
+                                        <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
+                                            <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
+                                            <span className="mx-1 text-gray-600">/</span>
+                                            <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
+                                                R$ {irmao.joia_pendente.toFixed(0)}
+                                            </span>
+                                        </td>
+                                    )}
+                                    {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
+                                        <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
+                                            <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
+                                            <span className="mx-1 text-gray-600">/</span>
+                                            <span className={
+                                                irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' :
+                                                irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' :
+                                                'text-gray-500 italic'
+                                            }>
+                                                R$ {irmao.mensalidade_pendente.toFixed(0)}
+                                            </span>
+                                        </td>
+                                    )}
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
                                         <button
                                             onClick={() => setIrmaoSelecionado(irmao)}
@@ -362,17 +393,21 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     </tbody>
                     <tfoot className="border-t border-white/10 bg-white/5 font-sans font-black text-[10px] uppercase tracking-widest">
                         <tr>
-                            <td colSpan={3} className="px-5 py-4 text-right text-gray-500">Totais do Período:</td>
-                            <td className="px-5 py-4 text-center whitespace-nowrap">
-                                <span className="text-green-400 font-bold">R$ {totais.joia_paga.toFixed(0)}</span>
-                                <span className="mx-1 text-gray-600">/</span>
-                                <span className="text-yellow-500 font-bold">R$ {totais.joia_pendente.toFixed(0)}</span>
-                            </td>
-                            <td className="px-5 py-4 text-center whitespace-nowrap">
-                                <span className="text-green-400 font-bold">R$ {totais.mensalidade_paga.toFixed(0)}</span>
-                                <span className="mx-1 text-gray-600">/</span>
-                                <span className="text-red-400 font-bold">R$ {totais.mensalidade_pendente.toFixed(0)}</span>
-                            </td>
+                            <td colSpan={3} className="px-5 py-4 text-right text-gray-500">Totais:</td>
+                            {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
+                                <td className="px-5 py-4 text-center whitespace-nowrap">
+                                    <span className="text-green-400 font-bold">R$ {totais.joia_paga.toFixed(0)}</span>
+                                    <span className="mx-1 text-gray-600">/</span>
+                                    <span className="text-yellow-500 font-bold">R$ {totais.joia_pendente.toFixed(0)}</span>
+                                </td>
+                            )}
+                            {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
+                                <td className="px-5 py-4 text-center whitespace-nowrap">
+                                    <span className="text-green-400 font-bold">R$ {totais.mensalidade_paga.toFixed(0)}</span>
+                                    <span className="mx-1 text-gray-600">/</span>
+                                    <span className="text-red-400 font-bold">R$ {totais.mensalidade_pendente.toFixed(0)}</span>
+                                </td>
+                            )}
                             <td colSpan={2}></td>
                         </tr>
                     </tfoot>
@@ -386,7 +421,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     <div className="bg-[#0f1d45] border border-white/20 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in duration-300">
                         <div className="p-4 border-b border-white/10 flex justify-between items-center">
                             <div>
-                                <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest">Meses em Aberto</h3>
+                                <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest">Detalhamento Financeiro</h3>
                                 <p className="text-[9px] text-gray-500 mt-0.5 uppercase">Clique em um mês vermelho para justificar e ignorar</p>
                             </div>
                             <button onClick={() => { setIrmaoSelecionado(null); setJustificativaTemp({}); }} className="text-gray-400 hover:text-white">✕</button>
@@ -396,8 +431,12 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 Obreiro: <span className="text-white">{irmaoSelecionado.nome}</span>
                                 <span className="ml-3 text-gray-600">·</span>
                                 <span className="ml-3 text-gray-400">Iniciado: {formatarData(irmaoSelecionado.data_admissao)}</span>
-                                <span className="ml-3 text-gray-600">·</span>
-                                <span className="ml-3 text-gray-400">{irmaoSelecionado.meses_devidos} meses devidos</span>
+                                {irmaoSelecionado.meses_devidos > 0 && (
+                                    <>
+                                        <span className="ml-3 text-gray-600">·</span>
+                                        <span className="ml-3 text-red-400 font-black">{irmaoSelecionado.meses_devidos} meses devidos</span>
+                                    </>
+                                )}
                             </div>
 
                             {mesesModal.map((mes) => {
