@@ -308,15 +308,13 @@ def listar_transacoes(
             params["status"] = status
             
         if mes:
-            # Assumindo data_vencimento no formato YYYY-MM-DD
-            # Usando LIKE para compatibilidade SQLite/MySQL
             mes_str = f"-{mes:02d}-"
-            query += " AND data_vencimento LIKE :mes"
+            query += " AND (CASE WHEN status = 'pago' AND data_pagamento IS NOT NULL THEN data_pagamento ELSE data_vencimento END) LIKE :mes"
             params["mes"] = f"%{mes_str}%"
             
         if ano:
             ano_str = f"{ano}-"
-            query += " AND data_vencimento LIKE :ano"
+            query += " AND (CASE WHEN status = 'pago' AND data_pagamento IS NOT NULL THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
             params["ano"] = f"{ano_str}%"
 
         rows = db_treasury.execute(text(query), params).fetchall()
@@ -565,19 +563,29 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                     while curr <= alvo_limite:
                         mes_ref_str = curr.strftime("%Y-%m")
                         
-                        # Conta meses devidos
-                        if curr < date(hoje.year, hoje.month, 1):
-                            meses_devidos += 1
-                        elif curr == date(hoje.year, hoje.month, 1) and hoje.day > 10:
-                            meses_devidos += 1
-
-                        # Verifica exceção (ignorar este mês)
+                        # Verifica exceção (ignorar este mês mas incluir no histórico para visualização)
                         if mes_ref_str in excecoes_map:
+                            exc = excecoes_map[mes_ref_str]
+                            detalhes_meses.append({
+                                "mes_ref": mes_ref_str,
+                                "label": f"{MESES_PT[curr.month]}/{curr.year}",
+                                "ignorado": True,
+                                "excecao_id": exc["id"],
+                                "justificativa": exc["justificativa"],
+                                "status": "justificado"
+                            })
+                            
                             if curr.month == 12:
                                 curr = date(curr.year + 1, 1, 1)
                             else:
                                 curr = date(curr.year, curr.month + 1, 1)
                             continue
+
+                        # Conta meses devidos (Somente se não for exceção)
+                        if curr < date(hoje.year, hoje.month, 1):
+                            meses_devidos += 1
+                        elif curr == date(hoje.year, hoje.month, 1) and hoje.day > 10:
+                            meses_devidos += 1
 
                         # Verifica se existe algum lançamento de mensalidade pago neste mês
                         # (COUNT > 0: qualquer valor conta, inclusive R$0 por desconto/empréstimo)
@@ -622,14 +630,31 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                     meses_devidos = 0
 
             # 3. SAÚDE FINANCEIRA
-            is_atrasado = (m_pend > 0)
-            
-            if is_atrasado:
-                saude = "ATRASADO"
-            elif (j_pend > 0):
+            saude = "REGULAR"
+            if m_pend > 0:
+                # Verificar se existe algum mês atrasado de fato (antes de HOJE)
+                tem_atraso_real = False
+                for d in detalhes_meses:
+                    d_mes = datetime.strptime(d["mes_ref"], "%Y-%m").date()
+                    if d_mes < date(hoje.year, hoje.month, 1):
+                        tem_atraso_real = True
+                        break
+                saude = "ATRASADO" if tem_atraso_real else "PENDENTE"
+            elif j_pend > 0:
                 saude = "PENDENTE"
-            else:
+            
+            # EXCEÇÃO: Se tem justificativa para o mês atual, não pode estar PENDENTE/ATRASADO
+            target_ref = alvo.strftime("%Y-%m")
+            if target_ref in excecoes_map:
                 saude = "REGULAR"
+            
+            # Se qualquer justificativa mencionar 'joia', zeramos a pendencia da joia
+            for exc in excecoes_map.values():
+                if 'joia' in (exc['justificativa'] or '').lower():
+                    j_pend = 0.0
+                    if saude == "PENDENTE" and m_pend == 0:
+                        saude = "REGULAR"
+                    break
 
             res.append({
                 "id": pid,

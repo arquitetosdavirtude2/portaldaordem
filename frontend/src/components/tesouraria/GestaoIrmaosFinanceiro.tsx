@@ -326,16 +326,12 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         </span>
                                     </td>
                                     <td className="px-5 py-4 text-center">
-                                        {irmao.meses_atraso && irmao.meses_atraso.length > 0 ? (
-                                            <button
-                                                onClick={() => setIrmaoSelecionado(irmao)}
-                                                className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
-                                            >
-                                                Ver Meses ({irmao.meses_atraso.length})
-                                            </button>
-                                        ) : (
-                                            <span className="text-[9px] text-gray-600 font-bold">—</span>
-                                        )}
+                                        <button
+                                            onClick={() => setIrmaoSelecionado(irmao)}
+                                            className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
+                                        >
+                                            Histórico ({irmao.meses_atraso?.length || 0})
+                                        </button>
                                     </td>
                                     <td className="px-5 py-4 text-right">
                                         {isAdormecido ? (
