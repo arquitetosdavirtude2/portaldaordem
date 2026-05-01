@@ -271,28 +271,15 @@ export default function FormCadastro({
   };
 
   return (
-    <div className={`bg-black/30 rounded-xl p-6 mb-6 border transition-all duration-500 ${pessoaParaEditar ? 'border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'border-yellow-500/20 shadow-inner'}`}>
-      <h2 className="text-lg font-bold mb-4 text-yellow-500 font-serif border-b border-yellow-500/10 pb-2 uppercase tracking-wide flex items-center justify-between">
-        <div className="flex items-center gap-2">
-            <span>{pessoaParaEditar ? '✏️' : '➕'}</span> 
-            {pessoaParaEditar ? `Editando: ${pessoaParaEditar.nome}` : (isCandidato ? 'Registrar Novo Candidato' : 'Cadastrar Novo Obreiro')}
-        </div>
-        
-        {pessoaParaEditar && (
-            <button
-                type="button"
-                onClick={onCancelarEdicao}
-                className="text-[9px] font-bold text-gray-400 bg-white/5 px-2 py-1 rounded hover:bg-white/10 transition-all border border-white/10"
-            >
-                CANCELAR EDIÇÃO
-            </button>
-        )}
-      </h2>
+    <div className={`bg-black/30 rounded-xl p-4 mb-6 border transition-all duration-500 ${pessoaParaEditar ? 'border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'border-yellow-500/20 shadow-inner'}`}>
+      {/* Título interno removido para evitar duplicidade com o título do Modal */}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
               Nome Completo
             </label>
             <input
@@ -300,13 +287,14 @@ export default function FormCadastro({
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder="Ex: João da Silva"
-              className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
+              className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
               autoFocus={!!pessoaParaEditar}
             />
           </div>
 
+
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
               Telefone (WhatsApp)
             </label>
             <input
@@ -315,38 +303,40 @@ export default function FormCadastro({
               onChange={handleTelefoneChange}
               placeholder="(11) 99999-9999"
               maxLength={15}
-              className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
+              className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-4 rounded-xl border border-white/10">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/5 p-3 rounded-xl border border-white/10">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                 Tipo de Cadastro
               </label>
               <select
                 value={tipoPessoa}
                 onChange={(e) => setTipoPessoa(e.target.value)}
-                className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-yellow-500 font-bold focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-yellow-500 font-bold focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
               >
                 <option value="obreiro">Irmão (Obreiro Ativo)</option>
                 <option value="candidato">Candidato / Profano</option>
                 <option value="adormecido">Adormecido</option>
               </select>
-              <p className="text-[9px] text-gray-500 mt-1 uppercase italic">* Candidatos não entram na contagem de Per Capita.</p>
+              <p className="text-[8px] text-gray-500 mt-1 uppercase italic">* Candidatos não entram na contagem de Per Capita.</p>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                 Data de Iniciação
               </label>
               <input
                 type="date"
                 value={dataIniciacao}
                 onChange={(e) => setDataIniciacao(e.target.value)}
-                className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs h-9"
               />
+
               {dataIniciacao && (
                 <p className="text-[10px] text-blue-400 mt-1 font-bold">
                    ⌛ Tempo de Irmandade: {(() => {
@@ -366,24 +356,24 @@ export default function FormCadastro({
         </div>
 
         {!isCandidato && (
-          <div className="bg-yellow-500/5 rounded-xl p-4 border border-yellow-500/10 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-yellow-500/5 rounded-xl p-3 border border-yellow-500/10 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">
                   Tipo de Ingresso na Loja
                 </label>
                 <div className="flex gap-4">
                   <button
                     type="button"
                     onClick={() => setTipoIngresso('iniciacao')}
-                    className={`flex-1 p-3 rounded-lg border text-xs font-bold transition-all ${tipoIngresso === 'iniciacao' ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500' : 'bg-black/20 border-white/10 text-gray-500'}`}
+                    className={`flex-1 p-2 rounded-lg border text-[10px] font-bold transition-all ${tipoIngresso === 'iniciacao' ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500' : 'bg-black/20 border-white/10 text-gray-500'}`}
                   >
                     🌱 INICIAÇÃO
                   </button>
                   <button
                     type="button"
                     onClick={() => setTipoIngresso('transferencia')}
-                    className={`flex-1 p-3 rounded-lg border text-xs font-bold transition-all ${tipoIngresso === 'transferencia' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-black/20 border-white/10 text-gray-500'}`}
+                    className={`flex-1 p-2 rounded-lg border text-[10px] font-bold transition-all ${tipoIngresso === 'transferencia' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-black/20 border-white/10 text-gray-500'}`}
                   >
                     ✈️ TRANSFERÊNCIA
                   </button>
@@ -391,29 +381,30 @@ export default function FormCadastro({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                   Indicador (Academia)
                 </label>
                 <select
                   value={indicadorId}
                   onChange={(e) => setIndicadorId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+                  className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
                 >
                   <option value="">Ninguém (Indicação Direta)</option>
                   {indicadores.map(ind => (
                     <option key={ind.id} value={ind.id}>{ind.nome}</option>
                   ))}
                 </select>
-                <p className="text-[9px] text-gray-500 mt-1 uppercase italic">* Se for transferência, a Joia não será cobrada.</p>
+                <p className="text-[8px] text-gray-500 mt-1 uppercase italic">* Se for transferência, a Joia não será cobrada.</p>
               </div>
             </div>
           </div>
         )}
 
+
         {!isCandidato && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-1 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                 Login (Para Acesso)
               </label>
               <input
@@ -421,12 +412,12 @@ export default function FormCadastro({
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 placeholder="Ex: joao.silva"
-                className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
+                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                 {pessoaParaEditar ? 'Nova Senha (Opcional)' : 'Senha Inicial'}
               </label>
               <input
@@ -434,21 +425,22 @@ export default function FormCadastro({
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder={pessoaParaEditar ? "Deixe em branco para não alterar" : "••••••••"}
-                className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
+                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
               />
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
               {isCandidato ? 'Status' : 'Grau'}
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
+              className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
             >
               {isCandidato ? (
                 <>
@@ -467,13 +459,13 @@ export default function FormCadastro({
           
           {!isCandidato && (
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                 Cargo
               </label>
               <select
                 value={cargoId}
                 onChange={(e) => setCargoId(Number(e.target.value))}
-                className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
+                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
               >
                 <option value={0}>Sem cargo</option>
                 {cargos.map(c => (
@@ -485,14 +477,14 @@ export default function FormCadastro({
 
           {!isCandidato && (
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                 Loja (Vínculo)
               </label>
               <select
                 value={lojaId}
                 onChange={(e) => setLojaId(e.target.value ? Number(e.target.value) : '')}
                 disabled={isLojaUser}
-                className={`w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm ${isLojaUser ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs ${isLojaUser ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 <option value="">Sem vínculo</option>
                 {lojas.map(loja => (
@@ -501,12 +493,10 @@ export default function FormCadastro({
                   </option>
                 ))}
               </select>
-              {isLojaUser && (
-                  <p className="text-[9px] text-gray-500 mt-1 uppercase">Acesso restrito à sua Loja</p>
-              )}
             </div>
           )}
         </div>
+
 
         {pessoaParaEditar && !isCandidato && (
           <div className="bg-blue-500/5 rounded-xl p-4 border border-blue-500/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
@@ -576,27 +566,27 @@ export default function FormCadastro({
         )}
 
         {!isCandidato && !pessoaParaEditar && (
-          <div className="bg-yellow-500/5 rounded-xl p-6 border border-yellow-500/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500 mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">💰</span>
-              <h3 className="text-[11px] font-black text-yellow-500 uppercase tracking-widest">Configuração Financeira Inicial</h3>
+          <div className="bg-yellow-500/5 rounded-xl p-4 border border-yellow-500/10 space-y-3 animate-in fade-in slide-in-from-top-2 duration-500 mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base">💰</span>
+              <h3 className="text-[10px] font-black text-yellow-500 uppercase tracking-widest">Configuração Financeira Inicial</h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                   Data de Iniciação / Admissão
                 </label>
                 <input
                   type="date"
                   value={dataAdmissao}
                   onChange={(e) => setDataAdmissao(e.target.value)}
-                  className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+                  className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                   Joia Paga (R$)
                 </label>
                 <input
@@ -604,26 +594,27 @@ export default function FormCadastro({
                   value={joiaPaga}
                   onChange={(e) => setJoiaPaga(e.target.value)}
                   placeholder="0,00"
-                  className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+                  className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                   Comprovante da Joia
                 </label>
                 <input
                   type="file"
                   onChange={(e) => setComprovante(e.target.files?.[0] || null)}
-                  className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-yellow-500/10 file:text-yellow-500 hover:file:bg-yellow-500/20 transition-all cursor-pointer"
+                  className="w-full text-[10px] text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[9px] file:font-bold file:uppercase file:bg-yellow-500/10 file:text-yellow-500 hover:file:bg-yellow-500/20 transition-all cursor-pointer"
                 />
               </div>
             </div>
-            <p className="text-[9px] text-gray-500 uppercase italic">
+            <p className="text-[8px] text-gray-500 uppercase italic">
               * O valor da Joia padrão é R$ 2.000,00. O valor inserido aqui será registrado como entrada no caixa de Joias.
             </p>
           </div>
         )}
+
 
         {mensagem && (
           <p className={`text-xs font-semibold p-2 rounded border animate-in fade-in duration-300 ${mensagem.includes('✅') ? 'bg-green-900/20 text-green-400 border-green-900/40' : 'bg-red-900/20 text-red-400 border-red-900/40'}`}>
