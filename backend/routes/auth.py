@@ -64,9 +64,9 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
                     tipo="leitor", 
                     role=user.role, 
                     allowed_states=states,
-                    loja_id=user.loja_id if user.role == 'loja' else None,
-                    loja_nome=user.loja.nome if user.role == 'loja' and user.loja else None,
-                    loja_numero=user.loja.numero if user.role == 'loja' and user.loja else None,
+                    loja_id=user.loja_id,
+                    loja_nome=user.loja.nome if user.loja else None,
+                    loja_numero=user.loja.numero if user.loja else None,
                     loja_cidade=cidade,
                     nome=getattr(user, 'nome', 'Irmão'), 
                     cargo=cargo_display
