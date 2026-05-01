@@ -484,7 +484,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             alvo = hoje
 
         query_pessoas = text("""
-            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso
+            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
