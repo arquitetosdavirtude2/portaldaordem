@@ -33,6 +33,9 @@ class PessoaCreate(BaseModel):
     data_adormecimento: Optional[str] = None
     tipo_ingresso: Optional[str] = "iniciacao"
     indicador_id: Optional[int] = None
+    tipo_pessoa: Optional[str] = "obreiro"
+    motivo_adormecimento: Optional[str] = None
+    data_iniciacao: Optional[str] = None
 
 class PessoaUpdate(BaseModel):
     nome: Optional[str] = None
@@ -47,6 +50,9 @@ class PessoaUpdate(BaseModel):
     data_adormecimento: Optional[str] = None
     tipo_ingresso: Optional[str] = None
     indicador_id: Optional[int] = None
+    tipo_pessoa: Optional[str] = None
+    motivo_adormecimento: Optional[str] = None
+    data_iniciacao: Optional[str] = None
 
 class PessoaResponse(BaseModel):
     id: int
@@ -64,6 +70,9 @@ class PessoaResponse(BaseModel):
     data_adormecimento: Optional[str] = None
     tipo_ingresso: Optional[str] = "iniciacao"
     indicador_id: Optional[int] = None
+    tipo_pessoa: Optional[str] = "obreiro"
+    motivo_adormecimento: Optional[str] = None
+    data_iniciacao: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -87,7 +96,10 @@ def _build_response(p: Pessoa) -> PessoaResponse:
         ativo=p.ativo,
         data_adormecimento=p.data_adormecimento,
         tipo_ingresso=p.tipo_ingresso or "iniciacao",
-        indicador_id=p.indicador_id
+        indicador_id=p.indicador_id,
+        tipo_pessoa=p.tipo_pessoa or "obreiro",
+        motivo_adormecimento=p.motivo_adormecimento,
+        data_iniciacao=p.data_iniciacao
     )
 
 
@@ -135,7 +147,10 @@ def criar_pessoa(pessoa: PessoaCreate, db: Session = Depends(get_db)):
         ativo=pessoa.ativo if pessoa.ativo is not None else 1,
         data_adormecimento=pessoa.data_adormecimento,
         tipo_ingresso=pessoa.tipo_ingresso or "iniciacao",
-        indicador_id=pessoa.indicador_id
+        indicador_id=pessoa.indicador_id,
+        tipo_pessoa=pessoa.tipo_pessoa or "obreiro",
+        motivo_adormecimento=pessoa.motivo_adormecimento,
+        data_iniciacao=pessoa.data_iniciacao
     )
     db.add(nova)
     db.commit()
@@ -173,6 +188,12 @@ def atualizar_pessoa(pessoa_id: int, dados: PessoaUpdate, db: Session = Depends(
         pessoa.tipo_ingresso = dados.tipo_ingresso
     if dados.indicador_id is not None:
         pessoa.indicador_id = dados.indicador_id if dados.indicador_id != 0 else None
+    if dados.tipo_pessoa is not None:
+        pessoa.tipo_pessoa = dados.tipo_pessoa
+    if dados.motivo_adormecimento is not None:
+        pessoa.motivo_adormecimento = dados.motivo_adormecimento
+    if dados.data_iniciacao is not None:
+        pessoa.data_iniciacao = dados.data_iniciacao
 
     db.commit()
     db.refresh(pessoa)

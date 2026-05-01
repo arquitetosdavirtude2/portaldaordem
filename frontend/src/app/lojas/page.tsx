@@ -165,19 +165,27 @@ export default function LojasDashboardPage() {
                                 {/* Summary Chips */}
                                 <div className="flex flex-wrap items-center gap-2">
                                     <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total</span>
-                                        <span className="text-xs font-black text-white">{pessoas.length}</span>
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total Irmãos</span>
+                                        <span className="text-xs font-black text-white">
+                                            {pessoas.filter(p => (p as any).tipo_pessoa !== 'candidato').length}
+                                        </span>
                                     </div>
                                     <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full flex items-center gap-2">
                                         <span className="text-[10px] font-bold text-green-500/70 uppercase tracking-widest">Ativos</span>
                                         <span className="text-xs font-black text-green-400">
-                                            {pessoas.filter(p => (p as any).ativo !== 0).length}
+                                            {pessoas.filter(p => (p as any).tipo_pessoa === 'obreiro' && (p as any).ativo !== 0).length}
+                                        </span>
+                                    </div>
+                                    <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center gap-2">
+                                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Candidatos</span>
+                                        <span className="text-xs font-black text-blue-400">
+                                            {pessoas.filter(p => (p as any).tipo_pessoa === 'candidato').length}
                                         </span>
                                     </div>
                                     <div className="px-3 py-1 bg-gray-500/10 border border-gray-500/20 rounded-full flex items-center gap-2">
                                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Adormecidos</span>
                                         <span className="text-xs font-black text-gray-400">
-                                            {pessoas.filter(p => (p as any).ativo === 0).length}
+                                            {pessoas.filter(p => (p as any).tipo_pessoa === 'adormecido' || (p as any).ativo === 0).length}
                                         </span>
                                     </div>
                                     <div className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full flex items-center gap-2">
@@ -185,7 +193,7 @@ export default function LojasDashboardPage() {
                                         <span className="text-xs font-black text-yellow-400">
                                             {pessoas.filter(p => {
                                                 const cargo = (p as any).cargo_nome?.toLowerCase() || '';
-                                                return cargo.includes('venerável') || cargo.includes('vigilante');
+                                                return (cargo.includes('venerável') || cargo.includes('vigilante')) && (p as any).tipo_pessoa !== 'candidato';
                                             }).length}
                                         </span>
                                     </div>

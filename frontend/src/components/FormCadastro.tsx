@@ -15,6 +15,9 @@ interface Pessoa {
   data_admissao?: string | null;
   tipo_ingresso?: string;
   indicador_id?: number | null;
+  tipo_pessoa?: string;
+  motivo_adormecimento?: string | null;
+  data_iniciacao?: string | null;
 }
 
 interface Cargo {
@@ -83,6 +86,11 @@ export default function FormCadastro({
   const [indicadorId, setIndicadorId] = useState<number | ''>('');
   const [indicadores, setIndicadores] = useState<Indicador[]>([]);
 
+  // Novos campos de Categorização
+  const [tipoPessoa, setTipoPessoa] = useState<string>('obreiro');
+  const [motivoAdormecimento, setMotivoAdormecimento] = useState<string>('');
+  const [dataIniciacao, setDataIniciacao] = useState<string>('');
+
   // Carregar cargos da API
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -118,6 +126,9 @@ export default function FormCadastro({
       setDataAdmissao(pessoaParaEditar.data_admissao || new Date().toISOString().split('T')[0]);
       setTipoIngresso(pessoaParaEditar.tipo_ingresso as any || 'iniciacao');
       setIndicadorId(pessoaParaEditar.indicador_id || '');
+      setTipoPessoa(pessoaParaEditar.tipo_pessoa || 'obreiro');
+      setMotivoAdormecimento(pessoaParaEditar.motivo_adormecimento || '');
+      setDataIniciacao(pessoaParaEditar.data_iniciacao || '');
     } else {
         setNome('');
         setTelefone('');
@@ -133,6 +144,9 @@ export default function FormCadastro({
         setDataAdormecimento('');
         setTipoIngresso('iniciacao');
         setIndicadorId('');
+        setTipoPessoa('obreiro');
+        setMotivoAdormecimento('');
+        setDataIniciacao('');
     }
   }, [pessoaParaEditar, isCandidato, isLojaUser, acesso]);
 
@@ -185,6 +199,9 @@ export default function FormCadastro({
           data_adormecimento: (isCandidato || ativo === 1) ? null : dataAdormecimento,
           tipo_ingresso: tipoIngresso,
           indicador_id: indicadorId || null,
+          tipo_pessoa: tipoPessoa,
+          motivo_adormecimento: motivoAdormecimento || null,
+          data_iniciacao: dataIniciacao || null,
         }),
       });
 
@@ -301,6 +318,51 @@ export default function FormCadastro({
               className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-sm"
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-4 rounded-xl border border-white/10">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                Tipo de Cadastro
+              </label>
+              <select
+                value={tipoPessoa}
+                onChange={(e) => setTipoPessoa(e.target.value)}
+                className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-yellow-500 font-bold focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+              >
+                <option value="obreiro">Irmão (Obreiro Ativo)</option>
+                <option value="candidato">Candidato / Profano</option>
+                <option value="adormecido">Adormecido</option>
+              </select>
+              <p className="text-[9px] text-gray-500 mt-1 uppercase italic">* Candidatos não entram na contagem de Per Capita.</p>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                Data de Iniciação
+              </label>
+              <input
+                type="date"
+                value={dataIniciacao}
+                onChange={(e) => setDataIniciacao(e.target.value)}
+                className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-sm"
+              />
+              {dataIniciacao && (
+                <p className="text-[10px] text-blue-400 mt-1 font-bold">
+                   ⌛ Tempo de Irmandade: {(() => {
+                      const start = new Date(dataIniciacao);
+                      const now = new Date();
+                      let years = now.getFullYear() - start.getFullYear();
+                      let months = now.getMonth() - start.getMonth();
+                      if (months < 0) {
+                        years--;
+                        months += 12;
+                      }
+                      return `${years} anos e ${months} meses`;
+                   })()}
+                </p>
+              )}
+            </div>
         </div>
 
         {!isCandidato && (
@@ -476,22 +538,37 @@ export default function FormCadastro({
             </div>
 
             {ativo === 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-left-2 duration-300">
+              <div className="grid grid-cols-1 gap-6 animate-in slide-in-from-left-2 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Data de Adormecimento
+                    </label>
+                    <input
+                      type="date"
+                      value={dataAdormecimento}
+                      onChange={(e) => setDataAdormecimento(e.target.value)}
+                      className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-red-500/50 transition-all text-sm"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <p className="text-[9px] text-gray-500 uppercase italic leading-tight">
+                      * Ao adormecer um irmão, o sistema interrompe a geração de novas mensalidades a partir desta data.
+                    </p>
+                  </div>
+                </div>
+                
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Data de Adormecimento
+                    Motivo do Adormecimento
                   </label>
-                  <input
-                    type="date"
-                    value={dataAdormecimento}
-                    onChange={(e) => setDataAdormecimento(e.target.value)}
-                    className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-red-500/50 transition-all text-sm"
+                  <textarea
+                    value={motivoAdormecimento}
+                    onChange={(e) => setMotivoAdormecimento(e.target.value)}
+                    placeholder="Descreva brevemente o motivo..."
+                    rows={2}
+                    className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition-all text-sm resize-none"
                   />
-                </div>
-                <div className="flex items-end">
-                  <p className="text-[9px] text-gray-500 uppercase italic leading-tight">
-                    * Ao adormecer um irmão, o sistema interrompe a geração de novas mensalidades a partir desta data.
-                  </p>
                 </div>
               </div>
             )}
