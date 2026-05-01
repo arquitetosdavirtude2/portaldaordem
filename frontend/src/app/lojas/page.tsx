@@ -182,8 +182,9 @@ export default function LojasDashboardPage() {
                         <div className="flex flex-row justify-between items-center mb-8 gap-4 flex-nowrap overflow-hidden">
                             <h2 className="text-lg md:text-xl font-black text-gray-200 uppercase tracking-[0.2em] flex items-center gap-3 whitespace-nowrap">
                                 <span className="w-2 h-2 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]"></span>
-                                Obreiros da Loja
+                                Lista de Obreiros
                             </h2>
+
                             
                             <button
                                 onClick={() => {
@@ -220,6 +221,7 @@ export default function LojasDashboardPage() {
                                 <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest">
                                     {pessoaSendoEditada ? 'Editar Obreiro' : 'Cadastrar Novo Obreiro'}
                                 </h3>
+
                                 <button 
                                     onClick={() => {
                                         setIsModalAberto(false);

@@ -245,10 +245,9 @@ export default function ListaPessoas({
         <>
             <div className="bg-black/20 backdrop-blur-md rounded-xl border border-white/5 overflow-hidden">
                 <div className="flex flex-col md:flex-row justify-between items-center p-6 border-b border-white/5 bg-black/20">
-                    <h2 className="text-xl font-bold text-yellow-500 font-serif uppercase tracking-widest flex items-center gap-3">
-                        <span className="text-2xl">📜</span>
-                        {isCandidato ? 'Lista de Candidatos / Profanos' : 'Obreiros da Loja'}
-                    </h2>
+                    <div></div>
+
+
 
 
 
