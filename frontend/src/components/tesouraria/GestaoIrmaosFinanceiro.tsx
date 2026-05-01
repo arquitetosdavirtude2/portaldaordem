@@ -61,7 +61,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     useEffect(() => {
         carregarFinanceiroIrmaos();
-    }, [acesso.loja_id, mesAtivo, anoAtivo, visaoAtiva]);
+    }, [acesso.loja_id, mesAtivo, anoAtivo, visaoAtiva, mostrarAdormecidos]);
+
 
     useEffect(() => {
         if (irmaoSelecionado) {
@@ -166,8 +167,10 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         if (i.ativo === 0) return true;
 
         if (visaoAtiva === 'inadimplentes') {
-            return i.mensalidade_pendente > 0 || i.joia_pendente > 0;
+            return Math.round(i.mensalidade_pendente) > 0 || Math.round(i.joia_pendente) > 0 || i.meses_devidos > 0;
         }
+
+
         return true;
     });
 

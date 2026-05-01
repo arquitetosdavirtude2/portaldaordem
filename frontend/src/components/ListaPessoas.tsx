@@ -51,6 +51,9 @@ export default function ListaPessoas({
     onEditPessoa
 }: ListaPessoasProps) {
     const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+    const [filtroSituacao, setFiltroSituacao] = useState<string>('ativos');
+    const [busca, setBusca] = useState<string>('');
+
     const [editandoId, setEditandoId] = useState<number | null>(null);
     const [editandoTelefone, setEditandoTelefone] = useState<string>('');
     const [editandoLogin, setEditandoLogin] = useState<string>('');
@@ -87,9 +90,24 @@ export default function ListaPessoas({
         }
 
         // Filtro de Grau selecionado no Dropdown
-        if (filtroStatus === 'todos') return true;
-        return p.status === filtroStatus;
+        const matchStatus = filtroStatus === 'todos' || p.status === filtroStatus;
+
+        // Filtro por Situação (Ativo/Adormecido)
+        const matchSituacao = isCandidato ? true : (
+            filtroSituacao === 'todos' ? true :
+            filtroSituacao === 'ativos' ? p.ativo !== 0 :
+            filtroSituacao === 'adormecidos' ? p.ativo === 0 : true
+        );
+
+        // Filtro por Busca (Nome/Cargo)
+        const buscaLower = busca.toLowerCase().trim();
+        const matchBusca = !buscaLower || 
+                          p.nome.toLowerCase().includes(buscaLower) || 
+                          (p.cargo_nome || '').toLowerCase().includes(buscaLower);
+
+        return matchStatus && matchSituacao && matchBusca;
     });
+
 
     const handleMudarStatus = async (pessoa: Pessoa, novoStatus: string) => {
         try {
@@ -251,28 +269,59 @@ export default function ListaPessoas({
 
 
 
-                    <div className="flex items-center gap-3 mt-4 md:mt-0">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Filtrar por {isCandidato ? 'Situação' : 'Grau'}:</label>
-                        <select
-                            value={filtroStatus}
-                            onChange={(e) => setFiltroStatus(e.target.value)}
-                            className="bg-gray-900/80 border border-gray-700 text-gray-300 text-xs rounded-lg p-2 focus:outline-none focus:border-yellow-500 transition-colors uppercase tracking-wider"
-                        >
-                            <option value="todos">Todos</option>
-                            {isCandidato ? (
-                                <>
-                                    <option value="Profano">Profano</option>
-                                    <option value="Candidato">Candidato</option>
-                                </>
-                            ) : (
-                                <>
-                                    <option value="Aprendiz">Aprendiz</option>
-                                    <option value="Companheiro">Companheiro</option>
-                                    <option value="Mestre">Mestre</option>
-                                </>
-                            )}
-                        </select>
+                    <div className="flex flex-col md:flex-row items-center gap-4 mt-4 md:mt-0 w-full md:w-auto">
+                        {/* Busca */}
+                        <div className="relative w-full md:w-64">
+                            <input
+                                type="text"
+                                placeholder="Buscar nome ou cargo..."
+                                value={busca}
+                                onChange={(e) => setBusca(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 text-gray-300 text-[10px] rounded-lg pl-8 pr-4 py-2 focus:outline-none focus:border-yellow-500 transition-all uppercase tracking-widest"
+                            />
+                            <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+
+                        {/* Situação (Somente se não for candidato) */}
+                        {!isCandidato && (
+                            <div className="flex items-center gap-2">
+                                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Situação:</label>
+                                <select
+                                    value={filtroSituacao}
+                                    onChange={(e) => setFiltroSituacao(e.target.value)}
+                                    className="bg-gray-900/80 border border-gray-700 text-gray-300 text-[9px] font-bold rounded-lg p-2 focus:outline-none focus:border-yellow-500 transition-colors uppercase tracking-widest"
+                                >
+                                    <option value="ativos">Ativos</option>
+                                    <option value="adormecidos">Adormecidos</option>
+                                    <option value="todos">Todos</option>
+                                </select>
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-2">
+                            <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Grau:</label>
+                            <select
+                                value={filtroStatus}
+                                onChange={(e) => setFiltroStatus(e.target.value)}
+                                className="bg-gray-900/80 border border-gray-700 text-gray-300 text-[9px] font-bold rounded-lg p-2 focus:outline-none focus:border-yellow-500 transition-colors uppercase tracking-widest"
+                            >
+                                <option value="todos">Todos</option>
+                                {isCandidato ? (
+                                    <>
+                                        <option value="Profano">Profano</option>
+                                        <option value="Candidato">Candidato</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="Aprendiz">Aprendiz</option>
+                                        <option value="Companheiro">Companheiro</option>
+                                        <option value="Mestre">Mestre</option>
+                                    </>
+                                )}
+                            </select>
+                        </div>
                     </div>
+
                 </div>
 
                 {/* Lista */}
