@@ -658,6 +658,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 tem_atraso_real = False
                 for d in detalhes_meses:
                     if d.get("ignorado"): continue # Pula os verdes
+                    if d["mes_ref"] == "JOIA": continue # Pula a Joia, pois não é data
                     d_mes = datetime.strptime(d["mes_ref"], "%Y-%m").date()
                     if d_mes < date(hoje.year, hoje.month, 1):
                         tem_atraso_real = True
