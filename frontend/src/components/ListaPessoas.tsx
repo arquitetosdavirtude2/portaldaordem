@@ -248,9 +248,6 @@ export default function ListaPessoas({
                     <h2 className="text-xl font-bold text-yellow-500 font-serif uppercase tracking-widest flex items-center gap-3">
                         <span className="text-2xl">📜</span>
                         {isCandidato ? 'Lista de Candidatos / Profanos' : 'Lista de Obreiros'}
-                        <span className="text-xs bg-yellow-500/10 text-yellow-200 px-2 py-1 rounded-full border border-yellow-500/20">
-                            {pessoasFiltradas.length}
-                        </span>
                     </h2>
 
                     <div className="flex items-center gap-3 mt-4 md:mt-0">
@@ -289,42 +286,42 @@ export default function ListaPessoas({
                     <div className="overflow-x-auto overflow-y-visible">
                         <table className="w-full text-left table-auto">
                             <thead>
-                                <tr className="bg-white/5 text-gray-400 text-[10px] uppercase tracking-[0.1em] border-b border-white/5">
-                                    <th className="py-3 px-3 font-medium text-masonic-gold tracking-[0.15em]">{isCandidato ? 'Candidato' : 'Obreiro'}</th>
-                                    <th className="py-3 px-3 font-medium">Contato</th>
-                                    <th className="py-3 px-3 font-medium">{isCandidato ? 'Status' : 'Grau'}</th>
+                                <tr className="bg-white/5 text-gray-500 uppercase tracking-widest text-[9px] font-bold">
+                                    <th className="py-3 px-3 font-medium whitespace-nowrap">{isCandidato ? 'Candidato' : 'Obreiro'}</th>
+                                    <th className="py-3 px-3 font-medium whitespace-nowrap">Contato</th>
+                                    <th className="py-3 px-3 font-medium whitespace-nowrap">{isCandidato ? 'Situação' : 'Grau'}</th>
                                     
                                     {!isCandidato && (
                                         <>
-                                            <th className="py-3 px-3 font-medium">Cargo</th>
-                                            <th className="py-3 px-3 font-medium">Login</th>
-                                            <th className="py-3 px-3 font-medium">Senha</th>
-                                            {!isLojaUser && <th className="py-3 px-3 font-medium">Loja</th>}
+                                            <th className="py-3 px-3 font-medium whitespace-nowrap">Cargo</th>
+                                            <th className="py-3 px-3 font-medium whitespace-nowrap">Login</th>
+                                            <th className="py-3 px-3 font-medium whitespace-nowrap">Senha</th>
+                                            {!isLojaUser && <th className="py-3 px-3 font-medium whitespace-nowrap">Loja</th>}
                                         </>
                                     )}
                                     
-                                    <th className="py-3 px-3 font-medium text-center">Ações</th>
+                                    <th className="py-3 px-3 font-medium text-center whitespace-nowrap">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5 text-[11px]">
+                            <tbody className="divide-y divide-white/5 text-[10px]">
                                 {pessoasFiltradas.map((pessoa) => (
                                     <tr key={pessoa.id} className="hover:bg-white/5 transition-colors group">
-                                        <td className="py-3 px-3 font-medium text-gray-200 tracking-wide">
+                                        <td className="py-3 px-3 font-medium text-gray-200 tracking-wide whitespace-nowrap">
                                             <div className="flex flex-col">
                                                 {isCandidato ? (
-                                                    <span className="text-gray-200 font-bold">{pessoa.nome}</span>
+                                                    <span className="text-[11px] text-gray-200 font-bold">{pessoa.nome}</span>
                                                 ) : (
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-2">
-                                                                <span className={`text-gray-200 font-bold ${pessoa.ativo === 0 ? 'opacity-50 line-through' : ''}`}>{pessoa.nome}</span>
+                                                                <span className={`text-[11px] text-gray-200 font-bold ${pessoa.ativo === 0 ? 'opacity-50 line-through' : ''}`}>{pessoa.nome}</span>
                                                                 {pessoa.ativo === 0 && (
-                                                                    <span className="text-[8px] bg-red-900/40 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 font-black uppercase tracking-tighter">
+                                                                    <span className="text-[7px] bg-red-900/40 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 font-black uppercase tracking-tighter">
                                                                         Adormecido
                                                                     </span>
                                                                 )}
                                                             </div>
                                                             {(!isLojaUser && pessoa.loja_nome) && (
-                                                                <span className="text-[10px] text-masonic-gold uppercase tracking-tighter">{pessoa.loja_nome}</span>
+                                                                <span className="text-[9px] text-masonic-gold uppercase tracking-tighter">{pessoa.loja_nome}</span>
                                                             )}
                                                         </div>
                                                 )}

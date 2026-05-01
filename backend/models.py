@@ -79,6 +79,9 @@ class Pessoa(Base):
     data_adormecimento = Column(String(20), nullable=True)  # YYYY-MM-DD
     tipo_ingresso = Column(String(30), default="iniciacao") # 'iniciacao', 'transferencia'
     indicador_id = Column(Integer, ForeignKey("indicadores.id"), nullable=True)
+    tipo_pessoa = Column(String(50), default="obreiro") # 'obreiro', 'candidato', 'adormecido'
+    motivo_adormecimento = Column(String(500), nullable=True)
+    data_iniciacao = Column(String(20), nullable=True)
 
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")

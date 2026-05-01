@@ -158,11 +158,21 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         const cargo = (i.cargo || '').toLowerCase();
         if (cargo.includes('venerável') || cargo.includes('vigilante')) return false;
 
-        const isAtivo = (!i.data_adormecimento || i.data_adormecimento.trim() === '') && i.ativo !== 0;
-        if (visaoAtiva === 'inadimplentes') return i.saude_financeira !== 'REGULAR' && isAtivo;
-        if (visaoAtiva === 'adormecidos') return !isAtivo;
-        return isAtivo;
+        const isAdormecido = i.ativo === 0 || (i.data_adormecimento && i.data_adormecimento.trim() !== '');
+        
+        // Se não for para mostrar adormecidos e o irmão for adormecido, filtra fora
+        if (!mostrarAdormecidos && isAdormecido) return false;
+
+        if (visaoAtiva === 'inadimplentes') return i.saude_financeira !== 'REGULAR';
+        return true; // Na visão 'ativos' mostra todos (conforme o toggle de adormecidos acima)
     });
+
+    const totais = irmaosFiltrados.reduce((acc, i) => ({
+        joia_paga: acc.joia_paga + i.joia_paga,
+        joia_pendente: acc.joia_pendente + i.joia_pendente,
+        mensalidade_paga: acc.mensalidade_paga + i.mensalidade_paga,
+        mensalidade_pendente: acc.mensalidade_pendente + i.mensalidade_pendente
+    }), { joia_paga: 0, joia_pendente: 0, mensalidade_paga: 0, mensalidade_pendente: 0 });
 
     if (carregando) {
         return (
@@ -184,10 +194,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     Joias & Mensalidades
                 </h1>
 
-                {/* Controles: filtros + relatório + mês/ano */}
                 <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-end w-full">
 
-                    {/* Segmented control de visão */}
                     <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10 shadow-inner">
                         <button
                             onClick={() => setVisaoAtiva('ativos')}
@@ -211,6 +219,13 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             Adormecidos
                         </button>
                     </div>
+
+                    <button 
+                        onClick={() => setMostrarAdormecidos(!mostrarAdormecidos)}
+                        className={`h-10 px-4 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest ${mostrarAdormecidos ? 'bg-gray-600/20 border-gray-400 text-gray-200' : 'bg-black/40 border-white/10 text-gray-500'}`}
+                    >
+                        Mostrar Adormecidos
+                    </button>
 
                     <div className="h-8 w-px bg-white/10 mx-1 hidden lg:block"></div>
 
@@ -261,13 +276,13 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
-                            <th className="px-5 py-4">Obreiro</th>
-                            <th className="px-5 py-4">Cargo</th>
-                            <th className="px-5 py-4 text-center">Iniciação</th>
-                            <th className="px-5 py-4 text-center">Joia (Paga / Pend)</th>
-                            <th className="px-5 py-4 text-center">Mensal. (Paga / Pend)</th>
-                            <th className="px-5 py-4 text-center">Ações</th>
-                            <th className="px-5 py-4 text-right">Saúde Financeira</th>
+                            <th className="px-5 py-4 whitespace-nowrap">Obreiro</th>
+                            <th className="px-5 py-4 whitespace-nowrap">Cargo</th>
+                            <th className="px-5 py-4 text-center whitespace-nowrap">Iniciação</th>
+                            <th className="px-5 py-4 text-center whitespace-nowrap">Joia (Paga / Pend)</th>
+                            <th className="px-5 py-4 text-center whitespace-nowrap">Mensal. (Paga / Pend)</th>
+                            <th className="px-5 py-4 text-center whitespace-nowrap">Ações</th>
+                            <th className="px-5 py-4 text-right whitespace-nowrap">Saúde Financeira</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -282,36 +297,36 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             const isAdormecido = irmao.ativo === 0;
                             return (
                                 <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
-                                    <td className="px-5 py-4">
-                                        <div className="text-[12px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
+                                    <td className="px-5 py-4 whitespace-nowrap">
+                                        <div className="text-[11px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
                                             {irmao.nome}
                                         </div>
                                         {isAdormecido && (
-                                            <div className="text-[9px] text-gray-500 uppercase tracking-tighter mt-0.5">
+                                            <div className="text-[8px] text-gray-500 uppercase tracking-tighter mt-0.5">
                                                 Adormecido desde {formatarData(irmao.data_adormecimento)}
                                             </div>
                                         )}
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-5 py-4 whitespace-nowrap">
                                         {isAdormecido ? (
-                                            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-500 bg-gray-400/10 border border-gray-400/20 px-2 py-0.5 rounded-full">ADORMECIDO</span>
+                                            <span className="text-[8px] font-bold uppercase tracking-wider text-gray-500 bg-gray-400/10 border border-gray-400/20 px-2 py-0.5 rounded-full">ADORMECIDO</span>
                                         ) : irmao.cargo ? (
-                                            <span className="text-[9px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">{irmao.cargo}</span>
+                                            <span className="text-[8px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">{irmao.cargo}</span>
                                         ) : (
-                                            <span className="text-[9px] text-gray-600 italic">—</span>
+                                            <span className="text-[8px] text-gray-600 italic">—</span>
                                         )}
                                     </td>
-                                    <td className="px-5 py-4 text-center">
-                                        <span className="text-[11px] text-gray-300 font-mono">{formatarData(irmao.data_admissao)}</span>
+                                    <td className="px-5 py-4 text-center whitespace-nowrap">
+                                        <span className="text-[10px] text-gray-300 font-mono">{formatarData(irmao.data_admissao)}</span>
                                     </td>
-                                    <td className="px-5 py-4 text-center font-sans text-[11px]">
+                                    <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
                                         <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
                                         <span className="mx-1 text-gray-600">/</span>
                                         <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
                                             R$ {irmao.joia_pendente.toFixed(0)}
                                         </span>
                                     </td>
-                                    <td className="px-5 py-4 text-center font-sans text-[11px]">
+                                    <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
                                         <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
                                         <span className="mx-1 text-gray-600">/</span>
                                         <span className={
@@ -322,29 +337,45 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                             R$ {irmao.mensalidade_pendente.toFixed(0)}
                                         </span>
                                     </td>
-                                    <td className="px-5 py-4 text-center">
+                                    <td className="px-5 py-4 text-center whitespace-nowrap">
                                         <button
                                             onClick={() => setIrmaoSelecionado(irmao)}
-                                            className="px-4 py-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded text-[10px] font-black uppercase tracking-widest hover:bg-blue-600/30 transition-all shadow-sm"
+                                            className="px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded text-[9px] font-black uppercase tracking-widest hover:bg-blue-600/30 transition-all shadow-sm"
                                         >
                                             DETALHES
                                         </button>
                                     </td>
-                                    <td className="px-5 py-4 text-right">
+                                    <td className="px-5 py-4 text-right whitespace-nowrap">
                                         {isAdormecido ? (
-                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full border border-gray-500/20">Adormecido</div>
+                                            <div className="inline-flex items-center gap-1 text-[8px] font-bold uppercase text-gray-500 bg-gray-500/10 px-2 py-0.5 rounded-full border border-gray-500/20">Adormecido</div>
                                         ) : irmao.saude_financeira === 'REGULAR' ? (
-                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">Regular</div>
+                                            <div className="inline-flex items-center gap-1 text-[8px] font-bold uppercase text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">Regular</div>
                                         ) : irmao.saude_financeira === 'ATRASADO' ? (
-                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">Atrasado</div>
+                                            <div className="inline-flex items-center gap-1 text-[8px] font-bold uppercase text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-500/20">Atrasado</div>
                                         ) : (
-                                            <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">Pendente</div>
+                                            <div className="inline-flex items-center gap-1 text-[8px] font-bold uppercase text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">Pendente</div>
                                         )}
                                     </td>
                                 </tr>
                             );
                         })}
                     </tbody>
+                    <tfoot className="border-t border-white/10 bg-white/5 font-sans font-black text-[10px] uppercase tracking-widest">
+                        <tr>
+                            <td colSpan={3} className="px-5 py-4 text-right text-gray-500">Totais do Período:</td>
+                            <td className="px-5 py-4 text-center whitespace-nowrap">
+                                <span className="text-green-400 font-bold">R$ {totais.joia_paga.toFixed(0)}</span>
+                                <span className="mx-1 text-gray-600">/</span>
+                                <span className="text-yellow-500 font-bold">R$ {totais.joia_pendente.toFixed(0)}</span>
+                            </td>
+                            <td className="px-5 py-4 text-center whitespace-nowrap">
+                                <span className="text-green-400 font-bold">R$ {totais.mensalidade_paga.toFixed(0)}</span>
+                                <span className="mx-1 text-gray-600">/</span>
+                                <span className="text-red-400 font-bold">R$ {totais.mensalidade_pendente.toFixed(0)}</span>
+                            </td>
+                            <td colSpan={2}></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
             {/* ── FIM da Tabela ── */}
