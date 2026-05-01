@@ -164,13 +164,14 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         if (!mostrarAdormecidos && i.ativo === 0) return false;
 
         if (visaoAtiva === 'inadimplentes') {
-            const deveJoia = Math.round(i.joia_pendente) > 0;
-            const deveMensalidade = Math.round(i.mensalidade_pendente) > 0 || i.meses_devidos > 0;
+            const pendenteJoia = Math.round(i.joia_pendente);
+            const pendenteMensalidade = Math.round(i.mensalidade_pendente);
 
-            if (categoriaFiltro === 'joia') return deveJoia;
-            if (categoriaFiltro === 'mensalidade') return deveMensalidade;
-            return deveJoia || deveMensalidade;
+            if (categoriaFiltro === 'joia') return pendenteJoia > 0;
+            if (categoriaFiltro === 'mensalidade') return pendenteMensalidade > 0;
+            return pendenteJoia > 0 || pendenteMensalidade > 0;
         }
+
 
         return true;
     });
