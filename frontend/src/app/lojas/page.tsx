@@ -155,17 +155,49 @@ export default function LojasDashboardPage() {
                     </div>
 
                     <div className="p-8 border-t border-white/5">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-lg font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
-                                Lista de Obreiros
-                            </h2>
+                        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+                            <div className="flex flex-col md:flex-row items-center gap-4">
+                                <h2 className="text-lg font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                                    Lista de Obreiros
+                                </h2>
+                                
+                                {/* Summary Chips */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full flex items-center gap-2">
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total</span>
+                                        <span className="text-xs font-black text-white">{pessoas.length}</span>
+                                    </div>
+                                    <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full flex items-center gap-2">
+                                        <span className="text-[10px] font-bold text-green-500/70 uppercase tracking-widest">Ativos</span>
+                                        <span className="text-xs font-black text-green-400">
+                                            {pessoas.filter(p => (p as any).ativo !== 0).length}
+                                        </span>
+                                    </div>
+                                    <div className="px-3 py-1 bg-gray-500/10 border border-gray-500/20 rounded-full flex items-center gap-2">
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Adormecidos</span>
+                                        <span className="text-xs font-black text-gray-400">
+                                            {pessoas.filter(p => (p as any).ativo === 0).length}
+                                        </span>
+                                    </div>
+                                    <div className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full flex items-center gap-2">
+                                        <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">Luzes (Isentos)</span>
+                                        <span className="text-xs font-black text-yellow-400">
+                                            {pessoas.filter(p => {
+                                                const cargo = (p as any).cargo_nome?.toLowerCase() || '';
+                                                return cargo.includes('venerável') || cargo.includes('vigilante');
+                                            }).length}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <button
                                 onClick={() => {
                                     setPessoaSendoEditada(null);
                                     setIsModalAberto(true);
                                 }}
-                                className="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-bold text-[11px] uppercase tracking-wider transition-all shadow-lg flex items-center gap-2"
+                                className="w-full md:w-auto px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-bold text-[11px] uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                                 Novo Obreiro
