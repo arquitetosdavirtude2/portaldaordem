@@ -162,17 +162,19 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
         // Filtro de Adormecidos (Toggle)
         if (!mostrarAdormecidos && i.ativo === 0) return false;
-        
-        // Se for Adormecido e o toggle estiver ON, ele passa (independente de estar inadimplente ou não na visão principal)
-        if (i.ativo === 0) return true;
 
         if (visaoAtiva === 'inadimplentes') {
-            return Math.round(i.mensalidade_pendente) > 0 || Math.round(i.joia_pendente) > 0 || i.meses_devidos > 0;
-        }
+            const deveJoia = Math.round(i.joia_pendente) > 0;
+            const deveMensalidade = Math.round(i.mensalidade_pendente) > 0 || i.meses_devidos > 0;
 
+            if (categoriaFiltro === 'joia') return deveJoia;
+            if (categoriaFiltro === 'mensalidade') return deveMensalidade;
+            return deveJoia || deveMensalidade;
+        }
 
         return true;
     });
+
 
 
     const totais = irmaosFiltrados.reduce((acc, i) => ({
