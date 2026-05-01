@@ -44,7 +44,12 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
+    const formatarMoeda = (valor: number) => {
+        return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
+    };
+
     const carregarFinanceiroIrmaos = async () => {
+
         setCarregando(true);
         try {
             const url = `${apiUrl}/api/tesouraria/irmaos/${acesso.loja_id}?ano=${anoAtivo}&mes=${mesAtivo}&incluir_adormecidos=${mostrarAdormecidos}`;
@@ -353,23 +358,23 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     </td>
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
                                         <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
-                                            <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
+                                            <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.joia_paga)}</span>
                                             <span className="mx-1 text-gray-600">/</span>
                                             <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
-                                                R$ {irmao.joia_pendente.toFixed(0)}
+                                                R$ {formatarMoeda(irmao.joia_pendente)}
                                             </span>
                                         </td>
                                     )}
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
                                         <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
-                                            <span className="text-green-400 font-bold">R$ {irmao.mensalidade_paga.toFixed(0)}</span>
+                                            <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.mensalidade_paga)}</span>
                                             <span className="mx-1 text-gray-600">/</span>
                                             <span className={
                                                 irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' :
                                                 irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' :
                                                 'text-gray-500 italic'
                                             }>
-                                                R$ {irmao.mensalidade_pendente.toFixed(0)}
+                                                R$ {formatarMoeda(irmao.mensalidade_pendente)}
                                             </span>
                                         </td>
                                     )}
@@ -401,16 +406,16 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             <td colSpan={3} className="px-5 py-4 text-right text-gray-500">Totais:</td>
                             {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
                                 <td className="px-5 py-4 text-center whitespace-nowrap">
-                                    <span className="text-green-400 font-bold">R$ {totais.joia_paga.toFixed(0)}</span>
+                                    <span className="text-green-400 font-bold">R$ {formatarMoeda(totais.joia_paga)}</span>
                                     <span className="mx-1 text-gray-600">/</span>
-                                    <span className="text-yellow-500 font-bold">R$ {totais.joia_pendente.toFixed(0)}</span>
+                                    <span className="text-yellow-500 font-bold">R$ {formatarMoeda(totais.joia_pendente)}</span>
                                 </td>
                             )}
                             {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
                                 <td className="px-5 py-4 text-center whitespace-nowrap">
-                                    <span className="text-green-400 font-bold">R$ {totais.mensalidade_paga.toFixed(0)}</span>
+                                    <span className="text-green-400 font-bold">R$ {formatarMoeda(totais.mensalidade_paga)}</span>
                                     <span className="mx-1 text-gray-600">/</span>
-                                    <span className="text-red-400 font-bold">R$ {totais.mensalidade_pendente.toFixed(0)}</span>
+                                    <span className="text-red-400 font-bold">R$ {formatarMoeda(totais.mensalidade_pendente)}</span>
                                 </td>
                             )}
                             <td colSpan={2}></td>
