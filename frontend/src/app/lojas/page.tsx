@@ -180,49 +180,12 @@ export default function LojasDashboardPage() {
 
                     <div className="p-8 border-t border-white/5">
                         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
-                            <div className="flex flex-col md:flex-row items-center gap-4">
-                                <h2 className="text-lg font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
-                                    Lista de Obreiros
-                                </h2>
-                                
-                                {/* Summary Chips */}
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total Irmãos</span>
-                                        <span className="text-xs font-black text-white">
-                                            {pessoas.filter(p => (p as any).tipo_pessoa !== 'candidato').length}
-                                        </span>
-                                    </div>
-                                    <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-green-500/70 uppercase tracking-widest">Ativos</span>
-                                        <span className="text-xs font-black text-green-400">
-                                            {pessoas.filter(p => (p as any).tipo_pessoa === 'obreiro' && (p as any).ativo !== 0).length}
-                                        </span>
-                                    </div>
-                                    <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Candidatos</span>
-                                        <span className="text-xs font-black text-blue-400">
-                                            {pessoas.filter(p => (p as any).tipo_pessoa === 'candidato').length}
-                                        </span>
-                                    </div>
-                                    <div className="px-3 py-1 bg-gray-500/10 border border-gray-500/20 rounded-full flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Adormecidos</span>
-                                        <span className="text-xs font-black text-gray-400">
-                                            {pessoas.filter(p => (p as any).tipo_pessoa === 'adormecido' || (p as any).ativo === 0).length}
-                                        </span>
-                                    </div>
-                                    <div className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">Luzes (Isentos)</span>
-                                        <span className="text-xs font-black text-yellow-400">
-                                            {pessoas.filter(p => {
-                                                const cargo = (p as any).cargo_nome?.toLowerCase() || '';
-                                                return (cargo.includes('venerável') || cargo.includes('vigilante')) && (p as any).tipo_pessoa !== 'candidato';
-                                            }).length}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="flex flex-col md:flex-row items-center gap-6">
+                            <h2 className="text-xl font-black text-gray-200 uppercase tracking-[0.2em] flex items-center gap-3">
+                                <span className="w-2 h-2 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]"></span>
+                                Lista de Obreiros
+                            </h2>
+                        </div>
                             
                             <button
                                 onClick={() => {

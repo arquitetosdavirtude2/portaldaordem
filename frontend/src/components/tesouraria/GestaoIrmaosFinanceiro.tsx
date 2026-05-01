@@ -155,17 +155,16 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     };
 
     const irmaosFiltrados = irmaos.filter(i => {
-        // Regra: VM e Vigilantes não pagam mensalidade, portanto nem devem aparecer na lista
         const cargo = (i.cargo || '').toLowerCase();
         if (cargo.includes('venerável') || cargo.includes('vigilante')) return false;
 
         const isAdormecido = i.ativo === 0 || (i.data_adormecimento && i.data_adormecimento.trim() !== '');
         
-        // Se não for para mostrar adormecidos e o irmão for adormecido, filtra fora
-        if (!mostrarAdormecidos && isAdormecido) return false;
-
+        if (visaoAtiva === 'adormecidos') return isAdormecido;
+        if (isAdormecido) return false;
+        
         if (visaoAtiva === 'inadimplentes') return i.saude_financeira !== 'REGULAR';
-        return true; // Na visão 'ativos' mostra todos (conforme o toggle de adormecidos acima)
+        return true;
     });
 
     const totais = irmaosFiltrados.reduce((acc, i) => ({
@@ -242,13 +241,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             Adormecidos
                         </button>
                     </div>
-
-                    <button 
-                        onClick={() => setMostrarAdormecidos(!mostrarAdormecidos)}
-                        className={`h-10 px-4 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest ${mostrarAdormecidos ? 'bg-gray-600/20 border-gray-400 text-gray-200' : 'bg-black/40 border-white/10 text-gray-500'}`}
-                    >
-                        Mostrar Adormecidos
-                    </button>
 
                     <div className="h-8 w-px bg-white/10 mx-1 hidden lg:block"></div>
 
