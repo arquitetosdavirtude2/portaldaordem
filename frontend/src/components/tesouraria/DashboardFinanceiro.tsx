@@ -32,6 +32,7 @@ export default function DashboardFinanceiro({
     const [mesAtivo, setMesAtivo] = useState<number>(new Date().getMonth() + 1);
     const [anoAtivo, setAnoAtivo] = useState<number>(new Date().getFullYear());
     const [statusFiltro, setStatusFiltro] = useState<string>('todos');
+    const [busca, setBusca] = useState<string>('');
     const [saldoPeriodo, setSaldoPeriodo] = useState<number>(0);
     const [carregando, setCarregando] = useState(true);
 
@@ -45,7 +46,11 @@ export default function DashboardFinanceiro({
             }
 
             // Also fetch filtered period data for summary
-            let url = `${apiUrl}/api/tesouraria/transacoes/${caixaAtivo}?loja_id=${acesso.loja_id}&mes=${mesAtivo}&ano=${anoAtivo}&status=${statusFiltro}`;
+            let url = `${apiUrl}/api/tesouraria/transacoes/${caixaAtivo}?loja_id=${acesso.loja_id}&`;
+            if (mesAtivo !== 0) url += `mes=${mesAtivo}&ano=${anoAtivo}&`;
+            if (statusFiltro) url += `status=${statusFiltro}&`;
+            if (busca) url += `busca=${busca}&`;
+
             const resTrans = await fetch(url);
             if (resTrans.ok) {
                 const trans: any[] = await resTrans.json();
@@ -63,7 +68,7 @@ export default function DashboardFinanceiro({
 
     useEffect(() => {
         carregarResumo();
-    }, [acesso.loja_id, caixaAtivo, mesAtivo, anoAtivo, statusFiltro, chaveAtualizacao]);
+    }, [acesso.loja_id, caixaAtivo, mesAtivo, anoAtivo, statusFiltro, busca, chaveAtualizacao]);
     
     // Remove the default selection logic since we default to 0 (consolidated)
 
@@ -175,19 +180,37 @@ export default function DashboardFinanceiro({
                             onChange={(e) => setMesAtivo(Number(e.target.value))}
                             className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase"
                         >
+                            <option value={0}>Tudo (Sem Filtro)</option>
                             {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
                                 <option key={m} value={i + 1}>{m}</option>
                             ))}
                         </select>
-                        <select 
-                            value={anoAtivo}
-                            onChange={(e) => setAnoAtivo(Number(e.target.value))}
-                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors"
-                        >
-                            {[2024, 2025, 2026].map(val => (
-                                <option key={val} value={val}>{val}</option>
-                            ))}
-                        </select>
+                        
+                        {mesAtivo !== 0 && (
+                            <select 
+                                value={anoAtivo}
+                                onChange={(e) => setAnoAtivo(Number(e.target.value))}
+                                className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors"
+                            >
+                                {[2024, 2025, 2026].map(val => (
+                                    <option key={val} value={val}>{val}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex-1 min-w-[200px]">
+                    <label className="text-[9px] uppercase font-bold text-gray-500 tracking-widest ml-1">Pesquisar</label>
+                    <div className="relative">
+                        <input 
+                            type="text"
+                            value={busca}
+                            onChange={(e) => setBusca(e.target.value)}
+                            placeholder="Nome, descrição ou categoria..."
+                            className="w-full bg-black/40 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-[11px] font-medium text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors"
+                        />
+                        <svg className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                 </div>
 
@@ -222,6 +245,7 @@ export default function DashboardFinanceiro({
                     mes={mesAtivo}
                     ano={anoAtivo}
                     statusFiltro={statusFiltro}
+                    busca={busca}
                     onStatusChanged={carregarResumo}
                     onEdit={onEdit}
                 />

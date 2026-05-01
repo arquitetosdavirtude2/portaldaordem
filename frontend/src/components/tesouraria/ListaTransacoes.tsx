@@ -32,6 +32,7 @@ export default function ListaTransacoes({
     mes, 
     ano, 
     statusFiltro, 
+    busca = '',
     onStatusChanged,
     onEdit
 }: { 
@@ -40,6 +41,7 @@ export default function ListaTransacoes({
     mes?: number, 
     ano?: number, 
     statusFiltro?: string, 
+    busca?: string,
     onStatusChanged: () => void,
     onEdit: (t: Transacao) => void
 }) {
@@ -54,8 +56,8 @@ export default function ListaTransacoes({
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
             let url = `${apiUrl}/api/tesouraria/transacoes/${caixaId}?loja_id=${acesso.loja_id}&`;
-            if (mes) url += `mes=${mes}&`;
-            if (ano) url += `ano=${ano}&`;
+            if (mes && mes !== 0) url += `mes=${mes}&`;
+            if (ano && mes !== 0) url += `ano=${ano}&`;
             if (statusFiltro) url += `status=${statusFiltro}&`;
 
             const res = await fetch(url);
@@ -119,7 +121,17 @@ export default function ListaTransacoes({
         }
     };
 
-    const transacoesOrdenadas = [...transacoes].sort((a, b) => {
+    const transacoesFiltradas = transacoes.filter(t => {
+        if (!busca) return true;
+        const s = busca.toLowerCase();
+        return (
+            (t.descricao || '').toLowerCase().includes(s) ||
+            (t.categoria || '').toLowerCase().includes(s) ||
+            (t.pessoa_nome || '').toLowerCase().includes(s)
+        );
+    });
+
+    const transacoesOrdenadas = [...transacoesFiltradas].sort((a, b) => {
         let aVal: any = a[sortKey];
         let bVal: any = b[sortKey];
 
@@ -145,7 +157,7 @@ export default function ListaTransacoes({
 
     useEffect(() => {
         carregarTransacoes();
-    }, [caixaId, mes, ano, statusFiltro]);
+    }, [caixaId, mes, ano, statusFiltro, busca]);
 
     if (carregando) {
         return <div className="text-center py-10 text-gray-400 text-[10px] uppercase tracking-widest font-bold font-sans">Atualizando histórico...</div>;

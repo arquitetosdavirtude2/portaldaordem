@@ -291,6 +291,7 @@ def listar_transacoes(
     mes: Optional[int] = None, 
     ano: Optional[int] = None, 
     status: Optional[str] = None,
+    busca: Optional[str] = None,
     db_treasury: Session = Depends(get_treasury_db)
 ):
     try:
@@ -324,6 +325,14 @@ def listar_transacoes(
             ano_str = f"{ano}-"
             query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
             params["ano"] = f"{ano_str}%"
+
+        if busca:
+            query += """ AND (
+                t.descricao LIKE :busca 
+                OR t.categoria LIKE :busca 
+                OR t.pessoa_id IN (SELECT id FROM pessoas WHERE nome LIKE :busca)
+            )"""
+            params["busca"] = f"%{busca}%"
 
         rows = db_treasury.execute(text(query), params).fetchall()
         

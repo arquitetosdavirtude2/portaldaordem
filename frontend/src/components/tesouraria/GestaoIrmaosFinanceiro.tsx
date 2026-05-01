@@ -154,6 +154,10 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     };
 
     const irmaosFiltrados = irmaos.filter(i => {
+        // Regra: VM e Vigilantes não pagam mensalidade, portanto nem devem aparecer na lista
+        const cargo = (i.cargo || '').toLowerCase();
+        if (cargo.includes('venerável') || cargo.includes('vigilante')) return false;
+
         const isAtivo = (!i.data_adormecimento || i.data_adormecimento.trim() === '') && i.ativo !== 0;
         if (visaoAtiva === 'inadimplentes') return i.saude_financeira !== 'REGULAR' && isAtivo;
         if (visaoAtiva === 'adormecidos') return !isAtivo;
@@ -260,10 +264,9 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             <th className="px-5 py-4">Obreiro</th>
                             <th className="px-5 py-4">Cargo</th>
                             <th className="px-5 py-4 text-center">Iniciação</th>
-                            <th className="px-5 py-4 text-center">Meses Devidos</th>
                             <th className="px-5 py-4 text-center">Joia (Paga / Pend)</th>
                             <th className="px-5 py-4 text-center">Mensal. (Paga / Pend)</th>
-                            <th className="px-5 py-4 text-center">Detalhes</th>
+                            <th className="px-5 py-4 text-center">Ações</th>
                             <th className="px-5 py-4 text-right">Saúde Financeira</th>
                         </tr>
                     </thead>
@@ -301,12 +304,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     <td className="px-5 py-4 text-center">
                                         <span className="text-[11px] text-gray-300 font-mono">{formatarData(irmao.data_admissao)}</span>
                                     </td>
-                                    <td className="px-5 py-4 text-center">
-                                        <div className="flex flex-col items-center gap-0.5">
-                                            <span className="text-[12px] font-bold text-white">{irmao.meses_devidos}</span>
-                                            <span className="text-[9px] text-gray-500 uppercase">{irmao.meses_pagos}/{irmao.meses_devidos} pagos</span>
-                                        </div>
-                                    </td>
                                     <td className="px-5 py-4 text-center font-sans text-[11px]">
                                         <span className="text-green-400 font-bold">R$ {irmao.joia_paga.toFixed(0)}</span>
                                         <span className="mx-1 text-gray-600">/</span>
@@ -328,9 +325,9 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     <td className="px-5 py-4 text-center">
                                         <button
                                             onClick={() => setIrmaoSelecionado(irmao)}
-                                            className="text-[10px] text-blue-400 hover:text-blue-300 underline font-bold uppercase tracking-tighter"
+                                            className="px-4 py-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded text-[10px] font-black uppercase tracking-widest hover:bg-blue-600/30 transition-all shadow-sm"
                                         >
-                                            Histórico ({irmao.meses_atraso?.length || 0})
+                                            DETALHES
                                         </button>
                                     </td>
                                     <td className="px-5 py-4 text-right">

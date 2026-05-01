@@ -111,12 +111,48 @@ def listar_cargos(db: Session = Depends(get_db)):
     return db.query(Cargo).order_by(Cargo.id).all()
 
 
-# IMPORTANTE: /loja/{loja_id} DEVE vir ANTES de /{estado_sigla}
+HIERARQUIA = {
+    "venerável mestre": 1,
+    "1º vigilante": 2,
+    "2º vigilante": 3,
+    "capelão": 4,
+    "orador": 4.5,
+    "secretário": 5,
+    "tesoureiro": 6,
+    "assistente secretário": 7,
+    "auxiliar de secretário": 7.1,
+    "mestre de cerimônias": 8,
+    "diretor de cerimônias": 8.1,
+    "diretor de cerimônias assistente": 9,
+    "esmoler": 10,
+    "hospitaleiro": 10.1,
+    "administrador de caridade": 11,
+    "1º diácono": 12,
+    "2º diácono": 13,
+    "guarda interno": 14,
+    "cobridor": 15,
+    "guarda externo": 15.1,
+    "organista": 16
+}
+
 @router.get("/loja/{loja_id}")
 def listar_pessoas_loja(loja_id: int, db: Session = Depends(get_db)):
-    """Lista pessoas de uma loja específica utilizando ORM para maior segurança."""
-    pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).order_by(Pessoa.nome).all()
-    return [_build_response(p) for p in pessoas]
+    """Lista pessoas de uma loja específica com ordenação por hierarquia de cargos."""
+    pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
+    
+    # Ordenação Customizada
+    def get_peso(p):
+        cargo = (p.cargo_rel.nome if p.cargo_rel else "").lower()
+        # Procura o peso na hierarquia
+        for key, peso in HIERARQUIA.items():
+            if key in cargo:
+                return peso
+        return 999 # Sem cargo ou cargo não listado vai para o fim
+
+    # Ordena por peso da hierarquia e depois por nome
+    pessoas_ordenadas = sorted(pessoas, key=lambda x: (get_peso(x), x.nome))
+    
+    return [_build_response(p) for p in pessoas_ordenadas]
 
 
 @router.get("/{estado_sigla}", response_model=List[PessoaResponse])

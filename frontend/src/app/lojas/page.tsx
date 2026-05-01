@@ -30,6 +30,8 @@ interface Acesso {
     loja_nome?: string | null;
     loja_numero?: string | null;
     loja_cidade?: string | null;
+    nome?: string | null;
+    cargo?: string | null;
 }
 
 export default function LojasDashboardPage() {
@@ -56,13 +58,13 @@ export default function LojasDashboardPage() {
         const siglaEstado = acessoObj.estado || (acessoObj as any).allowed_states?.[0];
         
         if (siglaEstado || acessoObj.loja_id) {
-            carregarDados((siglaEstado || '').toUpperCase(), acessoObj.loja_id);
+            carregarDados((siglaEstado || '').toUpperCase(), acessoObj.loja_id, acessoObj);
         } else {
             router.push('/dashboard');
         }
     }, [router]);
 
-    const carregarDados = async (sigla: string, lojaId?: number | null) => {
+    const carregarDados = async (sigla: string, lojaId: number | null | undefined, acessoAtual: Acesso) => {
         setCarregando(true);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -74,8 +76,30 @@ export default function LojasDashboardPage() {
                 
             const resPessoas = await fetch(endpoint);
             if (resPessoas.ok) {
-                const data = await resPessoas.json();
-                setPessoas(Array.isArray(data) ? data : []);
+                let data = await resPessoas.json();
+                data = Array.isArray(data) ? data : [];
+
+                // Garantir que o VM logado apareça na lista (se for conta de loja e não estiver na lista)
+                if (acessoAtual?.role === 'loja' && acessoAtual.nome && acessoAtual.nome !== 'Irmão') {
+                    const jaNaLista = data.some((p: any) => 
+                        p.nome.toLowerCase().includes(acessoAtual.nome!.toLowerCase()) ||
+                        acessoAtual.nome!.toLowerCase().includes(p.nome.toLowerCase())
+                    );
+                    if (!jaNaLista) {
+                        data.unshift({
+                            id: -99, // ID Virtual
+                            nome: acessoAtual.nome,
+                            telefone: '-',
+                            status: 'Mestre',
+                            cargo_nome: 'Venerável Mestre',
+                            loja_id: acessoAtual.loja_id,
+                            ativo: 1,
+                            tipo_pessoa: 'obreiro'
+                        });
+                    }
+                }
+
+                setPessoas(data);
             }
 
             // Fetch Stores for the state
