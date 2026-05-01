@@ -506,7 +506,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             alvo = hoje
 
         query_pessoas = text("""
-            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso
+            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso, p.data_iniciacao
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
@@ -518,10 +518,17 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
         res = []
         for p in pessoas:
-            pid, nome, cargo_nome, data_adm_str = p[0], p[1], (p[2] or ""), p[3]
+            pid, nome, cargo_nome = p[0], p[1], (p[2] or "")
+            data_adm_original = p[3]
             ativo = p[4] if len(p) > 4 else 1
             data_adormecimento = p[5] if len(p) > 5 else None
             tipo_ingresso = p[6] if len(p) > 6 else 'iniciacao'
+            data_ini_original = p[7] if len(p) > 7 else None
+
+            # Prioriza data_iniciacao se for iniciação, senão usa data_admissao
+            data_ref_calc = data_ini_original if (tipo_ingresso == 'iniciacao' and data_ini_original) else data_adm_original
+            data_adm_str = data_ref_calc # Usado no resto do cálculo
+
 
             # 0. Buscar exceções cadastradas para esse obreiro (incluindo JOIA)
             excecoes_rows = db_treasury.execute(text(
@@ -567,9 +574,19 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
 
                 try:
-                    data_adm = datetime.strptime(str(data_adm_str).strip(), "%Y-%m-%d").date()
+                    # Tenta converter a data (suporta YYYY-MM-DD e DD/MM/YYYY)
+                    d_str = str(data_adm_str).strip()
+                    try:
+                        data_adm = datetime.strptime(d_str, "%Y-%m-%d").date()
+                    except ValueError:
+                        try:
+                            data_adm = datetime.strptime(d_str, "%D/%M/%Y").date()
+                        except ValueError:
+                            # Fallback para DD/MM/YYYY com %d/%m/%Y
+                            data_adm = datetime.strptime(d_str, "%d/%m/%Y").date()
                     
                     if data_adm.day > 15:
+
                         if data_adm.month == 12:
                             inicio_cobranca = date(data_adm.year + 1, 1, 1)
                         else:
