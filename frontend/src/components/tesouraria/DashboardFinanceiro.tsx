@@ -179,14 +179,14 @@ export default function DashboardFinanceiro({
             </div>
 
             {/* Filters Bar */}
-            <div className="flex flex-wrap items-end gap-6 p-6 rounded-2xl bg-white/5 border border-white/10 shadow-lg">
-                <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10 shadow-lg items-end">
+                <div className="md:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Período</label>
                     <div className="flex items-center gap-2">
                         <select 
                             value={mesAtivo}
                             onChange={(e) => setMesAtivo(Number(e.target.value))}
-                            className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
+                            className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
                         >
                             <option value={0}>Tudo (Sem Filtro)</option>
                             {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
@@ -208,7 +208,7 @@ export default function DashboardFinanceiro({
                     </div>
                 </div>
 
-                <div className="flex-1 min-w-[300px] max-w-2xl flex flex-col gap-1.5">
+                <div className="md:col-span-5 flex flex-col gap-1.5">
                     <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Pesquisar</label>
                     <div className="relative group">
                         <input 
@@ -222,12 +222,12 @@ export default function DashboardFinanceiro({
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div className="md:col-span-2 flex flex-col gap-1.5">
                     <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Status</label>
                     <select 
                         value={statusFiltro}
                         onChange={(e) => setStatusFiltro(e.target.value)}
-                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
                     >
                         <option value="todos">Todos</option>
                         <option value="pendente">Pendente</option>
@@ -235,15 +235,16 @@ export default function DashboardFinanceiro({
                     </select>
                 </div>
 
-                <div className="ml-auto flex items-center gap-3">
+                <div className="md:col-span-2 flex flex-col gap-1.5 items-end justify-end pb-1">
                     <div className="text-right">
-                        <div className="text-[9px] uppercase font-bold text-gray-500 tracking-widest">Saldo do Período</div>
+                        <div className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] mb-1">Saldo Período</div>
                         <div className={`text-sm font-black ${saldoPeriodo >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             R$ {saldoPeriodo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
                 </div>
             </div>
+
 
             {/* List Section */}
             <div className="bg-black/20 rounded-2xl border border-white/5 p-1 min-h-[400px]">

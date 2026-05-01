@@ -38,7 +38,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [justificativaTemp, setJustificativaTemp] = useState<{[key: string]: string}>({});
     const [salvando, setSalvando] = useState<string | null>(null);
     const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
-    const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes' | 'adormecidos'>('ativos');
+    const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes'>('ativos');
+    const [mostrarAdormecidos, setMostrarAdormecidos] = useState(false);
     const [categoriaFiltro, setCategoriaFiltro] = useState<'todas' | 'joia' | 'mensalidade'>('todas');
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -158,12 +159,15 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         const cargo = (i.cargo || '').toLowerCase();
         if (cargo.includes('venerável') || cargo.includes('vigilante')) return false;
 
-        const isAdormecido = i.ativo === 0 || (i.data_adormecimento && i.data_adormecimento.trim() !== '');
+        // Filtro de Adormecidos (Toggle)
+        if (!mostrarAdormecidos && i.ativo === 0) return false;
         
-        if (visaoAtiva === 'adormecidos') return isAdormecido;
-        if (isAdormecido) return false;
-        
-        if (visaoAtiva === 'inadimplentes') return i.saude_financeira !== 'REGULAR';
+        // Se for Adormecido e o toggle estiver ON, ele passa (independente de estar inadimplente ou não na visão principal)
+        if (i.ativo === 0) return true;
+
+        if (visaoAtiva === 'inadimplentes') {
+            return i.saude_financeira === 'PENDENTE' || i.saude_financeira === 'ATRASADO';
+        }
         return true;
     });
 
@@ -233,14 +237,16 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'inadimplentes' ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></span>
                             Inadimplentes
                         </button>
-                        <button
-                            onClick={() => setVisaoAtiva('adormecidos')}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'adormecidos' ? 'bg-gray-500/20 text-gray-300 border border-gray-400/30' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'adormecidos' ? 'bg-gray-300 animate-pulse' : 'bg-gray-600'}`}></span>
-                            Adormecidos
-                        </button>
                     </div>
+
+                    <button
+                        onClick={() => setMostrarAdormecidos(!mostrarAdormecidos)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 border ${mostrarAdormecidos ? 'bg-gray-500/20 text-gray-200 border-gray-400/50 shadow-[0_0_15px_rgba(255,255,255,0.05)]' : 'bg-black/20 text-gray-600 border-white/5 hover:border-white/10'}`}
+                    >
+                        <div className={`w-2 h-2 rounded-full transition-all ${mostrarAdormecidos ? 'bg-gray-300 shadow-[0_0_8px_rgba(255,255,255,0.5)]' : 'bg-gray-800'}`}></div>
+                        Adormecidos
+                    </button>
+
 
                     <div className="h-8 w-px bg-white/10 mx-1 hidden lg:block"></div>
 
