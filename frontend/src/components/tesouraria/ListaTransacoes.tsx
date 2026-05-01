@@ -53,7 +53,7 @@ export default function ListaTransacoes({
         setCarregando(true);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            let url = `${apiUrl}/api/tesouraria/transacoes/${caixaId}?`;
+            let url = `${apiUrl}/api/tesouraria/transacoes/${caixaId}?loja_id=${acesso.loja_id}&`;
             if (mes) url += `mes=${mes}&`;
             if (ano) url += `ano=${ano}&`;
             if (statusFiltro) url += `status=${statusFiltro}&`;

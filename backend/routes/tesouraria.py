@@ -287,6 +287,7 @@ def excluir_transacao(transacao_id: int, db_treasury: Session = Depends(get_trea
 @router.get("/transacoes/{caixa_id}")
 def listar_transacoes(
     caixa_id: int, 
+    loja_id: int,
     mes: Optional[int] = None, 
     ano: Optional[int] = None, 
     status: Optional[str] = None,
@@ -296,11 +297,18 @@ def listar_transacoes(
         db_treasury.expire_all()
         from sqlalchemy import text
         
-        query = "SELECT id, caixa_id, pessoa_id, usuario_id, tipo, categoria, valor, data_vencimento, data_pagamento, descricao, status FROM transacoes WHERE 1=1"
-        params = {}
+        # Base query with JOIN to caixas to filter by loja_id
+        query = """
+            SELECT t.id, t.caixa_id, t.pessoa_id, t.usuario_id, t.tipo, t.categoria, t.valor, 
+                   t.data_vencimento, t.data_pagamento, t.descricao, t.status 
+            FROM transacoes t
+            JOIN caixas c ON t.caixa_id = c.id
+            WHERE c.loja_id = :loja_id
+        """
+        params = {"loja_id": loja_id}
 
         if caixa_id > 0:
-            query += " AND caixa_id = :caixa_id"
+            query += " AND t.caixa_id = :caixa_id"
             params["caixa_id"] = caixa_id
         
         if status and status != 'todos':
@@ -309,12 +317,12 @@ def listar_transacoes(
             
         if mes:
             mes_str = f"-{mes:02d}-"
-            query += " AND (CASE WHEN status = 'pago' AND data_pagamento IS NOT NULL THEN data_pagamento ELSE data_vencimento END) LIKE :mes"
+            query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :mes"
             params["mes"] = f"%{mes_str}%"
             
         if ano:
             ano_str = f"{ano}-"
-            query += " AND (CASE WHEN status = 'pago' AND data_pagamento IS NOT NULL THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
+            query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
             params["ano"] = f"{ano_str}%"
 
         rows = db_treasury.execute(text(query), params).fetchall()

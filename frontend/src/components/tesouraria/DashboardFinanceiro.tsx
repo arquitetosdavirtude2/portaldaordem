@@ -45,7 +45,7 @@ export default function DashboardFinanceiro({
             }
 
             // Also fetch filtered period data for summary
-            let url = `${apiUrl}/api/tesouraria/transacoes/${caixaAtivo}?mes=${mesAtivo}&ano=${anoAtivo}&status=${statusFiltro}`;
+            let url = `${apiUrl}/api/tesouraria/transacoes/${caixaAtivo}?loja_id=${acesso.loja_id}&mes=${mesAtivo}&ano=${anoAtivo}&status=${statusFiltro}`;
             const resTrans = await fetch(url);
             if (resTrans.ok) {
                 const trans: any[] = await resTrans.json();
