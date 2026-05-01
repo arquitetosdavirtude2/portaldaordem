@@ -479,7 +479,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
               AND (c.isento_contribuicao = 0 OR p.cargo_id IS NULL)
-              AND (:incl_adorm = 1 OR COALESCE(p.ativo, 1) = 1)
+              AND (:incl_adorm = 1 OR (p.data_adormecimento IS NULL AND COALESCE(p.ativo, 1) = 1))
             ORDER BY c.id, p.nome
         """)
         pessoas = db_treasury.execute(query_pessoas, {"lid": loja_id, "incl_adorm": 1 if incluir_adormecidos else 0}).fetchall()

@@ -102,25 +102,9 @@ def listar_cargos(db: Session = Depends(get_db)):
 # IMPORTANTE: /loja/{loja_id} DEVE vir ANTES de /{estado_sigla}
 @router.get("/loja/{loja_id}")
 def listar_pessoas_loja(loja_id: int, db: Session = Depends(get_db)):
-    """Lista pessoas de uma loja específica via Raw SQL para máxima confiabilidade."""
-    rows = db.execute(text("""
-        SELECT p.id, p.nome, p.status, p.cargo_id, c.nome as cargo_nome,
-               p.loja_id, p.telefone, p.login, p.senha, p.ativo, p.data_adormecimento, p.data_admissao,
-               p.tipo_ingresso, p.indicador_id
-        FROM pessoas p
-        LEFT JOIN cargos c ON p.cargo_id = c.id
-        WHERE p.loja_id = :lid
-        ORDER BY c.id, p.nome
-    """), {"lid": loja_id}).fetchall()
-
-    return [{
-        "id": r[0], "nome": r[1], "status": (r[2] or "Aprendiz").strip(),
-        "cargo_id": r[3], "cargo_nome": r[4] or "",
-        "loja_id": r[5], "telefone": r[6] or "",
-        "login": r[7], "senha": r[8],
-        "ativo": r[9], "data_adormecimento": r[10], "data_admissao": r[11],
-        "tipo_ingresso": r[12], "indicador_id": r[13]
-    } for r in rows]
+    """Lista pessoas de uma loja específica utilizando ORM para maior segurança."""
+    pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).order_by(Pessoa.nome).all()
+    return [_build_response(p) for p in pessoas]
 
 
 @router.get("/{estado_sigla}", response_model=List[PessoaResponse])
