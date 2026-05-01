@@ -39,7 +39,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [salvando, setSalvando] = useState<string | null>(null);
     const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
     const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes'>('ativos');
-    const [mostrarAdormecidos, setMostrarAdormecidos] = useState(false);
+
     const [categoriaFiltro, setCategoriaFiltro] = useState<'todas' | 'joia' | 'mensalidade'>('todas');
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
