@@ -228,7 +228,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
             {/* Backdrop click to close - absolute to fill the fixed container */}
             <div className="absolute inset-0 -z-10" onClick={onClose}></div>
             
-            <div className="relative mx-auto bg-[#0f1d45] border border-white/20 rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.9)] w-full max-w-lg overflow-hidden flex flex-col min-h-0 animate-in zoom-in duration-300 gap-0">
+            <div className="relative mx-auto bg-[#0f1d45] border border-white/20 rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.9)] w-full max-w-4xl overflow-hidden flex flex-col min-h-0 animate-in zoom-in duration-300 gap-0">
                 <div className="p-5 border-b border-white/5 bg-black/20 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full ${isEdit ? 'bg-blue-500' : 'bg-yellow-500'} animate-pulse`}></div>

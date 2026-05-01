@@ -154,7 +154,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     };
 
     const irmaosFiltrados = irmaos.filter(i => {
-        const isAtivo = !i.data_adormecimento && i.ativo !== 0;
+        const isAtivo = (!i.data_adormecimento || i.data_adormecimento.trim() === '') && i.ativo !== 0;
         if (visaoAtiva === 'inadimplentes') return i.saude_financeira !== 'REGULAR' && isAtivo;
         if (visaoAtiva === 'adormecidos') return !isAtivo;
         return isAtivo;

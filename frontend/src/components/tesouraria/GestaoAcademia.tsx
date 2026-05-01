@@ -59,10 +59,11 @@ export default function GestaoAcademia({ acesso }: { acesso: any }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     nome,
-                    telefone,
+                    telefone: '', // Removed from UI
                     pix,
-                    banco_info: bancoInfo,
-                    loja_id: acesso.loja_id
+                    banco_info: '', // Removed from UI
+                    loja_id: acesso.loja_id,
+                    usuario_id: acesso.id || acesso.usuario_id || 1
                 })
             });
             if (res.ok) {
@@ -95,29 +96,49 @@ export default function GestaoAcademia({ acesso }: { acesso: any }) {
             </div>
 
             {exibirForm && (
-                <form onSubmit={handleCriarIndicador} className="bg-white/5 border border-white/10 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
-                    <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nome Completo</label>
-                        <input type="text" value={nome} onChange={e => setNome(e.target.value)} required className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-500/50 outline-none" />
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-[#0f1d45] border border-white/20 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+                        <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
+                            <h3 className="text-sm font-bold text-yellow-500 uppercase tracking-widest">Cadastrar Novo Indicador (Academia)</h3>
+                            <button onClick={() => setExibirForm(false)} className="text-gray-400 hover:text-white transition-colors p-2 text-xl">✕</button>
+                        </div>
+                        
+                        <form onSubmit={handleCriarIndicador} className="p-8 space-y-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 tracking-widest">Nome Completo / Identificação</label>
+                                    <input 
+                                        type="text" 
+                                        value={nome} 
+                                        onChange={e => setNome(e.target.value)} 
+                                        required 
+                                        placeholder="Ex: João da Silva"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-yellow-500/50 outline-none transition-all" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 tracking-widest">Chave PIX (Para Pagamento de Comissões)</label>
+                                    <input 
+                                        type="text" 
+                                        value={pix} 
+                                        onChange={e => setPix(e.target.value)} 
+                                        placeholder="CPF, E-mail, Telefone ou Chave Aleatória"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-yellow-500/50 outline-none transition-all" 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-4">
+                                <button type="submit" className="w-full py-4 bg-yellow-500 hover:bg-yellow-600 text-black rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all shadow-xl shadow-yellow-500/10 active:scale-95">
+                                    Finalizar Cadastro
+                                </button>
+                                <p className="text-center text-[9px] text-gray-500 uppercase mt-4 tracking-tighter">
+                                    A academia é um ambiente privado para gestão de indicações.
+                                </p>
+                            </div>
+                        </form>
                     </div>
-                    <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">WhatsApp</label>
-                        <input type="text" value={telefone} onChange={e => setTelefone(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-500/50 outline-none" />
-                    </div>
-                    <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Chave PIX</label>
-                        <input type="text" value={pix} onChange={e => setPix(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-500/50 outline-none" />
-                    </div>
-                    <div className="flex items-end">
-                        <button type="submit" className="w-full py-2 bg-yellow-500/20 border border-yellow-500/40 text-yellow-500 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-yellow-500/30 transition-all">
-                            Cadastrar Indicador
-                        </button>
-                    </div>
-                    <div className="md:col-span-4">
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Outros Dados Bancários (Opcional)</label>
-                        <textarea value={bancoInfo} onChange={e => setBancoInfo(e.target.value)} rows={2} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-500/50 outline-none resize-none"></textarea>
-                    </div>
-                </form>
+                </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

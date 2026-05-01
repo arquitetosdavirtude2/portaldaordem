@@ -75,6 +75,8 @@ class TransacaoResponse(BaseModel):
         from_attributes = True
 
 class TransacaoUpdate(BaseModel):
+    caixa_id: Optional[int] = None
+    pessoa_id: Optional[int] = None
     status: Optional[str] = None
     data_pagamento: Optional[str] = None
     notas: Optional[str] = None
@@ -83,6 +85,7 @@ class TransacaoUpdate(BaseModel):
     valor: Optional[float] = None
     tipo: Optional[str] = None
     categoria: Optional[str] = None
+    data_vencimento: Optional[str] = None
 
 class ResumoFinanceiro(BaseModel):
     caixas: List[CaixaResponse] = []
@@ -227,16 +230,23 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
     elif dados.tipo is not None:
          transacao.tipo = dados.tipo
 
-    if dados.data_pagamento is not None:
-        transacao.data_pagamento = dados.data_pagamento
-    if dados.notas is not None:
-        transacao.notas = dados.notas
-    if dados.anexo_url is not None:
-        transacao.anexo_url = dados.anexo_url
+    if dados.caixa_id is not None:
+        transacao.caixa_id = dados.caixa_id
+    if dados.pessoa_id is not None:
+        transacao.pessoa_id = dados.pessoa_id if dados.pessoa_id != 0 else None
     if dados.descricao is not None:
         transacao.descricao = dados.descricao
+    if dados.notas is not None:
+        transacao.notas = dados.notas
+    if dados.data_vencimento is not None:
+        transacao.data_vencimento = dados.data_vencimento
     if dados.categoria is not None:
         transacao.categoria = dados.categoria
+    if dados.anexo_url is not None:
+        transacao.anexo_url = dados.anexo_url
+
+    if dados.data_pagamento is not None:
+        transacao.data_pagamento = dados.data_pagamento
         
     db_treasury.commit()
     db_treasury.refresh(transacao)
@@ -478,8 +488,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
-              AND (c.isento_contribuicao = 0 OR p.cargo_id IS NULL)
-              AND (:incl_adorm = 1 OR (p.data_adormecimento IS NULL AND COALESCE(p.ativo, 1) = 1))
+              AND (:incl_adorm = 1 OR (COALESCE(p.data_adormecimento, '') = '' AND COALESCE(p.ativo, 1) = 1))
             ORDER BY c.id, p.nome
         """)
         pessoas = db_treasury.execute(query_pessoas, {"lid": loja_id, "incl_adorm": 1 if incluir_adormecidos else 0}).fetchall()
