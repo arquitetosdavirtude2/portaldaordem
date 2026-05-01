@@ -172,51 +172,48 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
             {/* ── Linha do cabeçalho: Título + Controles ── */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
 
                 {/* Título */}
-                <h1 className="text-2xl font-bold text-yellow-500 uppercase tracking-tighter">
+                <h1 className="text-2xl font-bold text-yellow-500 uppercase tracking-tighter shrink-0">
                     Joias & Mensalidades
                 </h1>
 
                 {/* Controles: filtros + relatório + mês/ano */}
-                <div className="flex items-center gap-2 flex-wrap justify-end">
+                <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-end w-full">
 
                     {/* Segmented control de visão */}
-                    <div className="flex flex-col items-end gap-1">
-                        <span className="text-[9px] text-gray-500 uppercase font-black tracking-widest">
-                            Filtrar por Situação:
-                        </span>
-                        <div className="bg-black/40 p-1 rounded-xl border border-white/10 flex items-center gap-1">
-                            <button
-                                onClick={() => setVisaoAtiva('ativos')}
-                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'ativos' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:text-gray-300'}`}
-                            >
-                                <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'ativos' ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'}`}></span>
-                                Ativos
-                            </button>
-                            <button
-                                onClick={() => setVisaoAtiva('inadimplentes')}
-                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'inadimplentes' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:text-gray-300'}`}
-                            >
-                                <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'inadimplentes' ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></span>
-                                Inadimplentes
-                            </button>
-                            <button
-                                onClick={() => setVisaoAtiva('adormecidos')}
-                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'adormecidos' ? 'bg-gray-500/20 text-gray-300 border border-gray-400/30' : 'text-gray-500 hover:text-gray-300'}`}
-                            >
-                                <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'adormecidos' ? 'bg-gray-300 animate-pulse' : 'bg-gray-600'}`}></span>
-                                Adormecidos
-                            </button>
-                        </div>
+                    <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10 shadow-inner">
+                        <button
+                            onClick={() => setVisaoAtiva('ativos')}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'ativos' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'ativos' ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'}`}></span>
+                            Ativos
+                        </button>
+                        <button
+                            onClick={() => setVisaoAtiva('inadimplentes')}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'inadimplentes' ? 'bg-red-500/20 text-red-400 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'inadimplentes' ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></span>
+                            Inadimplentes
+                        </button>
+                        <button
+                            onClick={() => setVisaoAtiva('adormecidos')}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'adormecidos' ? 'bg-gray-500/20 text-gray-300 border border-gray-400/30' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'adormecidos' ? 'bg-gray-300 animate-pulse' : 'bg-gray-600'}`}></span>
+                            Adormecidos
+                        </button>
                     </div>
+
+                    <div className="h-8 w-px bg-white/10 mx-1 hidden lg:block"></div>
 
                     {/* Botão Relatório CSV */}
                     <button
                         onClick={handleDownloadRelatorio}
                         disabled={baixandoRelatorio}
-                        className="px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-500 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2"
+                        className="h-10 px-4 bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-500 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2 shrink-0"
                     >
                         {baixandoRelatorio ? (
                             <div className="w-3 h-3 border border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin"></div>
@@ -225,16 +222,16 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         )}
-                        {baixandoRelatorio ? 'Baixando...' : 'Baixar Relatório'}
+                        {baixandoRelatorio ? '...' : 'Relatório'}
                     </button>
 
                     {/* Seletor de Mês */}
                     <select
                         value={mesAtivo}
                         onChange={(e) => setMesAtivo(Number(e.target.value))}
-                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase"
+                        className="h-10 bg-black/40 border border-white/10 rounded-xl px-3 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase cursor-pointer"
                     >
-                        {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
+                        {['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'].map((m, i) => (
                             <option key={m} value={i + 1}>{m}</option>
                         ))}
                     </select>
@@ -243,7 +240,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     <select
                         value={anoAtivo}
                         onChange={(e) => setAnoAtivo(Number(e.target.value))}
-                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors"
+                        className="h-10 bg-black/40 border border-white/10 rounded-xl px-3 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors cursor-pointer"
                     >
                         {[2024, 2025, 2026].map(val => (
                             <option key={val} value={val}>{val}</option>
