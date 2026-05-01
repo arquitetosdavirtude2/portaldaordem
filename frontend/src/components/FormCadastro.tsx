@@ -337,21 +337,38 @@ export default function FormCadastro({
                 className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs h-9"
               />
 
-              {dataIniciacao && (
-                <p className="text-[10px] text-blue-400 mt-1 font-bold">
-                   ⌛ Tempo de Irmandade: {(() => {
-                      const start = new Date(dataIniciacao);
-                      const now = new Date();
-                      let years = now.getFullYear() - start.getFullYear();
-                      let months = now.getMonth() - start.getMonth();
-                      if (months < 0) {
-                        years--;
-                        months += 12;
-                      }
-                      return `${years} anos e ${months} meses`;
-                   })()}
-                </p>
-              )}
+                  {dataIniciacao && (
+                    <p className="text-[10px] text-blue-400 mt-1 font-bold">
+                       ⌛ {(() => {
+                          const start = new Date(dataIniciacao + 'T00:00:00');
+                          const now = new Date();
+                          now.setHours(0,0,0,0);
+
+                          if (start > now) {
+                            // Cálculo para data futura
+                            const diffTime = Math.abs(start.getTime() - now.getTime());
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            
+                            if (diffDays < 30) {
+                               return `Iniciação em ${diffDays} dias`;
+                            } else {
+                               const months = Math.floor(diffDays / 30);
+                               const days = diffDays % 30;
+                               return `Faltam ${months} mês(es) e ${days} dia(s) para Iniciação`;
+                            }
+                          }
+
+                          let years = now.getFullYear() - start.getFullYear();
+                          let months = now.getMonth() - start.getMonth();
+                          if (months < 0) {
+                            years--;
+                            months += 12;
+                          }
+                          return `Tempo de Irmandade: ${years} anos e ${months} meses`;
+                       })()}
+                    </p>
+                  )}
+
             </div>
         </div>
 
