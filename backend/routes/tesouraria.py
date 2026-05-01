@@ -9,7 +9,14 @@ from pydantic import BaseModel
 from typing import List, Optional
 from database import get_db, get_treasury_db, TREASURY_DB_URL
 from models import Transacao, Pessoa, Caixa
-from datetime import datetime
+from datetime import datetime, date
+import calendar
+
+MESES_PT = {
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+    5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+    9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+}
 
 UPLOAD_DIR = "static/uploads/comprovantes"
 if not os.path.exists(UPLOAD_DIR):
@@ -560,13 +567,6 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
 
                 try:
-                    import calendar
-                    MESES_PT = {
-                        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
-                        5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
-                        9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
-                    }
-
                     data_adm = datetime.strptime(str(data_adm_str).strip(), "%Y-%m-%d").date()
                     
                     if data_adm.day > 15:
