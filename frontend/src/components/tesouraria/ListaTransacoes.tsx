@@ -182,7 +182,10 @@ export default function ListaTransacoes({
                 <thead>
                     <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-bold">
                         <th className={thClass} onClick={() => handleSort('data_vencimento')}>
-                            Data <SortIcon active={sortKey === 'data_vencimento'} dir={sortDir} />
+                            Referência <SortIcon active={sortKey === 'data_vencimento'} dir={sortDir} />
+                        </th>
+                        <th className={thClass}>
+                            Data Pagto
                         </th>
                         <th className={thClass} onClick={() => handleSort('descricao')}>
                             Descrição <SortIcon active={sortKey === 'descricao'} dir={sortDir} />
@@ -193,17 +196,17 @@ export default function ListaTransacoes({
                         <th className={thClass} onClick={() => handleSort('valor')}>
                             Valor <SortIcon active={sortKey === 'valor'} dir={sortDir} />
                         </th>
-                        <th className={thClass} onClick={() => handleSort('status')}>
-                            Status <SortIcon active={sortKey === 'status'} dir={sortDir} />
-                        </th>
-                        {podeEditar && <th className="px-5 py-4 text-[9px] text-right">Ações</th>}
+                        {podeEditar && <th className="px-5 py-4 text-[9px] text-right uppercase tracking-widest">Ações</th>}
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                     {transacoesOrdenadas.map(t => (
                         <tr key={t.id} className="hover:bg-white/[0.03] transition-colors group">
-                            <td className="px-5 py-4 text-[11px] text-gray-300 whitespace-nowrap">
-                                {t.data_vencimento.split('-').reverse().join('/')}
+                            <td className="px-5 py-4 text-[10px] text-gray-400 font-mono">
+                                {t.data_vencimento ? t.data_vencimento.split('-').slice(0,2).reverse().join('/') : '-'}
+                            </td>
+                            <td className="px-5 py-4 text-[11px] text-gray-300 whitespace-nowrap font-bold">
+                                {t.data_pagamento ? t.data_pagamento.split('-').reverse().join('/') : (t.status === 'pago' ? t.data_vencimento.split('-').reverse().join('/') : 'PENDENTE')}
                             </td>
                             <td className="px-5 py-4">
                                 <div className="text-[11px] font-bold text-gray-200">{t.descricao}</div>
@@ -217,37 +220,31 @@ export default function ListaTransacoes({
                             <td className={`px-5 py-4 text-xs font-bold whitespace-nowrap ${t.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'}`}>
                                 {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="px-5 py-4">
-                                <div className={`flex flex-col gap-1 ${
-                                    t.status === 'pago' ? 'text-green-400' : 
-                                    t.status === 'pendente' ? 'text-yellow-500' : 'text-red-400'
-                                }`}>
-                                    <span className="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-white/5 w-fit">
-                                        {t.status}
-                                    </span>
-                                    {t.anexo_url && (
-                                        <a 
-                                            href={`${process.env.NEXT_PUBLIC_API_URL || ""}${t.anexo_url}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-[9px] text-blue-400 hover:text-blue-300 underline underline-offset-2 font-bold uppercase tracking-tighter w-fit"
-                                        >
-                                            Ver Recibo
-                                        </a>
-                                    )}
-                                </div>
-                            </td>
                             {podeEditar && (
                                 <td className="px-5 py-4 text-right">
-                                    <div className="flex items-center justify-end gap-3">
-                                        {t.status === 'pendente' && (
-                                            <button 
-                                                onClick={() => handleMarcarComoPago(t.id)}
-                                                className="text-[9px] font-bold uppercase tracking-widest text-yellow-500 hover:text-yellow-400"
+                                    <div className="flex items-center justify-end gap-2">
+                                        {t.anexo_url && (
+                                            <a 
+                                                href={`${process.env.NEXT_PUBLIC_API_URL || ""}${t.anexo_url}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-1.5 hover:bg-white/10 rounded-lg text-blue-400 transition-colors"
+                                                title="Ver Comprovante"
                                             >
-                                                Pagar
-                                            </button>
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.414a6 6 0 108.486 8.486L20.5 13" />
+                                                </svg>
+                                            </a>
                                         )}
+                                        <button 
+                                            onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/tesouraria/relatorio/individual/${t.id}`, '_blank')}
+                                            className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-green-400 transition-colors"
+                                            title="Gerar Relatório / Recibo"
+                                        >
+                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </button>
                                         <button 
                                             onClick={() => onEdit(t)}
                                             className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-blue-400 transition-colors"

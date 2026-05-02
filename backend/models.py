@@ -150,3 +150,18 @@ class Transacao(Base):
     caixa = relationship("Caixa", back_populates="transacoes")
     pessoa = relationship("Pessoa")
     usuario = relationship("Usuario")
+
+class ExtratoMensal(Base):
+    __tablename__ = "extratos_mensais"
+    id = Column(Integer, primary_key=True, index=True)
+    loja_id = Column(Integer, ForeignKey("lojas.id"))
+    caixa_id = Column(Integer, ForeignKey("caixas.id"))
+    ano = Column(Integer)
+    mes = Column(Integer)
+    arquivo_url = Column(String(255))
+    nome_arquivo = Column(String(255))
+    criado_em = Column(String(30)) # ISO date
+
+    loja = relationship("Loja")
+    caixa = relationship("Caixa")
+

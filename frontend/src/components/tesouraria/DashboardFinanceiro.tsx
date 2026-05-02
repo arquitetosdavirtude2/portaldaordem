@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ModalNovaTransacao from './ModalTransacao';
 import ListaTransacoes from './ListaTransacoes';
+import ModalExtratos from './ModalExtratos';
 
 interface Caixa {
     id: number;
@@ -31,10 +32,10 @@ export default function DashboardFinanceiro({
     const [caixaAtivo, setCaixaAtivo] = useState<number>(0); // 0 = Consolidated
     const [mesAtivo, setMesAtivo] = useState<number>(new Date().getMonth() + 1);
     const [anoAtivo, setAnoAtivo] = useState<number>(new Date().getFullYear());
-    const [statusFiltro, setStatusFiltro] = useState<string>('todos');
     const [busca, setBusca] = useState<string>('');
     const [saldoPeriodo, setSaldoPeriodo] = useState<number>(0);
     const [carregando, setCarregando] = useState(true);
+    const [isModalExtratosOpen, setIsModalExtratosOpen] = useState(false);
 
     const [buscaLocal, setBuscaLocal] = useState<string>('');
 
@@ -70,7 +71,7 @@ export default function DashboardFinanceiro({
 
     useEffect(() => {
         carregarResumo();
-    }, [acesso.loja_id, caixaAtivo, mesAtivo, anoAtivo, statusFiltro, busca, chaveAtualizacao]);
+    }, [acesso.loja_id, caixaAtivo, mesAtivo, anoAtivo, busca, chaveAtualizacao]);
 
     // Debounce search
     useEffect(() => {
@@ -223,16 +224,18 @@ export default function DashboardFinanceiro({
                 </div>
 
                 <div className="md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Status</label>
-                    <select 
-                        value={statusFiltro}
-                        onChange={(e) => setStatusFiltro(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
+                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Anexos</label>
+                    <button 
+                        onClick={() => setIsModalExtratosOpen(true)}
+                        disabled={caixaAtivo === 0 || mesAtivo === 0}
+                        className="w-full bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title={caixaAtivo === 0 ? "Selecione um caixa específico para ver os anexos" : "Ver extratos bancários do mês"}
                     >
-                        <option value="todos">Todos</option>
-                        <option value="pendente">Pendente</option>
-                        <option value="pago">Pago</option>
-                    </select>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.414a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        Extratos
+                    </button>
                 </div>
 
                 <div className="md:col-span-2 flex flex-col gap-1.5 items-end justify-end pb-1">
@@ -253,13 +256,22 @@ export default function DashboardFinanceiro({
                     caixaId={caixaAtivo} 
                     mes={mesAtivo}
                     ano={anoAtivo}
-                    statusFiltro={statusFiltro}
+                    statusFiltro="pago"
                     busca={busca}
                     onStatusChanged={carregarResumo}
                     onEdit={onEdit}
                 />
             </div>
 
+            <ModalExtratos 
+                isOpen={isModalExtratosOpen}
+                onClose={() => setIsModalExtratosOpen(false)}
+                lojaId={acesso.loja_id}
+                caixaId={caixaAtivo}
+                caixaNome={resumo?.caixas.find(c => c.id === caixaAtivo)?.nome || "Consolidado"}
+                mes={mesAtivo}
+                ano={anoAtivo}
+            />
         </div>
     );
 }

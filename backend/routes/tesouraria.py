@@ -19,8 +19,10 @@ MESES_PT = {
 }
 
 UPLOAD_DIR = "static/uploads/comprovantes"
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_EXTRATOS_DIR = "static/uploads/extratos"
+for d in [UPLOAD_DIR, UPLOAD_EXTRATOS_DIR]:
+    if not os.path.exists(d):
+        os.makedirs(d, exist_ok=True)
 
 router = APIRouter()
 
@@ -101,6 +103,19 @@ class ResumoFinanceiro(BaseModel):
     saldo_geral: float = 0.0
     saldo_benevolencia: float = 0.0
     saldo_joias_mensalidade: float = 0.0
+
+    class Config:
+        from_attributes = True
+
+class ExtratoMensalResponse(BaseModel):
+    id: int
+    loja_id: int
+    caixa_id: int
+    ano: int
+    mes: int
+    arquivo_url: str
+    nome_arquivo: str
+    criado_em: str
 
     class Config:
         from_attributes = True
@@ -308,7 +323,7 @@ def listar_transacoes(
         # Base query with JOIN to caixas to filter by loja_id
         query = """
             SELECT t.id, t.caixa_id, t.pessoa_id, t.usuario_id, t.tipo, t.categoria, t.valor, 
-                   t.data_vencimento, t.data_pagamento, t.descricao, t.status 
+                   t.data_vencimento, t.data_pagamento, t.descricao, t.status, t.anexo_url
             FROM transacoes t
             JOIN caixas c ON t.caixa_id = c.id
             WHERE c.loja_id = :loja_id
@@ -362,6 +377,7 @@ def listar_transacoes(
                 "data_pagamento": r[8],
                 "descricao": r[9],
                 "status": r[10],
+                "anexo_url": r[11],
                 "pessoa_nome": p_nome,
                 "caixa_nome": "Geral"
             })
@@ -370,6 +386,78 @@ def listar_transacoes(
     except Exception as e:
         import traceback
         return {"error": str(e), "traceback": traceback.format_exc()}
+
+# ─── ENDPOINTS DE EXTRATOS MENSAIS ──────────────────────────────────────────
+
+@router.post("/extratos")
+async def subir_extrato(
+    loja_id: int = Form(...),
+    caixa_id: int = Form(...),
+    ano: int = Form(...),
+    mes: int = Form(...),
+    arquivo: UploadFile = File(...),
+    db_treasury: Session = Depends(get_treasury_db)
+):
+    from models import ExtratoMensal
+    from datetime import datetime
+    
+    # Salvar arquivo
+    ext = os.path.splitext(arquivo.filename)[1]
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"extrato_{caixa_id}_{ano}_{mes}_{timestamp}{ext}"
+    filepath = os.path.join(UPLOAD_EXTRATOS_DIR, filename)
+    
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(arquivo.file, buffer)
+    
+    novo_extrato = ExtratoMensal(
+        loja_id=loja_id,
+        caixa_id=caixa_id,
+        ano=ano,
+        mes=mes,
+        arquivo_url=f"/static/uploads/extratos/{filename}",
+        nome_arquivo=arquivo.filename,
+        criado_em=datetime.now().isoformat()
+    )
+    
+    db_treasury.add(novo_extrato)
+    db_treasury.commit()
+    db_treasury.refresh(novo_extrato)
+    return novo_extrato
+
+@router.get("/extratos/{caixa_id}/{ano}/{mes}", response_model=List[ExtratoMensalResponse])
+def listar_extratos(
+    caixa_id: int, 
+    ano: int, 
+    mes: int, 
+    db_treasury: Session = Depends(get_treasury_db)
+):
+    from models import ExtratoMensal
+    extratos = db_treasury.query(ExtratoMensal).filter(
+        ExtratoMensal.caixa_id == caixa_id,
+        ExtratoMensal.ano == ano,
+        ExtratoMensal.mes == mes
+    ).all()
+    return extratos
+
+@router.delete("/extratos/{extrato_id}")
+def excluir_extrato(extrato_id: int, db_treasury: Session = Depends(get_treasury_db)):
+    from models import ExtratoMensal
+    extrato = db_treasury.query(ExtratoMensal).filter(ExtratoMensal.id == extrato_id).first()
+    if not extrato:
+        raise HTTPException(status_code=404, detail="Extrato não encontrado")
+    
+    # Tentar remover arquivo físico
+    try:
+        path = extrato.arquivo_url.lstrip("/")
+        if os.path.exists(path):
+            os.remove(path)
+    except:
+        pass
+        
+    db_treasury.delete(extrato)
+    db_treasury.commit()
+    return {"message": "Extrato removido com sucesso"}
 
 @router.get("/resumo/{loja_id}")
 def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
@@ -814,3 +902,130 @@ def relatorio_inadimplentes(
     }
     
     return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
+
+@router.get("/relatorio/individual/{transacao_id}")
+def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
+    """Gera um recibo/relatório individual formatado para impressão."""
+    from sqlalchemy import text
+    query = """
+        SELECT t.id, t.descricao, t.valor, t.tipo, t.categoria, t.data_vencimento, t.data_pagamento, 
+               t.notas, p.nome as pessoa_nome, c.nome as caixa_nome, l.nome as loja_nome, l.numero as loja_numero
+        FROM transacoes t
+        LEFT JOIN pessoas p ON t.pessoa_id = p.id
+        JOIN caixas c ON t.caixa_id = c.id
+        JOIN lojas l ON c.loja_id = l.id
+        WHERE t.id = :tid
+    """
+    row = db_treasury.execute(text(query), {"tid": transacao_id}).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+    
+    # Mapping
+    t_id, desc, valor, tipo, cat, ref, pagto, notas, p_nome, c_nome, l_nome, l_num = row
+    
+    data_ref = datetime.strptime(ref, "%Y-%m-%d").strftime("%m/%Y") if ref else "-"
+    # Se não houver data de pagamento explícita, usa a data de referência como fallback para exibição no recibo
+    data_pag = datetime.strptime(pagto, "%Y-%m-%d").strftime("%d/%m/%Y") if pagto else (datetime.strptime(ref, "%Y-%m-%d").strftime("%d/%m/%Y") if ref else "-")
+    
+    # Formatação de valor PT-BR
+    formatted_valor = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <title>Recibo de Lançamento #{t_id}</title>
+        <style>
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 40px; line-height: 1.6; background: #f9f9f9; }}
+            .container {{ max-width: 800px; margin: auto; background: #fff; padding: 40px; border-radius: 10px; shadow: 0 0 20px rgba(0,0,0,0.1); border: 1px solid #eee; }}
+            .header {{ text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }}
+            .header h1 {{ margin: 0; font-size: 24px; text-transform: uppercase; color: #000; }}
+            .header p {{ margin: 5px 0; font-size: 14px; font-weight: bold; color: #666; }}
+            .content {{ position: relative; }}
+            .row {{ display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px dashed #eee; padding-bottom: 10px; }}
+            .label {{ font-weight: bold; text-transform: uppercase; font-size: 11px; color: #888; }}
+            .value {{ font-size: 15px; font-weight: 600; color: #222; }}
+            .valor-box {{ background: #fdfdfd; padding: 20px; border: 2px solid #000; margin-top: 30px; display: flex; justify-content: space-between; align-items: center; }}
+            .valor-label {{ font-size: 18px; font-weight: bold; color: #000; }}
+            .valor-value {{ font-size: 28px; font-weight: 900; color: #000; }}
+            .footer {{ margin-top: 50px; text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #eee; padding-top: 20px; }}
+            .signature-area {{ margin-top: 60px; display: flex; justify-content: space-around; }}
+            .signature-box {{ border-top: 1px solid #333; width: 250px; text-align: center; padding-top: 10px; font-size: 12px; font-weight: bold; }}
+            .watermark {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 80px; color: rgba(0,0,0,0.03); font-weight: bold; pointer-events: none; text-transform: uppercase; }}
+            @media print {{
+                .no-print {{ display: none; }}
+                body {{ margin: 0; background: #fff; }}
+                .container {{ border: none; box-shadow: none; max-width: 100%; width: 100%; }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="no-print" style="margin-bottom: 20px; text-align: right; max-width: 800px; margin: 0 auto 20px auto;">
+            <button onclick="window.print()" style="padding: 12px 25px; background: #ca8a04; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(202,138,4,0.3);">🖨️ Imprimir Comprovante</button>
+        </div>
+
+        <div class="container">
+            <div class="watermark">PORTAL DA ORDEM</div>
+            <div class="header">
+                <h1>{l_nome} {f"Nº {l_num}" if l_num else ""}</h1>
+                <p>COMPROVANTE DE MOVIMENTAÇÃO FINANCEIRA</p>
+            </div>
+
+            <div class="content">
+                <div class="row">
+                    <span class="label">Controle Interno</span>
+                    <span class="value">#{t_id}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Descrição do Lançamento</span>
+                    <span class="value">{desc}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Categoria</span>
+                    <span class="value">{cat.upper()}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Tipo de Operação</span>
+                    <span class="value" style="color: {'#16a34a' if tipo == 'entrada' else '#dc2626'}">{tipo.upper()}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Obreiro Relacionado</span>
+                    <span class="value">{p_nome or "---"}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Mês de Referência</span>
+                    <span class="value">{data_ref}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Data de Efetivação (Pagamento)</span>
+                    <span class="value">{data_pag}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Conta / Caixa</span>
+                    <span class="value">{c_nome}</span>
+                </div>
+                
+                <div class="valor-box">
+                    <span class="valor-label">VALOR TOTAL</span>
+                    <span class="valor-value">R$ {formatted_valor}</span>
+                </div>
+                
+                {f'<div style="margin-top: 25px; background: #fcfcfc; padding: 15px; border-left: 4px solid #eee;"><span class="label">Observações:</span><p style="margin: 5px 0 0 0; font-size: 13px; color: #444; font-style: italic;">{notas}</p></div>' if notas else ''}
+                
+                <div class="signature-area">
+                    <div class="signature-box">TESOURARIA</div>
+                    <div class="signature-box">BENEFICIÁRIO / PAGADOR</div>
+                </div>
+            </div>
+
+            <div class="footer">
+                Este documento é um comprovante interno gerado em {datetime.now().strftime("%d/%m/%Y às %H:%M")} através do sistema Portal da Ordem.<br>
+                A validade deste comprovante está sujeita à conferência nos registros oficiais da Loja.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return Response(content=html, media_type='text/html')
