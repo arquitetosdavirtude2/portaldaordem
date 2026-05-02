@@ -667,10 +667,10 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
             # Contar meses ignorados (exceções) que não são JOIA
             m_ignoradas_count = sum(1 for ref in excecoes_map if ref != 'JOIA')
-            m_paga_justificada = m_ignoradas_count * 250.0
             
-            m_pagas_count = int(m_pagas_reais_count or 0) + m_ignoradas_count
-            m_paga_total = m_paga_real + m_paga_justificada
+            m_pagas_count = int(m_pagas_reais_count or 0)
+            m_paga_total = m_paga_real
+            m_paga_justificada = 0.0 # Mensalidades ignoradas não contam como valor pago
 
             meses_devidos = 0
             m_pend = 0.0
