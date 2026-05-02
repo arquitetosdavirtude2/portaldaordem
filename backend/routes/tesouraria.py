@@ -681,9 +681,13 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 j_pend = 0.0
                 j_paga_exibicao = 2000.0
             else:
-                # Fluxo normal
-                j_pend = max(0.0, 2000.0 - j_paga_real)
-                j_paga_exibicao = j_paga_real
+                # Fluxo normal (Joia 2000)
+                if tipo_ingresso == 'transferencia':
+                    j_pend = 0.0
+                    j_paga_exibicao = j_paga_real # Se pagou algo, mostra, mas dívida é zero
+                else:
+                    j_pend = max(0.0, 2000.0 - j_paga_real)
+                    j_paga_exibicao = j_paga_real
 
             # 2. MENSALIDADE
             m_pagas_reais_count = db_treasury.execute(text(
@@ -719,6 +723,16 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                     "excecao_id": None,
                     "justificativa": "Pago para outra conta (via Checkbox)",
                     "status": "justificado"
+                })
+            elif tipo_ingresso == 'transferencia':
+                # Isento por transferência (não deve cobrar)
+                detalhes_meses.append({
+                    "mes_ref": "JOIA",
+                    "label": "JOIA (Taxa de Ingresso)",
+                    "ignorado": True,
+                    "excecao_id": None,
+                    "justificativa": "Isento (Transferência de outra Loja)",
+                    "status": "isento"
                 })
             elif j_pend > 0:
                 detalhes_meses.append({
