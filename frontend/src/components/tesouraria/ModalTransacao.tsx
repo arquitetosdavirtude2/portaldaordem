@@ -534,6 +534,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(234, 179, 8, 0.2); }
                 .color-scheme-dark { color-scheme: dark; }
             `}</style>
-        </div>
+        </div>,
+        document.body
     );
 }

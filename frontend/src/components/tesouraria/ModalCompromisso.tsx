@@ -198,6 +198,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 </form>
             </div>
             <style jsx>{` .color-scheme-dark { color-scheme: dark; } `}</style>
-        </div>
+        </div>,
+        document.body
     );
 }
