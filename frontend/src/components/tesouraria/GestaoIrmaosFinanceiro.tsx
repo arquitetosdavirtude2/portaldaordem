@@ -70,7 +70,13 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
             const url = `${apiUrl}/api/tesouraria/irmaos/${acesso.loja_id}?ano=${anoAtivo}&mes=${mesAtivo}&incluir_adormecidos=${mostrarAdormecidos}`;
             const res = await fetch(url);
             if (res.ok) {
-                setIrmaos(await res.json());
+                const data = await res.json();
+                setIrmaos(data);
+                // Atualiza o irmão selecionado se o modal estiver aberto
+                setIrmaoSelecionado(prev => {
+                    if (!prev) return null;
+                    return data.find((i: any) => i.id === prev.id) || prev;
+                });
             }
         } catch (error) {
             console.error('Erro ao carregar financeiro dos irmãos:', error);
@@ -103,11 +109,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
             try {
                 const res = await fetch(`${apiUrl}/api/tesouraria/excecoes/${mes.excecao_id}`, { method: 'DELETE' });
                 if (res.ok) {
-                    setMesesModal(prev => prev.map(m =>
-                        m.mes_ref === mes.mes_ref
-                            ? { ...m, ignorado: false, excecao_id: null, justificativa: null }
-                            : m
-                    ));
+                    carregarFinanceiroIrmaos();
                 }
             } finally {
                 setSalvando(null);
@@ -135,12 +137,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                 })
             });
             if (res.ok) {
-                const data = await res.json();
-                setMesesModal(prev => prev.map(m =>
-                    m.mes_ref === mes.mes_ref
-                        ? { ...m, ignorado: true, excecao_id: data.id, justificativa: justificativaTemp[mes.mes_ref] || '' }
-                        : m
-                ));
                 setJustificativaTemp(prev => {
                     const copy = { ...prev };
                     delete copy[mes.mes_ref];
