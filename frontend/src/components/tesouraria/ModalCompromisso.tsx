@@ -81,10 +81,9 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
     });
 
     return (
-        <div className="fixed inset-0 z-[10000] overflow-y-auto bg-black/90 py-12 px-4 backdrop-blur-sm">
-            <div className="absolute inset-0 -z-10" onClick={onClose}></div>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all animate-in fade-in duration-300">
+            <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 m-4">
             
-            <div className="relative mx-auto bg-[#0f1d45] border border-white/20 rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.9)] w-full max-w-4xl overflow-hidden animate-in zoom-in duration-300">
                 <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>

@@ -427,8 +427,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
             {/* ── Modal Detalhes Meses ── */}
             {irmaoSelecionado && (
-                <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
-                    <div className="bg-[#0f1d45] border border-white/20 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md transition-all animate-in fade-in duration-300">
+                    <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col m-4 animate-in zoom-in duration-300">
                         <div className="p-4 border-b border-white/10 flex justify-between items-center">
                             <div>
                                 <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest">Detalhamento Financeiro</h3>

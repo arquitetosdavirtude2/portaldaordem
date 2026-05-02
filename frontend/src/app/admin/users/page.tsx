@@ -330,8 +330,8 @@ export default function AdminUsersPage() {
 
                 {/* Modal de Cadastro/Edição via Portal */}
                 {isMounted && isModalAberto && createPortal(
-                    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-                        <div className={`relative z-20 bg-[#0f1d45] border rounded-2xl p-0 w-full max-w-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] ${editingId ? 'border-masonic-gold shadow-[0_0_30px_rgba(212,175,55,0.1)]' : 'border-white/10'} transition-all duration-300 animate-in zoom-in duration-300`}>
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all animate-in fade-in duration-300">
+                        <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center p-6 border-b border-white/5 bg-black/20">
                                 <h2 className={`text-sm font-bold uppercase tracking-widest flex items-center gap-2 ${editingId ? 'text-masonic-gold' : 'text-gray-200'}`}>
                                     {editingId ? <><span>✏️</span> Editar Usuário</> : <><span>➕</span> Novo Cadastro</>}
@@ -539,8 +539,8 @@ export default function AdminUsersPage() {
 
             {/* Delete Confirmation Modal via Portal */}
             {isMounted && userParaDeletar && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
-                    <div className="bg-[#0a0a0a] border border-red-900/50 rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md transition-all animate-in fade-in duration-300">
+                    <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-6">
                             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-900/20 text-red-500 mb-4 border border-red-500/20 mx-auto">
                                 <span className="text-2xl">⚠️</span>

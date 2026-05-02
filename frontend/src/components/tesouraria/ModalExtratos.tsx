@@ -106,9 +106,8 @@ export default function ModalExtratos({
     if (!isOpen) return null;
 
     return (
-        <>
-            <div className="fixed top-0 left-0 right-0 bottom-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300">
-                <div className="bg-[#0f1115] border border-white/10 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md transition-all animate-in fade-in duration-300">
+            <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 m-4">
                     <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-white/5">
                         <div>
                             <h3 className="text-lg font-black text-gray-100 uppercase tracking-widest">Anexos de Extratos</h3>

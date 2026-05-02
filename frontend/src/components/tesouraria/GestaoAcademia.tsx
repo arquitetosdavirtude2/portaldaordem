@@ -96,8 +96,8 @@ export default function GestaoAcademia({ acesso }: { acesso: any }) {
             </div>
 
             {exibirForm && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-[#0f1d45] border border-white/20 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all animate-in fade-in duration-300">
+                    <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col m-4 animate-in zoom-in duration-300">
                         <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
                             <h3 className="text-sm font-bold text-yellow-500 uppercase tracking-widest">Cadastrar Novo Indicador (Academia)</h3>
                             <button onClick={() => setExibirForm(false)} className="text-gray-400 hover:text-white transition-colors p-2 text-xl">✕</button>
