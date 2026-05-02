@@ -322,10 +322,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                 </button>
             </div>
 
-                </div>
-            </div>
-            {/* ── FIM do cabeçalho ── */}
-
             {/* ── Tabela ── (irmã do cabeçalho, dentro de space-y-6) */}
             <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-md">
                 <table className="w-full text-left border-collapse">
