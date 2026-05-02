@@ -32,6 +32,8 @@ interface IrmaoFinanceiro {
     mensalidade_pendente: number;
     saude_financeira: string;
     meses_atraso: MesAtraso[];
+    joia_quitada_externa: boolean;
+    isencao_inicio: boolean;
 }
 
 export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
@@ -147,6 +149,23 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
             }
         } finally {
             setSalvando(null);
+        }
+    };
+
+    const handleToggleFlag = async (flag: 'joia_quitada_externa' | 'isencao_inicio', value: boolean) => {
+        if (!irmaoSelecionado) return;
+        try {
+            const res = await fetch(`${apiUrl}/api/tesouraria/irmaos/${irmaoSelecionado.id}/flags`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ [flag]: value })
+            });
+            if (res.ok) {
+                setIrmaoSelecionado(prev => prev ? { ...prev, [flag]: value } : null);
+                carregarFinanceiroIrmaos();
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar flag:', error);
         }
     };
 
@@ -484,6 +503,33 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         <span className="ml-3 text-red-400 font-black">{irmaoSelecionado.meses_devidos} meses devidos</span>
                                     </>
                                 )}
+                            </div>
+
+                            {/* ── Novas Flags de Isenção (Solicitado via Áudio) ── */}
+                            <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <div className="relative">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={irmaoSelecionado.joia_quitada_externa} 
+                                            onChange={(e) => handleToggleFlag('joia_quitada_externa', e.target.checked)}
+                                            className="w-4 h-4 rounded border-white/20 bg-black/40 text-yellow-500 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest group-hover:text-white transition-colors">Joia Paga Externamente (Forçar R$ 2.000)</span>
+                                </label>
+
+                                <label className="flex items-center gap-3 cursor-pointer group border-l border-white/10 pl-4">
+                                    <div className="relative">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={irmaoSelecionado.isencao_inicio} 
+                                            onChange={(e) => handleToggleFlag('isencao_inicio', e.target.checked)}
+                                            className="w-4 h-4 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest group-hover:text-white transition-colors">Isentar Mês de Iniciação (Sem dívida)</span>
+                                </label>
                             </div>
 
                             {mesesModal.map((mes) => {
