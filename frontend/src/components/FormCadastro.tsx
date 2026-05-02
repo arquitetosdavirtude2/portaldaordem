@@ -328,7 +328,7 @@ export default function FormCadastro({
 
             <div>
               <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                Data de Iniciação
+                Data de Iniciação / Transferência
               </label>
               <input
                 type="date"
@@ -592,7 +592,7 @@ export default function FormCadastro({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                  Data de Iniciação / Admissão
+                  Data de Iniciação / Transferência
                 </label>
                 <input
                   type="date"

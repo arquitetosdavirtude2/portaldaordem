@@ -338,7 +338,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                         <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
                             <th className="px-5 py-4 whitespace-nowrap">Obreiro</th>
                             <th className="px-5 py-4 whitespace-nowrap">Cargo</th>
-                            <th className="px-5 py-4 text-center whitespace-nowrap">Iniciação</th>
+                            <th className="px-5 py-4 text-center whitespace-nowrap">Iniciação / Transf.</th>
                             {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
                                 <th className="px-5 py-4 text-center whitespace-nowrap">Joia</th>
                             )}
