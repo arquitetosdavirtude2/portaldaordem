@@ -17,6 +17,7 @@ interface IrmaoFinanceiro {
     data_admissao: string | null;
     data_adormecimento: string | null;
     ativo: number;
+    tipo_ingresso: string;
     meses_devidos: number;
     meses_pagos: number;
     joia_paga: number;
@@ -362,16 +363,25 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     </td>
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
                                         <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
-                                            <div className="flex flex-col items-center">
-                                                <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.joia_paga)}</span>
-                                                {irmao.joia_justificada > 0 && (
-                                                    <span className="text-[7px] text-yellow-500/50 uppercase font-black tracking-tighter mt-0.5">Externo</span>
-                                                )}
-                                            </div>
-                                            <span className="mx-1 text-gray-600">/</span>
-                                            <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
-                                                R$ {formatarMoeda(irmao.joia_pendente)}
-                                            </span>
+                                            {irmao.tipo_ingresso === 'transferencia' ? (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-gray-500 italic">—</span>
+                                                    <span className="text-[7px] text-blue-500/50 uppercase font-black tracking-tighter mt-0.5">Transferido</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.joia_paga)}</span>
+                                                        {irmao.joia_justificada > 0 && (
+                                                            <span className="text-[7px] text-yellow-500/50 uppercase font-black tracking-tighter mt-0.5">Externo</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="mx-1 text-gray-600">/</span>
+                                                    <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
+                                                        R$ {formatarMoeda(irmao.joia_pendente)}
+                                                    </span>
+                                                </>
+                                            )}
                                         </td>
                                     )}
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
