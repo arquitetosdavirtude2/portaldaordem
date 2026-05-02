@@ -8,6 +8,7 @@ import ModalExtratos from './ModalExtratos';
 interface Caixa {
     id: number;
     nome: string;
+    finalidade: string;
     saldo_atual: number;
 }
 
@@ -15,6 +16,9 @@ interface Resumo {
     caixas: Caixa[];
     total_entrada_pendente: number;
     total_saida_pendente: number;
+    saldo_geral: number;
+    saldo_benevolencia: number;
+    saldo_joias_mensalidade: number;
 }
 
 export default function DashboardFinanceiro({ 
@@ -106,7 +110,7 @@ export default function DashboardFinanceiro({
                 </button>
             </div>
 
-            {/* Summary Cards - The "4 Cards" ONLY */}
+            {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Saldo Total */}
                 <div 
@@ -119,7 +123,7 @@ export default function DashboardFinanceiro({
                     <div className="relative z-10">
                         <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Saldo Consolidado</div>
                         <div className="text-2xl font-black text-white tracking-tight">
-                            R$ {(resumo as any)?.saldo_geral?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                            R$ {resumo?.saldo_geral?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                         </div>
                     </div>
                 </div>
@@ -127,46 +131,44 @@ export default function DashboardFinanceiro({
                 {/* Benevolência */}
                 <div 
                     onClick={() => {
-                        const c = resumo?.caixas.find(x => (x as any).tipo === 'benevolencia');
+                        const c = resumo?.caixas.find(x => x.finalidade === 'benevolencia');
                         if (c) setCaixaAtivo(c.id);
                     }}
-                    className={`p-6 rounded-2xl border-2 relative overflow-hidden group cursor-pointer transition-all ${caixaAtivo === resumo?.caixas.find(x => (x as any).tipo === 'benevolencia')?.id ? 'bg-green-500/10 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-[1.02]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                    className={`p-6 rounded-2xl border-2 relative overflow-hidden group cursor-pointer transition-all ${resumo?.caixas.find(x => x.id === caixaAtivo)?.finalidade === 'benevolencia' ? 'bg-green-500/10 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-[1.02]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
                 >
                     <div className="absolute top-0 right-0 p-3 opacity-10">
                         <span className="text-4xl text-green-500">🕊️</span>
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Benevolência</div>
                     <div className="text-2xl font-black text-green-400 tracking-tight">
-                        R$ {(resumo as any)?.saldo_benevolencia?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        R$ {resumo?.saldo_benevolencia?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
-                    {/* Display Bank Name inside the card */}
                     <div className="mt-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest">
-                        {resumo?.caixas.find(c => (c as any).tipo === 'benevolencia')?.nome || 'Recarga Pay'}
+                        {resumo?.caixas.find(c => c.finalidade === 'benevolencia')?.nome || 'Benevolência'}
                     </div>
                 </div>
 
                 {/* Joias e Mensalidades */}
                 <div 
                     onClick={() => {
-                        const c = resumo?.caixas.find(x => (x as any).tipo === 'joias_mensalidade');
+                        const c = resumo?.caixas.find(x => x.finalidade === 'mensalidade');
                         if (c) setCaixaAtivo(c.id);
                     }}
-                    className={`p-6 rounded-2xl border-2 relative overflow-hidden group cursor-pointer transition-all ${caixaAtivo === resumo?.caixas.find(x => (x as any).tipo === 'joias_mensalidade')?.id ? 'bg-blue-500/10 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-[1.02]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                    className={`p-6 rounded-2xl border-2 relative overflow-hidden group cursor-pointer transition-all ${resumo?.caixas.find(x => x.id === caixaAtivo)?.finalidade === 'mensalidade' ? 'bg-blue-500/10 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-[1.02]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
                 >
                     <div className="absolute top-0 right-0 p-3 opacity-10">
                         <span className="text-4xl text-blue-500">💎</span>
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Joias e Mensalidades</div>
                     <div className="text-2xl font-black text-blue-400 tracking-tight">
-                        R$ {(resumo as any)?.saldo_joias_mensalidade?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        R$ {resumo?.saldo_joias_mensalidade?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
-                    {/* Display Bank Name inside the card */}
                     <div className="mt-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest">
-                        {resumo?.caixas.find(c => (c as any).tipo === 'joias_mensalidade')?.nome || 'Banco Pan'}
+                        {resumo?.caixas.find(c => c.finalidade === 'mensalidade')?.nome || 'Geral'}
                     </div>
                 </div>
 
-                {/* Pendências Totais (Entradas) */}
+                {/* Pendências */}
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-3 opacity-10">
                         <span className="text-4xl text-orange-500">⏳</span>
