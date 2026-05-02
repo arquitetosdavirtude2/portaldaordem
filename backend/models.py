@@ -82,6 +82,8 @@ class Pessoa(Base):
     tipo_pessoa = Column(String(50), default="obreiro") # 'obreiro', 'candidato', 'adormecido'
     motivo_adormecimento = Column(String(500), nullable=True)
     data_iniciacao = Column(String(20), nullable=True)
+    joia_quitada_externa = Column(Integer, default=0) # 1 = Quitado Externamente (Forçar R$ 2.000)
+    isencao_inicio = Column(Integer, default=0) # 1 = Isento de dívida no mês de iniciação
 
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")

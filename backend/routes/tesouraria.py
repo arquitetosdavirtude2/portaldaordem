@@ -797,7 +797,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                               AND data_vencimento LIKE :ref
                         """), {"pid": pid, "ref": f"{mes_ref_str}%"}).fetchone()[0]
 
-                        # Verifica exceção
+                        # 1. Verifica se é exceção manual (Histórico)
                         if mes_ref_str in excecoes_map:
                             exc = excecoes_map[mes_ref_str]
                             detalhes_meses.append({
@@ -808,19 +808,36 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                                 "justificativa": exc["justificativa"],
                                 "status": "justificado"
                             })
-                            # Soma no total pago se for justificativa manual (histórico)
                             m_paga_total += 250.0
                             m_pagas_count += 1
+                        
+                        # 2. Verifica se está pago (Dinheiro Real)
                         elif count_pago > 0:
-                            # Pago, não faz nada
-                            pass
+                            detalhes_meses.append({
+                                "mes_ref": mes_ref_str,
+                                "label": f"{MESES_PT[curr.month]}/{curr.year}",
+                                "ignorado": False,
+                                "excecao_id": None,
+                                "justificativa": "Pago (Lançamento no sistema)",
+                                "status": "pago"
+                            })
+                            # O valor pago já foi somado no m_paga_real_dinheiro lá em cima
+
+                        # 3. Verifica se é isento pelo novo flag global
                         elif is_mes_isento_inicio:
-                            # Mês de iniciação isento por flag global
-                            # NÃO gera dívida e NÃO soma no total pago
-                            pass
+                            detalhes_meses.append({
+                                "mes_ref": mes_ref_str,
+                                "label": f"{MESES_PT[curr.month]}/{curr.year}",
+                                "ignorado": True,
+                                "excecao_id": None,
+                                "justificativa": "Isento (Mês de Iniciação)",
+                                "status": "isento"
+                            })
+                            # NÃO soma no valor pago, apenas limpa a dívida
+
+                        # 4. Caso contrário, está PENDENTE
                         else:
-                            # Não pago e sem exceção -> PENDENTE
-                            if curr < date(hoje.year, hoje.month, 1):
+                            if curr < date(hoje.year, hoje.month, 1) or (curr == date(hoje.year, hoje.month, 1) and hoje.day > 10):
                                 meses_devidos += 1
                                 m_pend += 250.0
                                 detalhes_meses.append({
@@ -828,17 +845,8 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                                     "label": f"{MESES_PT[curr.month]}/{curr.year}",
                                     "ignorado": False,
                                     "excecao_id": None,
-                                    "justificativa": None
-                                })
-                            elif curr == date(hoje.year, hoje.month, 1) and hoje.day > 10:
-                                meses_devidos += 1
-                                m_pend += 250.0
-                                detalhes_meses.append({
-                                    "mes_ref": mes_ref_str,
-                                    "label": f"{MESES_PT[curr.month]}/{curr.year}",
-                                    "ignorado": False,
-                                    "excecao_id": None,
-                                    "justificativa": None
+                                    "justificativa": None,
+                                    "status": "pendente"
                                 })
                         
                         if curr.month == 12:
