@@ -651,8 +651,8 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             joia_quitada_externa = bool(p[8])
             isencao_inicio = bool(p[9])
 
-            # Prioriza data_iniciacao se for iniciação, senão usa data_admissao
-            data_ref_calc = data_iniciacao if (tipo_ingresso == 'iniciacao' and data_iniciacao) else data_adm_original
+            # Prioriza data_iniciacao (campo do cadastro) como única fonte da verdade
+            data_ref_calc = data_iniciacao if data_iniciacao else data_adm_original
             data_adm_str = data_ref_calc # Usado no resto do cálculo
 
 
