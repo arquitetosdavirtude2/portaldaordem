@@ -469,6 +469,7 @@ export default function FormCadastro({
                   <option value="Aprendiz">Aprendiz</option>
                   <option value="Companheiro">Companheiro</option>
                   <option value="Mestre">Mestre</option>
+                  <option value="Mestre Instalado">Mestre Instalado</option>
                 </>
               )}
             </select>

@@ -52,6 +52,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes'>('ativos');
 
     const [categoriaFiltro, setCategoriaFiltro] = useState<'todas' | 'joia' | 'mensalidade'>('todas');
+    const [busca, setBusca] = useState('');
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -190,8 +191,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     };
 
     const irmaosFiltrados = irmaos.filter(i => {
-        const cargo = (i.cargo || '').toLowerCase();
-        if (cargo.includes('venerável') || cargo.includes('vigilante')) return false;
+        // Busca por nome
+        if (busca && !i.nome.toLowerCase().includes(busca.toLowerCase())) return false;
 
         // Filtro de Adormecidos (Toggle)
         if (!mostrarAdormecidos && i.ativo === 0) return false;
@@ -231,101 +232,95 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
             {/* ── Linha do cabeçalho: Título + Controles ── */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex flex-wrap items-center gap-2 bg-black/20 p-2 rounded-xl border border-white/5">
+                {/* Busca */}
+                <div className="relative flex-1 min-w-[200px]">
+                    <input
+                        type="text"
+                        placeholder="Buscar obreiro..."
+                        value={busca}
+                        onChange={(e) => setBusca(e.target.value)}
+                        className="w-full h-9 bg-black/40 border border-white/10 text-gray-300 text-[10px] rounded-lg pl-8 pr-4 py-1 focus:outline-none focus:border-yellow-500 transition-all uppercase tracking-widest"
+                    />
+                    <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
 
-                {/* Título removido - já está na aba do dashboard financeiro */}
-                <div></div>
+                <div className="h-6 w-px bg-white/10 mx-1 hidden lg:block"></div>
 
-
-                <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-end w-full">
-
-                    {/* Sub-filtro de Categoria */}
-                    <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 shadow-inner mr-2">
-                        <button
-                            onClick={() => setCategoriaFiltro('todas')}
-                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${categoriaFiltro === 'todas' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Todas
-                        </button>
-                        <button
-                            onClick={() => setCategoriaFiltro('joia')}
-                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${categoriaFiltro === 'joia' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Joia
-                        </button>
-                        <button
-                            onClick={() => setCategoriaFiltro('mensalidade')}
-                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${categoriaFiltro === 'mensalidade' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Mensalidade
-                        </button>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10 shadow-inner">
-                        <button
-                            onClick={() => setVisaoAtiva('ativos')}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'ativos' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'ativos' ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'}`}></span>
-                            Ativos
-                        </button>
-                        <button
-                            onClick={() => setVisaoAtiva('inadimplentes')}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'inadimplentes' ? 'bg-red-500/20 text-red-400 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full ${visaoAtiva === 'inadimplentes' ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></span>
-                            Inadimplentes
-                        </button>
-                    </div>
-
+                {/* Filtro de Visão (Ativos/Inadimplentes) */}
+                <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/10 shadow-inner">
                     <button
-                        onClick={() => setMostrarAdormecidos(!mostrarAdormecidos)}
-                        className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 border ${mostrarAdormecidos ? 'bg-gray-500/20 text-gray-200 border-gray-400/50 shadow-[0_0_15px_rgba(255,255,255,0.05)]' : 'bg-black/20 text-gray-600 border-white/5 hover:border-white/10'}`}
+                        type="button"
+                        onClick={() => setVisaoAtiva('ativos')}
+                        className={`px-3 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'ativos' ? 'bg-blue-500/20 text-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
                     >
-                        <div className={`w-2 h-2 rounded-full transition-all ${mostrarAdormecidos ? 'bg-gray-300 shadow-[0_0_8px_rgba(255,255,255,0.5)]' : 'bg-gray-800'}`}></div>
-                        Adormecidos
+                        Ativos
                     </button>
-
-
-                    <div className="h-8 w-px bg-white/10 mx-1 hidden lg:block"></div>
-
-                    {/* Botão Relatório CSV */}
                     <button
-                        onClick={handleDownloadRelatorio}
-                        disabled={baixandoRelatorio}
-                        className="h-10 px-4 bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-500 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2 shrink-0"
+                        type="button"
+                        onClick={() => setVisaoAtiva('inadimplentes')}
+                        className={`px-3 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${visaoAtiva === 'inadimplentes' ? 'bg-red-500/20 text-red-400' : 'text-gray-500 hover:text-gray-300'}`}
                     >
-                        {baixandoRelatorio ? (
-                            <div className="w-3 h-3 border border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin"></div>
-                        ) : (
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        )}
-                        {baixandoRelatorio ? '...' : 'Relatório'}
+                        Inadimplentes
                     </button>
+                </div>
 
-                    {/* Seletor de Mês */}
+                {/* Filtro de Categoria */}
+                <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/10 shadow-inner">
+                    <span className="text-[8px] font-bold text-gray-500 uppercase px-1.5">Exibir:</span>
+                    <select
+                        value={categoriaFiltro}
+                        onChange={(e) => setCategoriaFiltro(e.target.value as any)}
+                        className="h-7 bg-white/5 border-none rounded-md px-2 text-[9px] font-bold text-yellow-500 focus:outline-none transition-colors uppercase cursor-pointer"
+                    >
+                        <option value="todas">Todas</option>
+                        <option value="joia">Joia</option>
+                        <option value="mensalidade">Mensalidade</option>
+                    </select>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => setMostrarAdormecidos(!mostrarAdormecidos)}
+                    className={`h-9 px-3 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 border ${mostrarAdormecidos ? 'bg-gray-500/20 text-gray-200 border-gray-400/50 shadow-[0_0_15px_rgba(255,255,255,0.05)]' : 'bg-black/20 text-gray-600 border-white/5 hover:border-white/10'}`}
+                >
+                    <div className={`w-1.5 h-1.5 rounded-full ${mostrarAdormecidos ? 'bg-gray-300' : 'bg-gray-800'}`}></div>
+                    Adormecidos
+                </button>
+
+                <div className="h-6 w-px bg-white/10 mx-1 hidden lg:block"></div>
+
+                {/* Seletor de Mês/Ano */}
+                <div className="flex items-center gap-1">
                     <select
                         value={mesAtivo}
                         onChange={(e) => setMesAtivo(Number(e.target.value))}
-                        className="h-10 bg-black/40 border border-white/10 rounded-xl px-3 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase cursor-pointer"
+                        className="h-9 bg-black/40 border border-white/10 rounded-lg px-2 text-[10px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase cursor-pointer"
                     >
                         {['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'].map((m, i) => (
                             <option key={m} value={i + 1}>{m}</option>
                         ))}
                     </select>
-
-                    {/* Seletor de Ano */}
                     <select
                         value={anoAtivo}
                         onChange={(e) => setAnoAtivo(Number(e.target.value))}
-                        className="h-10 bg-black/40 border border-white/10 rounded-xl px-3 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors cursor-pointer"
+                        className="h-9 bg-black/40 border border-white/10 rounded-lg px-2 text-[10px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors cursor-pointer"
                     >
                         {[2024, 2025, 2026].map(val => (
                             <option key={val} value={val}>{val}</option>
                         ))}
                     </select>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={handleDownloadRelatorio}
+                    disabled={baixandoRelatorio}
+                    className="h-9 px-3 bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-500 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-1.5 shrink-0"
+                >
+                    {baixandoRelatorio ? '...' : 'CSV'}
+                </button>
+            </div>
 
                 </div>
             </div>

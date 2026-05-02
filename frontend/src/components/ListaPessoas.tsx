@@ -437,6 +437,7 @@ export default function ListaPessoas({
                                                             <option value="Aprendiz">Aprendiz</option>
                                                             <option value="Companheiro">Companheiro</option>
                                                             <option value="Mestre">Mestre</option>
+                                                            <option value="Mestre Instalado">Mestre Instalado</option>
                                                         </>
                                                     )}
                                                 </select>
@@ -445,7 +446,7 @@ export default function ListaPessoas({
                                                     className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
                                                         pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                                         pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                                        pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                        (pessoa.status === 'Mestre' || pessoa.status === 'Mestre Instalado') ? 'bg-green-500/10 text-green-400 border-green-500/20' :
                                                         pessoa.status === 'Candidato' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
                                                         pessoa.status === 'Profano' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                                                         'bg-gray-500/10 text-gray-400 border-gray-500/20'
@@ -538,13 +539,19 @@ export default function ListaPessoas({
                                         <td className="py-3 px-3 text-center">
                                             <div className="flex justify-center gap-3 opacity-50 group-hover:opacity-100 transition-opacity">
                                                 {podeFullEdit && (
-                                                    <button
-                                                        onClick={() => onEditPessoa ? onEditPessoa(pessoa) : actStartEdit(pessoa)}
-                                                        className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 rounded transition"
-                                                        title="Editar"
-                                                    >
-                                                        ✏️
-                                                    </button>
+                                                    pessoa.cargo_nome === 'Venerável Mestre' ? (
+                                                        <span className="p-1.5 text-gray-600 cursor-not-allowed opacity-50" title="Gestão via Grão-Mestrado">
+                                                            🔒
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => onEditPessoa ? onEditPessoa(pessoa) : actStartEdit(pessoa)}
+                                                            className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 rounded transition"
+                                                            title="Editar"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                    )
                                                 )}
                                                 {podeEditar && editandoId === pessoa.id && (
                                                     <button
