@@ -287,7 +287,7 @@ export default function FormCadastro({
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder="Ex: João da Silva"
-              className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
+              className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs font-sans"
               autoFocus={!!pessoaParaEditar}
             />
           </div>
@@ -303,7 +303,7 @@ export default function FormCadastro({
               onChange={handleTelefoneChange}
               placeholder="(11) 99999-9999"
               maxLength={15}
-              className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
+              className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs font-sans"
             />
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function FormCadastro({
                 type="date"
                 value={dataIniciacao}
                 onChange={(e) => setDataIniciacao(e.target.value)}
-                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs h-9"
+                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs h-9 font-sans"
               />
 
                   {dataIniciacao && (
@@ -429,7 +429,7 @@ export default function FormCadastro({
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 placeholder="Ex: joao.silva"
-                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
+                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs font-sans"
               />
             </div>
 
@@ -442,7 +442,7 @@ export default function FormCadastro({
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder={pessoaParaEditar ? "Deixe em branco para não alterar" : "••••••••"}
-                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
+                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs font-sans"
               />
             </div>
           </div>
@@ -501,7 +501,7 @@ export default function FormCadastro({
                 value={lojaId}
                 onChange={(e) => setLojaId(e.target.value ? Number(e.target.value) : '')}
                 disabled={isLojaUser}
-                className={`w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs ${isLojaUser ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs font-sans ${isLojaUser ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 <option value="">Sem vínculo</option>
                 {lojas.map(loja => (
@@ -555,7 +555,7 @@ export default function FormCadastro({
                       type="date"
                       value={dataAdormecimento}
                       onChange={(e) => setDataAdormecimento(e.target.value)}
-                      className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-red-500/50 transition-all text-sm"
+                      className="w-full p-3 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-red-500/50 transition-all text-sm font-sans"
                     />
                   </div>
                   <div className="flex items-end">
@@ -598,7 +598,7 @@ export default function FormCadastro({
                   type="date"
                   value={dataAdmissao}
                   onChange={(e) => setDataAdmissao(e.target.value)}
-                  className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
+                  className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs font-sans"
                 />
               </div>
 
@@ -611,7 +611,7 @@ export default function FormCadastro({
                   value={joiaPaga}
                   onChange={(e) => setJoiaPaga(e.target.value)}
                   placeholder="0,00"
-                  className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
+                  className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-all text-xs font-sans"
                 />
               </div>
 

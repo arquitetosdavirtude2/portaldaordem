@@ -371,7 +371,7 @@ export default function ListaPessoas({
                                                                 )}
                                                             </div>
                                                             {(!isLojaUser && pessoa.loja_nome) && (
-                                                                <span className="text-[9px] text-masonic-gold uppercase tracking-tighter">{pessoa.loja_nome}</span>
+                                                                <span className="text-[9px] text-masonic-gold uppercase tracking-tighter font-sans">{pessoa.loja_nome}</span>
                                                             )}
                                                         </div>
                                                 )}
@@ -524,7 +524,7 @@ export default function ListaPessoas({
                                                 {!isLojaUser && (
                                                     <td className="py-3 px-3">
                                                         {pessoa.loja_nome ? (
-                                                            <span className="bg-yellow-900/10 text-yellow-500 px-2 py-1 rounded text-[10px] uppercase font-bold border border-yellow-500/20">
+                                                            <span className="bg-yellow-900/10 text-yellow-500 px-2 py-1 rounded text-[10px] uppercase font-bold border border-yellow-500/20 font-sans">
                                                                 {pessoa.loja_nome}
                                                             </span>
                                                         ) : (

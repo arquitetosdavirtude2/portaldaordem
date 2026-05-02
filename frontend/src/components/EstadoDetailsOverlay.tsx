@@ -113,7 +113,7 @@ export default function EstadoDetailsOverlay({ sigla, nomeEstado, userRole, onCl
                             {nomeEstado}
                         </h2>
                         <div className="flex items-center gap-3 text-xs tracking-widest uppercase text-gray-400">
-                            <span className="font-bold text-white">{sigla}</span>
+                            <span className="font-bold text-white font-sans">{sigla}</span>
                             <span>•</span>
                             <span>
                                 {['admin', 'grao_mestre', 'master', 'federal'].includes(String(userRole).toLowerCase())

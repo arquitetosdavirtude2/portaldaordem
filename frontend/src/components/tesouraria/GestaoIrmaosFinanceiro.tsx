@@ -367,11 +367,6 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                             <span className="text-[11px] text-gray-100 group-hover:text-yellow-500 transition-colors">
                                                 {irmao.nome}
                                             </span>
-                                            {irmao.data_admissao && new Date(irmao.data_admissao) > new Date() && (
-                                                <span className="text-[7px] text-blue-400 font-bold uppercase tracking-tighter bg-blue-400/10 px-1 py-0.5 rounded border border-blue-400/20">
-                                                    Candidato
-                                                </span>
-                                            )}
                                         </div>
                                         {isAdormecido && (
                                             <div className="text-[8px] text-gray-500 uppercase tracking-tighter mt-0.5">
@@ -389,11 +384,18 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         )}
                                     </td>
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <span className="text-[10px] text-gray-300 font-sans">{formatarData(irmao.data_admissao)}</span>
-                                            {irmao.meses_cobrados > 0 && (
-                                                <span className="text-[9px] text-gray-500 font-sans">
-                                                    ({irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'})
+                                        <div className="flex flex-col items-center justify-center">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <span className="text-[10px] text-gray-300 font-sans">{formatarData(irmao.data_admissao)}</span>
+                                                {irmao.meses_cobrados > 0 && (
+                                                    <span className="text-[9px] text-gray-500 font-sans">
+                                                        ({irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'})
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {irmao.data_admissao && new Date(irmao.data_admissao) > new Date() && (
+                                                <span className="text-[7px] text-blue-400 font-bold uppercase tracking-tighter mt-1">
+                                                    Candidato
                                                 </span>
                                             )}
                                         </div>

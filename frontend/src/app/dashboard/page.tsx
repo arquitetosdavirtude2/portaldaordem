@@ -69,7 +69,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-8">
                     <div className="text-right hidden md:block">
                         {rawRole === 'loja' && (
-                            <p className="text-sm text-masonic-gold/80 font-bold tracking-wider uppercase">
+                            <p className="text-sm text-masonic-gold/80 font-bold tracking-wider uppercase font-sans">
                                 L∴ {headerRole}
                             </p>
                         )}
