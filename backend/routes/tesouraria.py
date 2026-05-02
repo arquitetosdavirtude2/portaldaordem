@@ -347,7 +347,7 @@ def listar_transacoes(
                    t.data_vencimento, t.data_pagamento, t.descricao, t.status, t.anexo_url
             FROM transacoes t
             JOIN caixas c ON t.caixa_id = c.id
-            WHERE (c.loja_id = :loja_id OR :loja_id <= 1)
+            WHERE c.loja_id = :loja_id
         """
         params = {"loja_id": loja_id}
 
@@ -488,10 +488,9 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         from sqlalchemy import text
         db_treasury.expire_all()
         
-        # 1. Buscar Caixas (Contas)
-        # Usamos SELECT * para ser flexível e não quebrar se uma coluna sumiu
-        query_caixas = text("SELECT * FROM caixas")
-        caixas_rows = db_treasury.execute(query_caixas).fetchall()
+        # 1. Buscar Caixas (Contas) da Loja
+        query_caixas = text("SELECT id, nome, finalidade, saldo_atual, tipo FROM caixas WHERE loja_id = :lid")
+        caixas_rows = db_treasury.execute(query_caixas, {"lid": loja_id}).fetchall()
         
         caixas = []
         saldo_geral = 0.0
