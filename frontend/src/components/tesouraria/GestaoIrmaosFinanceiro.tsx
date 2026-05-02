@@ -360,54 +360,46 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         )}
                                     </td>
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-[10px] text-gray-300 font-mono">{formatarData(irmao.data_admissao)}</span>
+                                        <div className="flex flex-col items-center leading-tight">
+                                            <span className="text-[10px] text-gray-300 font-sans">{formatarData(irmao.data_admissao)}</span>
                                             {irmao.meses_cobrados > 0 && (
-                                                <span className="text-[8px] text-gray-500 uppercase font-black tracking-tighter mt-0.5">
-                                                    | {irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'}
+                                                <span className="text-[9px] text-gray-500 font-sans font-bold">
+                                                    {irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'}
                                                 </span>
                                             )}
                                         </div>
                                     </td>
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
-                                        <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
+                                        <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap min-w-[140px]">
                                             {irmao.tipo_ingresso === 'transferencia' ? (
                                                 <div className="flex flex-col items-center">
                                                     <span className="text-gray-500 italic">—</span>
                                                     <span className="text-[7px] text-blue-500/50 uppercase font-black tracking-tighter mt-0.5">Transferido</span>
                                                 </div>
                                             ) : (
-                                                <>
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.joia_paga)}</span>
-                                                        {irmao.joia_justificada > 0 && (
-                                                            <span className="text-[7px] text-yellow-500/50 uppercase font-black tracking-tighter mt-0.5">Externo</span>
-                                                        )}
-                                                    </div>
-                                                    <span className="mx-1 text-gray-600">/</span>
+                                                <div className="inline-flex items-center gap-1">
+                                                    <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.joia_paga)}</span>
+                                                    <span className="text-gray-600">/</span>
                                                     <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
                                                         R$ {formatarMoeda(irmao.joia_pendente)}
                                                     </span>
-                                                </>
+                                                </div>
                                             )}
                                         </td>
                                     )}
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
-                                        <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
-                                            <div className="flex flex-col items-center">
+                                        <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap min-w-[140px]">
+                                            <div className="inline-flex items-center gap-1">
                                                 <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.mensalidade_paga)}</span>
-                                                {irmao.mensalidade_justificada > 0 && (
-                                                    <span className="text-[7px] text-yellow-500/50 uppercase font-black tracking-tighter mt-0.5">Externo</span>
-                                                )}
+                                                <span className="text-gray-600">/</span>
+                                                <span className={
+                                                    irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' :
+                                                    irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' :
+                                                    'text-gray-500 italic'
+                                                }>
+                                                    R$ {formatarMoeda(irmao.mensalidade_pendente)}
+                                                </span>
                                             </div>
-                                            <span className="mx-1 text-gray-600">/</span>
-                                            <span className={
-                                                irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' :
-                                                irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' :
-                                                'text-gray-500 italic'
-                                            }>
-                                                R$ {formatarMoeda(irmao.mensalidade_pendente)}
-                                            </span>
                                         </td>
                                     )}
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
