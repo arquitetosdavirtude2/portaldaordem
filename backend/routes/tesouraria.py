@@ -90,14 +90,6 @@ class TransacaoUpdate(BaseModel):
     categoria: Optional[str] = None
     data_vencimento: Optional[str] = None
 
-class ResumoFinanceiro(BaseModel):
-    caixas: List[CaixaResponse] = []
-    total_entrada_pendente: float = 0.0
-    total_saida_pendente: float = 0.0
-    saldo_geral: float = 0.0
-    saldo_benevolencia: float = 0.0
-    saldo_joias_mensalidade: float = 0.0
-
 class CaixaResponse(BaseModel):
     id: int
     nome: str
@@ -107,6 +99,14 @@ class CaixaResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ResumoFinanceiro(BaseModel):
+    caixas: List[CaixaResponse] = []
+    total_entrada_pendente: float = 0.0
+    total_saida_pendente: float = 0.0
+    saldo_geral: float = 0.0
+    saldo_benevolencia: float = 0.0
+    saldo_joias_mensalidade: float = 0.0
 
 @router.get("/caixas", response_model=List[CaixaResponse])
 def listar_caixas(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
