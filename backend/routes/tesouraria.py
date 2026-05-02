@@ -31,7 +31,7 @@ class CaixaCreate(BaseModel):
     loja_id: int
     nome: str
     tipo: str = "geral" 
-    finalidade: str = "geral"
+    finalidade: str = "mensalidade"
     descricao: Optional[str] = None
     saldo_inicial: float = 0.0
 
@@ -102,7 +102,7 @@ class CaixaResponse(BaseModel):
     id: int
     nome: str
     tipo: Optional[str] = "geral"
-    finalidade: Optional[str] = "geral"
+    finalidade: Optional[str] = "mensalidade"
     saldo_atual: float
 
     class Config:
@@ -491,10 +491,10 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         # 1. Buscar Caixas (Contas)
         # Se loja_id=0 ou 1, pegamos tudo para garantir visibilidade conforme solicitado
         if loja_id <= 1:
-            query_caixas = text("SELECT id, nome, tipo, saldo_atual FROM caixas")
+            query_caixas = text("SELECT id, nome, finalidade, saldo_atual, tipo FROM caixas")
             caixas_rows = db_treasury.execute(query_caixas).fetchall()
         else:
-            query_caixas = text("SELECT id, nome, tipo, saldo_atual FROM caixas WHERE loja_id = :lid")
+            query_caixas = text("SELECT id, nome, finalidade, saldo_atual, tipo FROM caixas WHERE loja_id = :lid")
             caixas_rows = db_treasury.execute(query_caixas, {"lid": loja_id}).fetchall()
         
         caixas = []
@@ -503,20 +503,21 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         saldo_jm = 0.0
         
         for r in caixas_rows:
-            # Usando mapeamento seguro por nome ou índice fixo do SELECT acima
-            c_id, c_nome, c_tipo, c_saldo = r[0], r[1], r[2], (r[3] or 0.0)
+            # c_id, c_nome, c_finalidade, c_saldo, c_tipo
+            c_id, c_nome, c_fin, c_saldo, c_tipo = r[0], r[1], (r[2] or 'mensalidade'), (r[3] or 0.0), r[4]
             
             caixas.append({
                 "id": c_id,
                 "nome": c_nome,
-                "tipo": c_tipo,
+                "finalidade": c_fin,
+                "tipo": c_tipo or 'geral',
                 "saldo_atual": float(c_saldo)
             })
             
             saldo_geral += float(c_saldo)
-            if c_tipo == 'benevolencia':
+            if c_fin == 'benevolencia':
                 saldo_ben += float(c_saldo)
-            elif c_tipo == 'joias_mensalidade':
+            elif c_fin == 'mensalidade':
                 saldo_jm += float(c_saldo)
         
         # 2. Calcular Pendências (Apenas da Loja atual)
@@ -560,25 +561,6 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
             "error": str(e)
         }
 
-@router.post("/caixas", response_model=CaixaResponse)
-def criar_caixa(dados: CaixaCreate, db_treasury: Session = Depends(get_treasury_db)):
-        print(f"DEBUG: Criando caixa {dados.nome} para loja {dados.loja_id}")
-        try:
-            nuevo_caixa = Caixa(
-                loja_id=dados.loja_id,
-                nome=dados.nome,
-                tipo=dados.tipo,
-                descricao=dados.descricao,
-                saldo_atual=dados.saldo_inicial
-            )
-            db_treasury.add(nuevo_caixa)
-            db_treasury.commit()
-            db_treasury.refresh(nuevo_caixa)
-            return nuevo_caixa
-        except Exception as e:
-            db_treasury.rollback()
-            print(f"DEBUG ERROR: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
 
 class IrmaoFinanceiro(BaseModel):
     id: int
