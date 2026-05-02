@@ -90,6 +90,32 @@ class TransacaoUpdate(BaseModel):
     categoria: Optional[str] = None
     data_vencimento: Optional[str] = None
 
+class IrmaoFlagsUpdate(BaseModel):
+    joia_quitada_externa: Optional[bool] = None
+    isencao_inicio: Optional[bool] = None
+
+@router.patch("/irmaos/{pessoa_id}/flags")
+def atualizar_flags_financeiras(
+    pessoa_id: int,
+    flags: IrmaoFlagsUpdate,
+    db: Session = Depends(get_treasury_db)
+):
+    from sqlalchemy import text
+    try:
+        if flags.joia_quitada_externa is not None:
+            db.execute(text("UPDATE pessoas SET joia_quitada_externa = :val WHERE id = :pid"), 
+                       {"val": 1 if flags.joia_quitada_externa else 0, "pid": pessoa_id})
+        
+        if flags.isencao_inicio is not None:
+            db.execute(text("UPDATE pessoas SET isencao_inicio = :val WHERE id = :pid"), 
+                       {"val": 1 if flags.isencao_inicio else 0, "pid": pessoa_id})
+        
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 class CaixaResponse(BaseModel):
     id: int
     nome: str
@@ -603,7 +629,8 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             alvo = hoje
 
         query_pessoas = text("""
-            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso, p.data_iniciacao
+            SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso, p.data_iniciacao,
+                   p.joia_quitada_externa, p.isencao_inicio
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
@@ -617,13 +644,15 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
         for p in pessoas:
             pid, nome, cargo_nome = p[0], p[1], (p[2] or "")
             data_adm_original = p[3]
-            ativo = p[4] if len(p) > 4 else 1
-            data_adormecimento = p[5] if len(p) > 5 else None
-            tipo_ingresso = p[6] if len(p) > 6 else 'iniciacao'
-            data_ini_original = p[7] if len(p) > 7 else None
+            ativo = p[4]
+            data_adormecimento = p[5]
+            tipo_ingresso = p[6]
+            data_iniciacao = p[7]
+            joia_quitada_externa = bool(p[8])
+            isencao_inicio = bool(p[9])
 
             # Prioriza data_iniciacao se for iniciação, senão usa data_admissao
-            data_ref_calc = data_ini_original if (tipo_ingresso == 'iniciacao' and data_ini_original) else data_adm_original
+            data_ref_calc = data_iniciacao if (tipo_ingresso == 'iniciacao' and data_iniciacao) else data_adm_original
             data_adm_str = data_ref_calc # Usado no resto do cálculo
 
 
@@ -647,8 +676,8 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 # Isento de Joia
                 j_pend = 0.0
                 j_paga_exibicao = 0.0
-            elif 'JOIA' in excecoes_map:
-                # Pago em outro banco (Justificado)
+            elif 'JOIA' in excecoes_map or joia_quitada_externa:
+                # Pago em outro banco (Justificado ou Quitado Externamente)
                 j_pend = 0.0
                 j_paga_exibicao = 2000.0
             else:
@@ -657,30 +686,25 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 j_paga_exibicao = j_paga_real
 
             # 2. MENSALIDADE
-            # Nova Lógica: Contamos os MESES pagos (lançamentos) em vez de somar os valores.
-            # Isso permite que lançamentos de R$ 0 (justificados por empréstimo/abatimento) 
-            # contem como R$ 250 no resumo do irmão.
             m_pagas_reais_count = db_treasury.execute(text(
                 "SELECT COUNT(id) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
             m_pagas_reais_count = int(m_pagas_reais_count or 0)
-
-            # Contar meses ignorados (exceções) que não são JOIA
-            m_ignoradas_count = sum(1 for ref in excecoes_map if ref != 'JOIA')
             
-            # Total de meses "quitados" (seja por dinheiro ou por justificativa/empréstimo)
-            total_meses_quitados = m_pagas_reais_count + m_ignoradas_count
-            
-            m_pagas_count = total_meses_quitados
-            m_paga_total = total_meses_quitados * 250.0
-            
-            # Para fins de transparência, mantemos o valor real em dinheiro também
+            # Valor real em dinheiro que entrou no sistema
             m_paga_real_dinheiro = db_treasury.execute(text(
                 "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
             m_paga_real_dinheiro = float(m_paga_real_dinheiro or 0.0)
 
-            m_paga_justificada = (total_meses_quitados * 250.0) - m_paga_real_dinheiro
+            # Contar meses ignorados (exceções) que não são JOIA
+            m_ignoradas_count = sum(1 for ref in excecoes_map if ref != 'JOIA')
+            
+            # NOVO: Para Mensalidade, o valor pago é APENAS o dinheiro real.
+            # O "ignorar" apenas remove a dívida, não conta como dinheiro pago.
+            m_paga_total = m_paga_real_dinheiro
+            m_paga_justificada = 0.0 # Revertido: não somamos justificativa no total de mensalidade
+            m_pagas_count = m_pagas_reais_count # Contamos apenas meses com transação real
 
             meses_devidos = 0
             m_pend = 0.0
@@ -714,8 +738,6 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                             data_adm = datetime.strptime(d_str, "%d/%m/%Y").date()
                     
                     # Regra de início de cobrança
-                    # Para iniciações em 2025, sempre começa no mês seguinte.
-                    # A partir de 2026, vale a regra do dia 15.
                     if data_adm.year < 2026:
                         if data_adm.month == 12:
                             inicio_cobranca = date(data_adm.year + 1, 1, 1)
@@ -730,7 +752,17 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                         else:
                             inicio_cobranca = date(data_adm.year, data_adm.month, 1)
                     
+                    # Garantir que meses com exceção (justificativas) apareçam no histórico mesmo se forem antes do início da cobrança
                     curr = date(inicio_cobranca.year, inicio_cobranca.month, 1)
+                    for mes_exc in excecoes_map.keys():
+                        if mes_exc == 'JOIA': continue
+                        try:
+                            exc_date = datetime.strptime(mes_exc, "%Y-%m").date()
+                            if exc_date < curr:
+                                curr = exc_date
+                        except:
+                            pass
+
                     alvo_limite = date(alvo.year, alvo.month, 1)
                     
                     # Contagem total de meses que deveriam ser pagos
@@ -750,8 +782,10 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                         except:
                             pass
 
+                    inicio_cobranca_str = inicio_cobranca.strftime("%Y-%m")
                     while curr <= alvo_limite:
                         mes_ref_str = curr.strftime("%Y-%m")
+                        is_mes_isento_inicio = (mes_ref_str == inicio_cobranca_str and isencao_inicio)
                         
                         # Verifica se existe algum lançamento de mensalidade pago neste mês
                         count_pago = db_treasury.execute(text("""
@@ -774,9 +808,15 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                                 "justificativa": exc["justificativa"],
                                 "status": "justificado"
                             })
-                            # Se for justificado, NÃO conta como devido nem pendente
+                            # Soma no total pago se for justificativa manual (histórico)
+                            m_paga_total += 250.0
+                            m_pagas_count += 1
                         elif count_pago > 0:
                             # Pago, não faz nada
+                            pass
+                        elif is_mes_isento_inicio:
+                            # Mês de iniciação isento por flag global
+                            # NÃO gera dívida e NÃO soma no total pago
                             pass
                         else:
                             # Não pago e sem exceção -> PENDENTE
@@ -860,7 +900,9 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 "mensalidade_justificada": float(m_paga_justificada),
                 "mensalidade_pendente": float(m_pend),
                 "saude_financeira": saude,
-                "meses_atraso": detalhes_meses
+                "meses_atraso": detalhes_meses,
+                "joia_quitada_externa": joia_quitada_externa,
+                "isencao_inicio": isencao_inicio
             })
 
         return res
