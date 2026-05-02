@@ -489,9 +489,8 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         db_treasury.expire_all()
         
         # 1. Buscar Caixas (Contas)
-        # Vamos buscar todos os caixas primeiro para garantir visibilidade, 
-        # e depois filtramos se necessário.
-        query_caixas = text("SELECT id, nome, finalidade, saldo_atual, tipo FROM caixas")
+        # Usamos SELECT * para ser flexível e não quebrar se uma coluna sumiu
+        query_caixas = text("SELECT * FROM caixas")
         caixas_rows = db_treasury.execute(query_caixas).fetchall()
         
         caixas = []
@@ -500,22 +499,30 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         saldo_jm = 0.0
         
         for r in caixas_rows:
-            # c_id, c_nome, c_finalidade, c_saldo, c_tipo
-            c_id, c_nome, c_fin, c_saldo, c_tipo = r[0], r[1], (r[2] or 'mensalidade'), (r[3] or 0.0), r[4]
-            
+            # Tentar mapear colunas de forma segura (funciona em MySQL e SQLite)
+            try:
+                # SQLAlchemy Row mapping
+                row_map = r._mapping
+                c_id = row_map.get('id')
+                c_nome = row_map.get('nome')
+                c_fin = row_map.get('finalidade') or 'mensalidade'
+                c_saldo = float(row_map.get('saldo_atual') or 0.0)
+            except:
+                # Fallback para índices caso o _mapping falhe
+                c_id, c_nome, c_fin, c_saldo = r[0], r[1], r[2], r[3]
+
             caixas.append({
                 "id": c_id,
                 "nome": c_nome,
                 "finalidade": c_fin,
-                "tipo": c_tipo or 'geral',
-                "saldo_atual": float(c_saldo)
+                "saldo_atual": c_saldo
             })
             
-            saldo_geral += float(c_saldo)
+            saldo_geral += c_saldo
             if c_fin == 'benevolencia':
-                saldo_ben += float(c_saldo)
+                saldo_ben += c_saldo
             elif c_fin == 'mensalidade':
-                saldo_jm += float(c_saldo)
+                saldo_jm += c_saldo
         
         # 2. Calcular Pendências (Apenas da Loja atual)
         query_pend = text("""
