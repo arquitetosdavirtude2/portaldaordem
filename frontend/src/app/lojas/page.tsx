@@ -140,7 +140,7 @@ export default function LojasDashboardPage() {
     }
 
     const displayTitle = acesso?.loja_nome 
-        ? `${acesso.loja_nome}${acesso.loja_numero ? ` Nº ${acesso.loja_numero}` : ''}`
+        ? <>{acesso.loja_nome}{acesso.loja_numero ? <span className="font-sans"> Nº {acesso.loja_numero}</span> : ''}</>
         : 'Sua Loja';
 
     return (
