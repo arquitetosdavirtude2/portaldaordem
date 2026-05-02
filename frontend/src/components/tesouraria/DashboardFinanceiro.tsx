@@ -51,7 +51,6 @@ export default function DashboardFinanceiro({
             // Also fetch filtered period data for summary
             let url = `${apiUrl}/api/tesouraria/transacoes/${caixaAtivo}?loja_id=${acesso.loja_id}&`;
             if (mesAtivo !== 0) url += `mes=${mesAtivo}&ano=${anoAtivo}&`;
-            if (statusFiltro) url += `status=${statusFiltro}&`;
             if (busca) url += `busca=${busca}&`;
 
             const resTrans = await fetch(url);
