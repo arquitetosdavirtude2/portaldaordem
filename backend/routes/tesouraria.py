@@ -159,10 +159,11 @@ async def criar_transacao(
         ext = os.path.splitext(comprovante.filename)[1]
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         filename = f"recibo_{timestamp}{ext}"
-        filepath = os.path.join(UPLOAD_DIR, filename)
+        # Garantir que a pasta existe
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(comprovante.file, buffer)
-        anexo_url = f"/static/uploads/comprovantes/{filename}"
+        anexo_url = f"/api/static/uploads/comprovantes/{filename}"
 
     nova_transacao = Transacao(
         caixa_id=caixa_id,
@@ -405,7 +406,8 @@ async def subir_extrato(
     ext = os.path.splitext(arquivo.filename)[1]
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     filename = f"extrato_{caixa_id}_{ano}_{mes}_{timestamp}{ext}"
-    filepath = os.path.join(UPLOAD_EXTRATOS_DIR, filename)
+    # Garantir que a pasta existe
+    os.makedirs(UPLOAD_EXTRATOS_DIR, exist_ok=True)
     
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(arquivo.file, buffer)
@@ -415,7 +417,7 @@ async def subir_extrato(
         caixa_id=caixa_id,
         ano=ano,
         mes=mes,
-        arquivo_url=f"/static/uploads/extratos/{filename}",
+        arquivo_url=f"/api/static/uploads/extratos/{filename}",
         nome_arquivo=arquivo.filename,
         criado_em=datetime.now().isoformat()
     )
