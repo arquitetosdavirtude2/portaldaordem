@@ -442,13 +442,13 @@ export default function ListaPessoas({
                                                 </select>
                                             ) : (
                                                 <span
-                                                    className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                                                        pessoa.status === 'Aprendiz' ? 'bg-blue-900/20 text-blue-400 border-blue-500/30' :
-                                                        pessoa.status === 'Companheiro' ? 'bg-purple-900/20 text-purple-400 border-purple-500/30' :
-                                                        pessoa.status === 'Mestre' ? 'bg-green-900/20 text-green-500 border-green-500/30' :
-                                                        pessoa.status === 'Candidato' ? 'bg-yellow-900/20 text-yellow-500 border-yellow-500/30' :
-                                                        pessoa.status === 'Profano' ? 'bg-orange-900/20 text-orange-400 border-orange-500/30' :
-                                                        'bg-gray-900/20 text-gray-400 border-gray-500/30'
+                                                    className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
+                                                        pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                        pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                        pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                        pessoa.status === 'Candidato' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                                                        pessoa.status === 'Profano' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                                        'bg-gray-500/10 text-gray-400 border-gray-500/20'
                                                     } ${podeMudarStatus ? 'cursor-pointer hover:bg-opacity-40' : 'cursor-default opacity-80'}`}
                                                     onClick={() => podeMudarStatus && actStartEdit(pessoa)}
                                                     title={podeEditar ? "Clique para alterar" : "Apenas leitura"}
@@ -475,7 +475,7 @@ export default function ListaPessoas({
                                                         </select>
                                                     ) : (
                                                         <span
-                                                            className={`text-xs font-sans ${pessoa.cargo_nome ? 'text-yellow-400 font-bold' : 'text-gray-500 italic'} ${podeFullEdit ? 'cursor-pointer hover:underline underline-offset-2 decoration-white/20' : ''}`}
+                                                            className={`text-[10px] font-sans ${pessoa.cargo_nome ? 'text-yellow-400 font-medium' : 'text-gray-500 italic'} ${podeFullEdit ? 'cursor-pointer hover:underline underline-offset-2 decoration-white/20' : ''}`}
                                                             onClick={() => podeFullEdit && actStartEdit(pessoa)}
                                                             title={podeFullEdit ? "Clique para alterar cargo" : ""}
                                                         >

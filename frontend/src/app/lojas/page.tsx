@@ -180,8 +180,8 @@ export default function LojasDashboardPage() {
 
                     <div className="p-8 border-t border-white/5">
                         <div className="flex flex-row justify-between items-center mb-8 gap-4 flex-nowrap overflow-hidden">
-                            <h2 className="text-lg md:text-xl font-black text-gray-200 uppercase tracking-[0.2em] flex items-center gap-3 whitespace-nowrap shrink-0">
-                                <span className="w-2 h-2 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]"></span>
+                            <h2 className="text-base font-bold text-gray-200 uppercase tracking-[0.2em] flex items-center gap-3 whitespace-nowrap shrink-0">
+                                <span className="w-2 h-2 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.3)]"></span>
                                 Lista de Obreiros
                             </h2>
 
