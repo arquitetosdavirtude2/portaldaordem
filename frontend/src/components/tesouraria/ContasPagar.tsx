@@ -167,8 +167,8 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                     mensagem={`Deseja confirmar a baixa do pagamento de "${transacaoParaPagar?.descricao}" no valor de R$ ${transacaoParaPagar?.valor.toLocaleString('pt-BR')}?`}
                     onConfirm={confirmarPagamento}
                     onClose={() => setIsModalConfirmacaoAberto(false)}
-                    tipo="danger"
                     confirmText="Dar Baixa"
+                    corBotao="red"
                 />
             )}
         </div>

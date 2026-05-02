@@ -6,9 +6,11 @@ interface ModalConfirmacaoProps {
     onConfirm: () => void;
     titulo: string;
     mensagem: string;
-    tipo?: 'danger' | 'warning' | 'info';
-    confirmText?: string;
+    textoConfirmar?: string;
+    confirmText?: string; // Aliases for flexibility
+    textoCancelar?: string;
     cancelText?: string;
+    corBotao?: 'red' | 'yellow' | 'blue';
 }
 
 export default function ModalConfirmacao({ 
@@ -17,74 +19,46 @@ export default function ModalConfirmacao({
     onConfirm, 
     titulo, 
     mensagem, 
-    tipo = 'danger',
-    confirmText = 'Confirmar Exclusão',
-    cancelText = 'Cancelar'
+    textoConfirmar,
+    confirmText,
+    textoCancelar,
+    cancelText,
+    corBotao = 'red'
 }: ModalConfirmacaoProps) {
+    const txtConfirm = textoConfirmar || confirmText || "Confirmar";
+    const txtCancel = textoCancelar || cancelText || "Cancelar";
     if (!isOpen) return null;
 
-    const colors = {
-        danger: 'text-red-500 border-red-500/20 bg-red-500/10',
-        warning: 'text-yellow-500 border-yellow-500/20 bg-yellow-500/10',
-        info: 'text-blue-500 border-blue-500/20 bg-blue-500/10'
+    const cores = {
+        red: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500 hover:text-white',
+        yellow: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500 hover:text-white',
+        blue: 'bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500 hover:text-white'
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            {/* Backdrop with extra blur and darkness */}
-            <div 
-                className="absolute inset-0 bg-[#0a1536]/80 backdrop-blur-md animate-in fade-in duration-300"
-                onClick={onClose}
-            />
-            
-            <div className="relative w-full max-w-md bg-[#0f1d45] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 fade-in duration-300">
-                {/* Decorative gradients */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300">
+            <div className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="p-6">
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-2">{titulo}</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">{mensagem}</p>
+                </div>
                 
-                <div className="p-8 text-center">
-                    {/* Icon section */}
-                    <div className="mx-auto w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-inner">
-                        {tipo === 'danger' && (
-                            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                        )}
-                        {tipo === 'warning' && (
-                            <svg className="w-8 h-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                        )}
-                    </div>
-
-                    <h3 className="text-xl font-serif font-black text-white italic mb-2 uppercase tracking-tight">
-                        {titulo}
-                    </h3>
-                    
-                    <p className="text-sm text-gray-400 font-sans leading-relaxed mb-8 px-4">
-                        {mensagem}
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <button
-                            onClick={onClose}
-                            className="py-3.5 px-6 rounded-xl border border-white/10 text-gray-400 text-[10px] uppercase font-black tracking-widest hover:bg-white/5 hover:text-white transition-all active:scale-95"
-                        >
-                            {cancelText}
-                        </button>
-                        <button
-                            onClick={() => {
-                                onConfirm();
-                                onClose();
-                            }}
-                            className={`py-3.5 px-6 rounded-xl text-black text-[10px] uppercase font-black tracking-widest transition-all active:scale-95 shadow-lg ${
-                                tipo === 'danger' ? 'bg-red-500 hover:bg-red-400 shadow-red-500/20' : 
-                                tipo === 'warning' ? 'bg-yellow-500 hover:bg-yellow-400 shadow-yellow-500/20' : 
-                                'bg-blue-500 hover:bg-blue-400 shadow-blue-500/20'
-                            }`}
-                        >
-                            {confirmText}
-                        </button>
-                    </div>
+                <div className="flex border-t border-white/5">
+                    <button 
+                        onClick={onClose}
+                        className="flex-1 px-6 py-4 text-[10px] uppercase font-black text-gray-500 hover:bg-white/5 transition-colors tracking-widest"
+                    >
+                        {txtCancel}
+                    </button>
+                    <button 
+                        onClick={() => {
+                            onConfirm();
+                            onClose();
+                        }}
+                        className={`flex-1 px-6 py-4 text-[10px] uppercase font-black transition-all tracking-widest border-l border-white/5 ${cores[corBotao]}`}
+                    >
+                        {txtConfirm}
+                    </button>
                 </div>
             </div>
         </div>

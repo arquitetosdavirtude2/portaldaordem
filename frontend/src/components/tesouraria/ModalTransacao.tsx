@@ -32,15 +32,19 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
     });
     const [carregandoCaixa, setCarregandoCaixa] = useState(false);
     
+    // Lógica de inicialização de datas
+    const initialPagamento = transacaoInicial?.data_pagamento || transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0];
+    const initialVencimento = transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0];
+
     const [form, setForm] = useState({
         caixa_id: transacaoInicial?.caixa_id || caixas[0]?.id || 0,
         pessoa_id: transacaoInicial?.pessoa_id?.toString() || '',
         tipo: transacaoInicial?.tipo || 'entrada',
-        grupo: '', // Calculated below
+        grupo: '', 
         categoria: transacaoInicial?.categoria || 'mensalidade',
         valor: transacaoInicial?.valor?.toString() || '',
-        data_vencimento: transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0],
-        data_pagamento: transacaoInicial?.data_pagamento || (isEdit ? '' : new Date().toISOString().split('T')[0]),
+        data_vencimento: initialVencimento,
+        data_pagamento: initialPagamento,
         descricao: transacaoInicial?.descricao || '',
         notas: transacaoInicial?.notas || '',
         status: transacaoInicial?.status || 'pago'
@@ -48,8 +52,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
 
     const [arquivo, setArquivo] = useState<File | null>(null);
     const [enviando, setEnviando] = useState(false);
-    // Mês de referência: somente para mensalidade e joia
-    // Formato: 'YYYY-MM' ou vazio (usa data_vencimento normal)
+    
     const [mesReferencia, setMesReferencia] = useState<string>(() => {
         if (transacaoInicial?.data_vencimento) {
             return transacaoInicial.data_vencimento.substring(0, 7);
@@ -58,7 +61,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
     });
 
-    // Hierarquia de categorias por tipo
     const categoriasHierarquicas: Record<string, { nome: string, categorias: { id: string, label: string }[] }[]> = {
         entrada: [
             { 
@@ -100,27 +102,22 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         ]
     };
 
-    // Calculate initial group based on category
     useEffect(() => {
         if (form.tipo && form.categoria && !form.grupo) {
             const grupos = categoriasHierarquicas[form.tipo] || [];
             const grupoEncontrado = grupos.find(g => g.categorias.some(c => c.id === form.categoria));
             if (grupoEncontrado) {
                 setForm(f => ({ ...f, grupo: grupoEncontrado.nome }));
-            } else if (grupos.length > 0) {
-                setForm(f => ({ ...f, grupo: grupos[0].nome }));
             }
         }
     }, [form.tipo, form.categoria]);
 
     useEffect(() => {
-        // Ensure default caixa is set when caixas prop loads
         if (caixas.length > 0 && form.caixa_id === 0) {
             setForm(f => ({ ...f, caixa_id: caixas[0].id }));
         }
     }, [caixas]);
 
-    // Lógica para selecionar banco automaticamente (Banco Pan para Joias/Mensalidades)
     useEffect(() => {
         if (form.categoria === 'joia' || form.categoria === 'mensalidade') {
             const caixaPan = caixas.find(c => c.tipo === 'joias_mensalidade');
@@ -153,25 +150,24 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         setErro(null);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-
-            // usuario_id: usa loja_id do acesso como proxy para o usuário da loja
             const usuarioId = acesso?.loja_id || 1;
             
+            const isMensalidadeOrJoia = form.categoria === 'mensalidade' || form.categoria === 'joia';
+            const dataVencimentoFinal = isMensalidadeOrJoia && mesReferencia
+                ? `${mesReferencia}-01`
+                : form.data_pagamento;
+
             if (isEdit) {
-                const isMensalidadeOrJoiaEdit = form.categoria === 'mensalidade' || form.categoria === 'joia';
-                const dataVencimentoEdit = isMensalidadeOrJoiaEdit && mesReferencia
-                    ? `${mesReferencia}-01`
-                    : form.data_vencimento;
                 const payload = {
                     caixa_id: form.caixa_id,
                     tipo: form.tipo,
                     categoria: form.categoria,
                     valor: parseFloat(form.valor),
-                    data_vencimento: dataVencimentoEdit,
-                    data_pagamento: form.data_pagamento || new Date().toISOString().split('T')[0],
+                    data_vencimento: dataVencimentoFinal,
+                    data_pagamento: form.data_pagamento,
                     descricao: form.descricao,
                     notas: form.notas,
-                    status: form.status,
+                    status: 'pago',
                     pessoa_id: form.pessoa_id ? parseInt(form.pessoa_id) : null
                 };
                 const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/${transacaoInicial.id}`, {
@@ -186,26 +182,19 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     setErro(body.detail || `Erro ${res.status} ao editar lançamento`);
                 }
             } else {
-                const isMensalidadeOrJoia = form.categoria === 'mensalidade' || form.categoria === 'joia';
-                // Se for mensalidade/joia e tiver mês de referência, usa o 1º dia do mês como data_vencimento
-                const dataVencimentoFinal = isMensalidadeOrJoia && mesReferencia
-                    ? `${mesReferencia}-01`
-                    : form.data_vencimento;
-
                 const formData = new FormData();
                 formData.append('caixa_id', form.caixa_id.toString());
                 formData.append('tipo', form.tipo);
                 formData.append('categoria', form.categoria);
                 formData.append('valor', form.valor);
                 formData.append('data_vencimento', dataVencimentoFinal);
-                formData.append('data_pagamento', form.data_pagamento || new Date().toISOString().split('T')[0]);
+                formData.append('data_pagamento', form.data_pagamento);
                 formData.append('descricao', form.descricao);
                 formData.append('notas', form.notas || '');
-                formData.append('status', form.status || 'pendente');
+                formData.append('status', 'pago');
                 formData.append('usuario_id', String(usuarioId));
                 if (form.pessoa_id) formData.append('pessoa_id', form.pessoa_id);
                 if (arquivo) formData.append('comprovante', arquivo);
-
 
                 const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/`, {
                     method: 'POST',
@@ -227,316 +216,203 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
     };
 
     return (
-        <div className="fixed inset-0 z-[10000] overflow-y-auto bg-black/80 py-6 sm:py-12 px-4 shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]">
-            {/* Backdrop click to close - absolute to fill the fixed container */}
-            <div className="absolute inset-0 -z-10" onClick={onClose}></div>
-            
-            <div className="relative mx-auto bg-[#0f1d45] border border-white/20 rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.9)] w-full max-w-4xl overflow-hidden flex flex-col min-h-0 animate-in zoom-in duration-300 gap-0">
-                <div className="p-5 border-b border-white/5 bg-black/20 flex justify-between items-center shrink-0">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all animate-in fade-in duration-300">
+            <div className="bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+                
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${isEdit ? 'bg-blue-500' : 'bg-yellow-500'} animate-pulse`}></div>
-                        <h3 className={`text-sm font-bold ${isEdit ? 'text-blue-400' : 'text-yellow-500'} uppercase tracking-[0.2em]`}>
-                            {isEdit ? 'Editar Lançamento' : 'Novo Lançamento Financeiro'}
+                        <div className={`w-2.5 h-2.5 rounded-full ${isEdit ? 'bg-blue-500' : 'bg-yellow-500'} animate-pulse`}></div>
+                        <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">
+                            {isEdit ? 'Editar Movimentação' : 'Novo Lançamento'}
                         </h3>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg">✕</button>
+                    <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 font-sans custom-scrollbar flex-1">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="space-y-1.5 flex-1">
-                            <div className="flex justify-between items-center">
-                                <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Conta / Caixa</label>
-                                {!isEdit && (
-                                    <button 
-                                        type="button"
-                                        onClick={() => setMostrarNovoCaixa(!mostrarNovoCaixa)}
-                                        className="text-[10px] text-yellow-500 hover:text-yellow-400 font-bold uppercase"
-                                    >
-                                        {mostrarNovoCaixa ? 'Cancelar' : '+ Nova'}
-                                    </button>
-                                )}
-                            </div>
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8">
+                    
+                    {/* Linha 1: Conta e Tipo */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Conta de Origem/Destino</label>
                             <select 
                                 value={form.caixa_id}
                                 onChange={e => setForm({...form, caixa_id: parseInt(e.target.value)})}
-                                disabled={isEdit} // Block changing account in edit mode to avoid complex balance logic for now
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer disabled:opacity-50"
+                                disabled={isEdit}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer disabled:opacity-50 transition-all hover:border-white/20"
                             >
                                 {caixas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                             </select>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Tipo de Movimentação</label>
-                            <select 
-                                value={form.tipo}
-                                onChange={e => {
-                                    const novoTipo = e.target.value;
-                                    const primeiroGrupo = categoriasHierarquicas[novoTipo][0];
-                                    setForm({
-                                        ...form, 
-                                        tipo: novoTipo,
-                                        grupo: primeiroGrupo.nome,
-                                        categoria: primeiroGrupo.categorias[0].id
-                                    });
-                                }}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
-                            >
-                                <option value="entrada">Entrada (+)</option>
-                                <option value="saida">Saída (-)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Quick Caixa Creation Form */}
-                    {mostrarNovoCaixa && !isEdit && (
-                        <div className="p-5 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl space-y-4 animate-in fade-in zoom-in duration-300 shadow-inner">
-                            {/* ... (Keep existing caixa form logic) ... */}
-                            <div className="flex justify-between items-center">
-                                <div className="text-[10px] uppercase font-bold text-yellow-500 tracking-widest flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
-                                    Nova Conta ou Caixa
-                                </div>
-                                <button onClick={() => setMostrarNovoCaixa(false)} className="text-[9px] text-gray-500 hover:text-white uppercase font-bold tracking-tighter">Fechar</button>
-                            </div>
-                            
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Nome da Conta / Banco</label>
-                                        <input 
-                                            type="text"
-                                            placeholder="Ex: Banco Pan, Recarga Pay..."
-                                            value={novoCaixaForm.nome}
-                                            onChange={e => setNovoCaixaForm({...novoCaixaForm, nome: e.target.value})}
-                                            className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Finalidade do Caixa</label>
-                                        <select 
-                                            value={novoCaixaForm.tipo}
-                                            onChange={e => setNovoCaixaForm({...novoCaixaForm, tipo: e.target.value})}
-                                            className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 transition-all appearance-none cursor-pointer"
-                                        >
-                                            <option value="geral">Geral (Fluxo de Caixa)</option>
-                                            <option value="benevolencia">Benevolência (Recarga Pay)</option>
-                                            <option value="joias_mensalidade">Joias e Mensalidades (Banco Pan)</option>
-                                        </select>
-                                    </div>
-                                </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Tipo de Operação</label>
+                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
                                 <button 
                                     type="button"
-                                    onClick={async () => {
-                                        setCarregandoCaixa(true);
-                                        try {
-                                            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-                                            const res = await fetch(`${apiUrl}/api/tesouraria/caixas`, {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    loja_id: acesso.loja_id,
-                                                    nome: novoCaixaForm.nome,
-                                                    tipo: novoCaixaForm.tipo,
-                                                    descricao: novoCaixaForm.descricao,
-                                                    saldo_inicial: parseFloat(novoCaixaForm.saldo_inicial || '0')
-                                                })
-                                            });
-                                            if (res.ok) {
-                                                if (onCaixaAdicionado) onCaixaAdicionado();
-                                                setMostrarNovoCaixa(false);
-                                                setNovoCaixaForm({ nome: '', tipo: 'geral', descricao: '', saldo_inicial: '0' });
-                                            }
-                                        } catch (err) {
-                                            console.error(err);
-                                        } finally {
-                                            setCarregandoCaixa(false);
-                                        }
-                                    }}
-                                    className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-black text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                                    onClick={() => setForm({...form, tipo: 'entrada'})}
+                                    className={`flex-1 py-3 rounded-lg text-[10px] uppercase font-black transition-all ${form.tipo === 'entrada' ? 'bg-green-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                                 >
-                                    {carregandoCaixa ? 'Cadastrando...' : 'Confirmar Cadastro'}
+                                    Entrada (+)
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setForm({...form, tipo: 'saida'})}
+                                    className={`flex-1 py-3 rounded-lg text-[10px] uppercase font-black transition-all ${form.tipo === 'saida' ? 'bg-red-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                >
+                                    Saída (-)
                                 </button>
                             </div>
                         </div>
-                    )}
+                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Grupo de Categoria</label>
+                    {/* Linha 2: Categoria e Subcategoria */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Grupo</label>
                             <select 
                                 value={form.grupo}
                                 onChange={e => {
                                     const novoGrupo = e.target.value;
                                     const categoriasDoGrupo = categoriasHierarquicas[form.tipo].find(g => g.nome === novoGrupo)?.categorias || [];
-                                    setForm({
-                                        ...form, 
-                                        grupo: novoGrupo,
-                                        categoria: categoriasDoGrupo[0]?.id || ''
-                                    });
+                                    setForm({ ...form, grupo: novoGrupo, categoria: categoriasDoGrupo[0]?.id || '' });
                                 }}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
                                 {categoriasHierarquicas[form.tipo].map(grupo => (
                                     <option key={grupo.nome} value={grupo.nome}>{grupo.nome}</option>
                                 ))}
                             </select>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Categoria Específica</label>
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Categoria</label>
                             <select 
                                 value={form.categoria}
                                 onChange={e => setForm({...form, categoria: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
-                                {categoriasHierarquicas[form.tipo]
-                                    .find(g => g.nome === form.grupo)?.categorias.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.label}</option>
-                                    ))
-                                }
+                                {categoriasHierarquicas[form.tipo].find(g => g.nome === form.grupo)?.categorias.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Irmão Vinculado</label>
+                    {/* Linha 3: Irmão e Valor */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Obreiro Relacionado</label>
                             <select 
                                 value={form.pessoa_id}
                                 onChange={e => setForm({...form, pessoa_id: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
-                                <option value="">Não vinculado a Irmão</option>
+                                <option value="">Nenhum</option>
                                 {pessoas.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
                             </select>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Valor do Lançamento</label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">R$</span>
-                                <input 
-                                    type="number" 
-                                    step="0.01"
-                                    required
-                                    value={form.valor}
-                                    onChange={e => setForm({...form, valor: e.target.value})}
-                                    placeholder="0,00"
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-9 text-xs text-gray-200 outline-none focus:border-yellow-500/50 font-bold"
-                                />
-                            </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Valor Total (R$)</label>
+                            <input 
+                                type="number" 
+                                step="0.01"
+                                required
+                                value={form.valor}
+                                onChange={e => setForm({...form, valor: e.target.value})}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white font-black outline-none focus:border-yellow-500/50 transition-all"
+                                placeholder="0,00"
+                            />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        {/* Mês de Referência — somente para mensalidade e joia */}
+                    {/* Linha 4: Datas */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {(form.categoria === 'mensalidade' || form.categoria === 'joia') ? (
-                            <>
-                                <div className="space-y-1.5 animate-in slide-in-from-top-1">
-                                    <div className="flex justify-between items-end mb-1">
-                                        <label className="text-[10px] uppercase font-black text-yellow-500 tracking-[0.1em] flex items-center gap-1.5">
-                                            <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
-                                            Mês de Referência
-                                        </label>
-                                    </div>
-                                    <div className="relative group">
-                                        <input
-                                            type="month"
-                                            value={mesReferencia}
-                                            onChange={e => setMesReferencia(e.target.value)}
-                                            className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3.5 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 focus:bg-yellow-500/10 cursor-pointer color-scheme-dark transition-all font-bold"
-                                        />
-                                    </div>
-                                    <p className="text-[8px] text-gray-500 uppercase leading-relaxed mt-1 italic font-medium">
-                                        * Refere-se à mensalidade de qual mês?
-                                    </p>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Lançamento (Pagamento)</label>
-                                    <input 
-                                        type="date"
-                                        required
-                                        value={form.data_pagamento || new Date().toISOString().split('T')[0]}
-                                        onChange={e => setForm({...form, data_pagamento: e.target.value})}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark transition-all"
-                                    />
-                                    <p className="text-[8px] text-gray-500 uppercase leading-relaxed mt-1 italic font-medium">
-                                        * Quando o dinheiro entrou de fato?
-                                    </p>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="space-y-1.5 relative">
-                                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Vencimento</label>
-                                    <input 
-                                        type="date"
-                                        required
-                                        value={form.data_vencimento}
-                                        onChange={e => setForm({...form, data_vencimento: e.target.value})}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark"
-                                    />
-                                </div>
-                                <div className="space-y-1.5 relative">
-                                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Data do Lançamento (Pagamento)</label>
-                                    <input 
-                                        type="date"
-                                        required
-                                        value={form.data_pagamento || new Date().toISOString().split('T')[0]}
-                                        onChange={e => setForm({...form, data_pagamento: e.target.value})}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark"
-                                    />
-                                </div>
-                            </>
-                        )}
+                            <div className="space-y-2 animate-in slide-in-from-top-2">
+                                <label className="text-[10px] uppercase font-black text-yellow-500 tracking-widest ml-1 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                                    Mês de Referência
+                                </label>
+                                <input
+                                    type="month"
+                                    value={mesReferencia}
+                                    onChange={e => setMesReferencia(e.target.value)}
+                                    className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 color-scheme-dark transition-all font-bold"
+                                />
+                            </div>
+                        ) : null}
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Data Efetiva do Pagamento</label>
+                            <input 
+                                type="date"
+                                required
+                                value={form.data_pagamento}
+                                onChange={e => setForm({...form, data_pagamento: e.target.value})}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark transition-all hover:border-white/20"
+                            />
+                        </div>
                     </div>
 
-
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Descrição / Título do Lançamento</label>
+                    {/* Linha 5: Descrição */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Descrição do Lançamento</label>
                         <input 
                             type="text"
                             required
                             value={form.descricao}
                             onChange={e => setForm({...form, descricao: e.target.value})}
-                            placeholder="Ex: Mensalidade de Março - Ir. Fulano"
-                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50"
+                            placeholder="Ex: Pagamento Mensalidade Abril"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
                         />
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Observações Internas (Opcional)</label>
+                    {/* Linha 6: Notas */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Observações Internas</label>
                         <textarea 
                             rows={3}
                             value={form.notas}
                             onChange={e => setForm({...form, notas: e.target.value})}
-                            placeholder="Anote aqui detalhes importantes..."
-                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 resize-none leading-relaxed"
+                            placeholder="Informações adicionais para auditoria..."
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-400 outline-none focus:border-yellow-500/50 resize-none transition-all hover:border-white/20"
                         ></textarea>
                     </div>
 
                     {erro && (
-                        <div className="bg-red-900/30 border border-red-500/50 text-red-400 text-xs p-3 rounded-xl">
-                            ⚠️ {erro}
+                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] uppercase font-black tracking-widest text-center animate-pulse">
+                            {erro}
                         </div>
                     )}
-
-                    <div className="pt-4 pb-2">
-                        <button
-                            type="submit"
-                            disabled={enviando}
-                            className={`w-full py-4 ${isEdit ? 'bg-blue-600 hover:bg-blue-700' : 'bg-yellow-500 hover:bg-yellow-600'} disabled:bg-gray-700 text-white font-bold uppercase tracking-[0.2em] text-[11px] rounded-xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2`}
-                        >
-                            {enviando ? 'Processando...' : isEdit ? 'Salvar Alterações' : 'Efetuar Lançamento'}
-                        </button>
-                    </div>
                 </form>
+
+                {/* Footer Buttons */}
+                <div className="px-8 py-6 border-t border-white/5 bg-white/5 flex gap-4">
+                    <button 
+                        type="button" 
+                        onClick={onClose}
+                        className="flex-1 py-4 text-[10px] uppercase font-black text-gray-500 hover:bg-white/5 rounded-xl transition-all tracking-widest"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        onClick={handleSubmit}
+                        disabled={enviando}
+                        className={`flex-[2] py-4 rounded-xl text-[11px] uppercase font-black tracking-[0.2em] transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 ${isEdit ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-yellow-500 hover:bg-yellow-400 text-black'}`}
+                    >
+                        {enviando ? 'Processando...' : isEdit ? 'Salvar Alterações' : 'Confirmar Lançamento'}
+                    </button>
+                </div>
             </div>
             
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(234, 179, 8, 0.3); }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(234, 179, 8, 0.2); }
                 .color-scheme-dark { color-scheme: dark; }
             `}</style>
         </div>
