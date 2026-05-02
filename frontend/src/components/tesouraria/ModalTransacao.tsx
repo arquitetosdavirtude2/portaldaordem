@@ -40,7 +40,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         categoria: transacaoInicial?.categoria || 'mensalidade',
         valor: transacaoInicial?.valor?.toString() || '',
         data_vencimento: transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0],
-        data_pagamento: transacaoInicial?.data_pagamento || new Date().toISOString().split('T')[0],
+        data_pagamento: transacaoInicial?.data_pagamento || (isEdit ? '' : new Date().toISOString().split('T')[0]),
         descricao: transacaoInicial?.descricao || '',
         notas: transacaoInicial?.notas || '',
         status: transacaoInicial?.status || 'pago'
