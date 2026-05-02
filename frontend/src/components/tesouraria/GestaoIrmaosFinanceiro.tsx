@@ -369,15 +369,13 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                             </span>
                                         </div>
                                         {isAdormecido && (
-                                            <div className="text-[8px] text-gray-500 uppercase tracking-tighter mt-0.5">
+                                            <div className="text-[8px] text-red-500/70 font-bold uppercase tracking-tighter mt-0.5">
                                                 Adormecido desde {formatarData(irmao.data_adormecimento)}
                                             </div>
                                         )}
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        {isAdormecido ? (
-                                            <span className="text-[8px] font-bold uppercase tracking-wider text-gray-500 bg-gray-400/10 border border-gray-400/20 px-2 py-0.5 rounded-full">ADORMECIDO</span>
-                                        ) : irmao.cargo ? (
+                                        {irmao.cargo ? (
                                             <span className="text-[8px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">{irmao.cargo}</span>
                                         ) : (
                                             <span className="text-[8px] text-gray-600 italic">—</span>
