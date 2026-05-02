@@ -657,20 +657,30 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 j_paga_exibicao = j_paga_real
 
             # 2. MENSALIDADE
+            # Nova Lógica: Contamos os MESES pagos (lançamentos) em vez de somar os valores.
+            # Isso permite que lançamentos de R$ 0 (justificados por empréstimo/abatimento) 
+            # contem como R$ 250 no resumo do irmão.
             m_pagas_reais_count = db_treasury.execute(text(
                 "SELECT COUNT(id) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
-            m_paga_real = db_treasury.execute(text(
-                "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
-            ), {"pid": pid}).fetchone()[0]
-            m_paga_real = float(m_paga_real or 0.0)
+            m_pagas_reais_count = int(m_pagas_reais_count or 0)
 
             # Contar meses ignorados (exceções) que não são JOIA
             m_ignoradas_count = sum(1 for ref in excecoes_map if ref != 'JOIA')
             
-            m_pagas_count = int(m_pagas_reais_count or 0)
-            m_paga_total = m_paga_real
-            m_paga_justificada = 0.0 # Mensalidades ignoradas não contam como valor pago
+            # Total de meses "quitados" (seja por dinheiro ou por justificativa/empréstimo)
+            total_meses_quitados = m_pagas_reais_count + m_ignoradas_count
+            
+            m_pagas_count = total_meses_quitados
+            m_paga_total = total_meses_quitados * 250.0
+            
+            # Para fins de transparência, mantemos o valor real em dinheiro também
+            m_paga_real_dinheiro = db_treasury.execute(text(
+                "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
+            ), {"pid": pid}).fetchone()[0]
+            m_paga_real_dinheiro = float(m_paga_real_dinheiro or 0.0)
+
+            m_paga_justificada = (total_meses_quitados * 250.0) - m_paga_real_dinheiro
 
             meses_devidos = 0
             m_pend = 0.0
@@ -703,18 +713,36 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                             # Fallback para DD/MM/YYYY com %d/%m/%Y
                             data_adm = datetime.strptime(d_str, "%d/%m/%Y").date()
                     
-                    if data_adm.day > 15:
-
+                    # Regra de início de cobrança
+                    # Para iniciações em 2025, sempre começa no mês seguinte.
+                    # A partir de 2026, vale a regra do dia 15.
+                    if data_adm.year < 2026:
                         if data_adm.month == 12:
                             inicio_cobranca = date(data_adm.year + 1, 1, 1)
                         else:
                             inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
                     else:
-                        inicio_cobranca = date(data_adm.year, data_adm.month, 1)
+                        if data_adm.day > 15:
+                            if data_adm.month == 12:
+                                inicio_cobranca = date(data_adm.year + 1, 1, 1)
+                            else:
+                                inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
+                        else:
+                            inicio_cobranca = date(data_adm.year, data_adm.month, 1)
                     
                     curr = date(inicio_cobranca.year, inicio_cobranca.month, 1)
                     alvo_limite = date(alvo.year, alvo.month, 1)
                     
+                    # Contagem total de meses que deveriam ser pagos
+                    total_meses_devidos_ate_hoje = 0
+                    temp_curr = curr
+                    while temp_curr <= alvo_limite:
+                        total_meses_devidos_ate_hoje += 1
+                        if temp_curr.month == 12:
+                            temp_curr = date(temp_curr.year + 1, 1, 1)
+                        else:
+                            temp_curr = date(temp_curr.year, temp_curr.month + 1, 1)
+
                     if data_adormecimento and not ativo:
                         try:
                             data_adorm = datetime.strptime(str(data_adormecimento).strip(), "%Y-%m-%d").date()
@@ -820,6 +848,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 "data_adormecimento": str(data_adormecimento) if data_adormecimento else None,
                 "ativo": int(ativo) if ativo is not None else 1,
                 "tipo_ingresso": tipo_ingresso,
+                "meses_cobrados": total_meses_devidos_ate_hoje if 'total_meses_devidos_ate_hoje' in locals() else 0,
                 "meses_devidos": meses_devidos,
                 "meses_pagos": int(m_pagas_count),
                 "joia_paga": float(j_paga_exibicao),
@@ -827,7 +856,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 "joia_justificada": float(j_justificada),
                 "joia_pendente": float(j_pend),
                 "mensalidade_paga": float(m_paga_total),
-                "mensalidade_real": float(m_paga_real),
+                "mensalidade_real": float(m_paga_real_dinheiro),
                 "mensalidade_justificada": float(m_paga_justificada),
                 "mensalidade_pendente": float(m_pend),
                 "saude_financeira": saude,
