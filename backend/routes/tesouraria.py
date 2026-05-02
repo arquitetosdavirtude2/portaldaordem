@@ -761,9 +761,17 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                     inicio_cobranca = date(data_adm.year, data_adm.month, 1)
                     curr = inicio_cobranca
 
+                    # ALVO LIMITE: Se o irmão estiver adormecido, o limite de cobrança é a data de adormecimento
+                    alvo_limite = date(alvo.year, alvo.month, 1)
                     if data_adormecimento and not ativo:
                         try:
-                            data_adorm = datetime.strptime(str(data_adormecimento).strip(), "%Y-%m-%d").date()
+                            # Tenta converter data_adormecimento (pode vir como string ou date)
+                            d_ador_str = str(data_adormecimento).strip()
+                            try:
+                                data_adorm = datetime.strptime(d_ador_str, "%Y-%m-%d").date()
+                            except:
+                                data_adorm = datetime.strptime(d_ador_str, "%d/%m/%Y").date()
+                            
                             alvo_limite = min(alvo_limite, date(data_adorm.year, data_adorm.month, 1))
                         except:
                             pass
