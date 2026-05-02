@@ -634,22 +634,32 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             excecoes_map = {r[1]: {"id": r[0], "justificativa": r[2]} for r in excecoes_rows}
 
             # 1. JOIA (Total de R$ 2.000)
-            j_paga = db_treasury.execute(text(
+            j_paga_real = db_treasury.execute(text(
                 "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'joia' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
+            j_paga_real = float(j_paga_real or 0.0)
             
             if tipo_ingresso == 'transferencia' or 'JOIA' in excecoes_map:
                 j_pend = 0.0
+                j_paga = 2000.0 # Considera pago se ignorado ou transferência
             else:
-                j_pend = max(0.0, 2000.0 - float(j_paga))
+                j_pend = max(0.0, 2000.0 - j_paga_real)
+                j_paga = j_paga_real
 
             # 2. MENSALIDADE
-            m_pagas_count = db_treasury.execute(text(
+            m_pagas_reais_count = db_treasury.execute(text(
                 "SELECT COUNT(id) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
-            m_paga = db_treasury.execute(text(
+            m_paga_real = db_treasury.execute(text(
                 "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE pessoa_id = :pid AND categoria = 'mensalidade' AND status = 'pago'"
             ), {"pid": pid}).fetchone()[0]
+            m_paga_real = float(m_paga_real or 0.0)
+
+            # Contar meses ignorados (exceções) que não são JOIA
+            m_ignoradas_count = sum(1 for ref in excecoes_map if ref != 'JOIA')
+            
+            m_pagas_count = int(m_pagas_reais_count or 0) + m_ignoradas_count
+            m_paga = m_paga_real + (m_ignoradas_count * 250.0)
 
             meses_devidos = 0
             m_pend = 0.0
