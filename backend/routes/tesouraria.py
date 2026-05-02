@@ -639,12 +639,22 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             ), {"pid": pid}).fetchone()[0]
             j_paga_real = float(j_paga_real or 0.0)
             
-            if tipo_ingresso == 'transferencia' or 'JOIA' in excecoes_map:
+            is_transferencia = (tipo_ingresso == 'transferencia')
+            j_paga_exibicao = j_paga_real
+            j_pend = 0.0
+
+            if is_transferencia:
+                # Isento de Joia
                 j_pend = 0.0
-                j_paga = 2000.0 # Considera pago se ignorado ou transferência
+                j_paga_exibicao = 0.0
+            elif 'JOIA' in excecoes_map:
+                # Pago em outro banco (Justificado)
+                j_pend = 0.0
+                j_paga_exibicao = 2000.0
             else:
+                # Fluxo normal
                 j_pend = max(0.0, 2000.0 - j_paga_real)
-                j_paga = j_paga_real
+                j_paga_exibicao = j_paga_real
 
             # 2. MENSALIDADE
             m_pagas_reais_count = db_treasury.execute(text(
@@ -657,9 +667,10 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
             # Contar meses ignorados (exceções) que não são JOIA
             m_ignoradas_count = sum(1 for ref in excecoes_map if ref != 'JOIA')
+            m_paga_justificada = m_ignoradas_count * 250.0
             
             m_pagas_count = int(m_pagas_reais_count or 0) + m_ignoradas_count
-            m_paga = m_paga_real + (m_ignoradas_count * 250.0)
+            m_paga_total = m_paga_real + m_paga_justificada
 
             meses_devidos = 0
             m_pend = 0.0
@@ -796,6 +807,11 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             if target_ref in excecoes_map and m_pend == 0 and j_pend == 0:
                 saude = "REGULAR"
 
+            # Cálculo de Joia Justificada (para exibir na tabela se necessário)
+            j_justificada = 0.0
+            if 'JOIA' in excecoes_map:
+                j_justificada = max(0.0, 2000.0 - j_paga_real)
+
             res.append({
                 "id": pid,
                 "nome": nome,
@@ -803,11 +819,16 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 "data_admissao": str(data_adm_str) if data_adm_str else None,
                 "data_adormecimento": str(data_adormecimento) if data_adormecimento else None,
                 "ativo": int(ativo) if ativo is not None else 1,
+                "tipo_ingresso": tipo_ingresso,
                 "meses_devidos": meses_devidos,
                 "meses_pagos": int(m_pagas_count),
-                "joia_paga": float(j_paga),
+                "joia_paga": float(j_paga_exibicao),
+                "joia_real": float(j_paga_real),
+                "joia_justificada": float(j_justificada),
                 "joia_pendente": float(j_pend),
-                "mensalidade_paga": float(m_paga),
+                "mensalidade_paga": float(m_paga_total),
+                "mensalidade_real": float(m_paga_real),
+                "mensalidade_justificada": float(m_paga_justificada),
                 "mensalidade_pendente": float(m_pend),
                 "saude_financeira": saude,
                 "meses_atraso": detalhes_meses
