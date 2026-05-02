@@ -231,6 +231,7 @@ export default function ModalExtratos({
                 onConfirm={handleDelete}
                 corBotao="red"
             />
-        </>
+        </>,
+        document.body
     );
 }
