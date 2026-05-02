@@ -1,6 +1,5 @@
-'use client';
-
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface MesAtraso {
     mes_ref: string;
@@ -34,6 +33,7 @@ interface IrmaoFinanceiro {
 }
 
 export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
+    const [isMounted, setIsMounted] = useState(false);
     const [irmaos, setIrmaos] = useState<IrmaoFinanceiro[]>([]);
     const [mesAtivo, setMesAtivo] = useState<number>(new Date().getMonth() + 1);
     const [anoAtivo, setAnoAtivo] = useState<number>(new Date().getFullYear());
@@ -49,6 +49,10 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [categoriaFiltro, setCategoriaFiltro] = useState<'todas' | 'joia' | 'mensalidade'>('todas');
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const formatarMoeda = (valor: number) => {
         return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
@@ -344,6 +348,11 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         <div className="text-[11px] font-bold text-gray-100 group-hover:text-yellow-500 transition-colors">
                                             {irmao.nome}
                                         </div>
+                                        {irmao.data_admissao && new Date(irmao.data_admissao) > new Date() && (
+                                            <div className="text-[8px] text-blue-400 font-black uppercase tracking-tighter mt-1 bg-blue-400/10 w-fit px-1.5 py-0.5 rounded border border-blue-400/20">
+                                                Candidato
+                                            </div>
+                                        )}
                                         {isAdormecido && (
                                             <div className="text-[8px] text-gray-500 uppercase tracking-tighter mt-0.5">
                                                 Adormecido desde {formatarData(irmao.data_adormecimento)}
@@ -450,7 +459,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
             {/* ── FIM da Tabela ── */}
 
             {/* ── Modal Detalhes Meses ── */}
-            {irmaoSelecionado && (
+            {isMounted && irmaoSelecionado && createPortal(
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md transition-all animate-in fade-in duration-300">
                     <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col m-4 animate-in zoom-in duration-300">
                         <div className="p-4 border-b border-white/10 flex justify-between items-center">
@@ -542,7 +551,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
         </div>
