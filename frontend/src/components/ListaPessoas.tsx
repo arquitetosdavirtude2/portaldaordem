@@ -363,10 +363,10 @@ export default function ListaPessoas({
                                                 ) : (
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-2">
-                                                                <span className={`text-[11px] text-gray-200 font-bold ${pessoa.ativo === 0 ? 'opacity-50 line-through' : ''}`}>{pessoa.nome}</span>
+                                                                <span className={`text-[11px] font-bold ${pessoa.ativo === 0 ? 'text-red-500/50' : 'text-gray-200'}`}>{pessoa.nome}</span>
                                                                 {pessoa.ativo === 0 && (
-                                                                    <span className="text-[7px] bg-red-900/40 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 font-black uppercase tracking-tighter">
-                                                                        Adormecido
+                                                                    <span className="text-[7px] text-red-500/50 font-bold uppercase tracking-tighter">
+                                                                        Adormecido {pessoa.data_adormecimento ? `desde ${pessoa.data_adormecimento.split('-').reverse().join('/')}` : ''}
                                                                     </span>
                                                                 )}
                                                             </div>

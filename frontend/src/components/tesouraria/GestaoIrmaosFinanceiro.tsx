@@ -364,18 +364,18 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[11px] text-gray-100 group-hover:text-yellow-500 transition-colors">
+                                            <span className={`text-[11px] font-bold group-hover:text-yellow-500 transition-colors ${isAdormecido ? 'text-red-500/60' : 'text-gray-100'}`}>
                                                 {irmao.nome}
                                             </span>
                                         </div>
                                         {isAdormecido && (
-                                            <div className="text-[8px] text-red-500/70 font-bold uppercase tracking-tighter mt-0.5">
+                                            <div className="text-[8px] text-red-500/60 font-bold uppercase tracking-tighter mt-0.5">
                                                 Adormecido desde {formatarData(irmao.data_adormecimento)}
                                             </div>
                                         )}
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        {irmao.cargo ? (
+                                        {(irmao.cargo && irmao.cargo !== 'ADORMECIDO') ? (
                                             <span className="text-[8px] font-bold uppercase tracking-wider text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full">{irmao.cargo}</span>
                                         ) : (
                                             <span className="text-[8px] text-gray-600 italic">—</span>
@@ -383,19 +383,21 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     </td>
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
                                         <div className="flex flex-col items-center justify-center">
-                                            <div className="flex items-center justify-center gap-2">
+                                            <div className="flex items-center justify-center gap-1.5">
                                                 <span className="text-[10px] text-gray-300 font-sans">{formatarData(irmao.data_admissao)}</span>
-                                                {irmao.meses_cobrados > 0 && (
-                                                    <span className="text-[9px] text-gray-500 font-sans">
-                                                        ({irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'})
-                                                    </span>
-                                                )}
+                                                <div className="flex items-center gap-1">
+                                                    {irmao.meses_cobrados > 0 && (
+                                                        <span className="text-[9px] text-gray-500 font-sans">
+                                                            ({irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'})
+                                                        </span>
+                                                    )}
+                                                    {irmao.data_admissao && new Date(irmao.data_admissao) > new Date() && (
+                                                        <span className="text-[7px] text-blue-400 font-bold uppercase tracking-tighter">
+                                                            • Candidato
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {irmao.data_admissao && new Date(irmao.data_admissao) > new Date() && (
-                                                <span className="text-[7px] text-blue-400 font-bold uppercase tracking-tighter mt-1">
-                                                    Candidato
-                                                </span>
-                                            )}
                                         </div>
                                     </td>
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
