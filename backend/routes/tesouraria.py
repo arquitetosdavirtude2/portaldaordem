@@ -755,32 +755,20 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                             # Fallback para DD/MM/YYYY com %d/%m/%Y
                             data_adm = datetime.strptime(d_str, "%d/%m/%Y").date()
                     
-                    # Regra de início de cobrança (Mesmo mês se < 15, mês seguinte se > 15)
-                    if data_adm.day > 15:
-                        if data_adm.month == 12:
-                            inicio_cobranca = date(data_adm.year + 1, 1, 1)
-                        else:
-                            inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
-                    else:
-                        inicio_cobranca = date(data_adm.year, data_adm.month, 1)
-                    
-                    # O histórico no modal deve SEMPRE começar no mês de iniciação (ou primeiro mês de cobrança)
-                    # para que não suma se a justificativa for removida.
-                    curr = date(inicio_cobranca.year, inicio_cobranca.month, 1)
-                    
-                    # Se houver qualquer justificativa anterior ao início da cobrança, começamos por ela
-                    for mes_exc in excecoes_map.keys():
-                        if mes_exc == 'JOIA': continue
+                    alvo_limite = date(alvo.year, alvo.month, 1)
+
+                    # Regra de início de cobrança: Michel quer que SEMPRE cobre o mês de iniciação por default
+                    inicio_cobranca = date(data_adm.year, data_adm.month, 1)
+                    curr = inicio_cobranca
+
+                    if data_adormecimento and not ativo:
                         try:
-                            exc_date = datetime.strptime(mes_exc, "%Y-%m").date()
-                            if exc_date < curr:
-                                curr = exc_date
+                            data_adorm = datetime.strptime(str(data_adormecimento).strip(), "%Y-%m-%d").date()
+                            alvo_limite = min(alvo_limite, date(data_adorm.year, data_adorm.month, 1))
                         except:
                             pass
 
-                    alvo_limite = date(alvo.year, alvo.month, 1)
-                    
-                    # Contagem total de meses que deveriam ser pagos
+                    # Contagem total de meses que deveriam ser pagos (respeitando o limite de adormecimento)
                     total_meses_devidos_ate_hoje = 0
                     temp_curr = curr
                     while temp_curr <= alvo_limite:
@@ -790,12 +778,9 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                         else:
                             temp_curr = date(temp_curr.year, temp_curr.month + 1, 1)
 
-                    if data_adormecimento and not ativo:
-                        try:
-                            data_adorm = datetime.strptime(str(data_adormecimento).strip(), "%Y-%m-%d").date()
-                            alvo_limite = min(alvo_limite, date(data_adorm.year, data_adorm.month, 1))
-                        except:
-                            pass
+                    # NOVO: Se o mês de iniciação for isento, subtraímos do contador global para que o valor final bata
+                    if isencao_inicio and total_meses_devidos_ate_hoje > 0:
+                        total_meses_devidos_ate_hoje -= 1
 
                     inicio_cobranca_str = inicio_cobranca.strftime("%Y-%m")
                     while curr <= alvo_limite:
