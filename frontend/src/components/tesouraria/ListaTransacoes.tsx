@@ -206,7 +206,7 @@ export default function ListaTransacoes({
                                 {t.data_vencimento ? t.data_vencimento.split('-').slice(0,2).reverse().join('/') : '-'}
                             </td>
                             <td className="px-5 py-4 text-[11px] text-gray-300 whitespace-nowrap font-bold">
-                                {t.data_pagamento ? t.data_pagamento.split('-').reverse().join('/') : '---'}
+                                {(t.data_pagamento || t.data_vencimento)?.split('-').reverse().join('/') || '---'}
                             </td>
                             <td className="px-5 py-4">
                                 <div className="text-[11px] font-bold text-gray-200">{t.descricao}</div>

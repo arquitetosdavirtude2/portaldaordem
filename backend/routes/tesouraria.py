@@ -26,18 +26,12 @@ for d in [UPLOAD_DIR, UPLOAD_EXTRATOS_DIR]:
 
 router = APIRouter()
 
-class CaixaResponse(BaseModel):
-    id: int
-    nome: str
-    saldo_atual: float
-
-    class Config:
-        from_attributes = True
 
 class CaixaCreate(BaseModel):
     loja_id: int
     nome: str
     tipo: str = "geral" 
+    finalidade: str = "geral"
     descricao: Optional[str] = None
     saldo_inicial: float = 0.0
 
@@ -104,8 +98,34 @@ class ResumoFinanceiro(BaseModel):
     saldo_benevolencia: float = 0.0
     saldo_joias_mensalidade: float = 0.0
 
+class CaixaResponse(BaseModel):
+    id: int
+    nome: str
+    tipo: Optional[str] = "geral"
+    finalidade: Optional[str] = "geral"
+    saldo_atual: float
+
     class Config:
         from_attributes = True
+
+@router.get("/caixas", response_model=List[CaixaResponse])
+def listar_caixas(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
+    return db_treasury.query(Caixa).filter(Caixa.loja_id == loja_id).all()
+
+@router.post("/caixas", response_model=CaixaResponse)
+def criar_caixa(dados: CaixaCreate, db_treasury: Session = Depends(get_treasury_db)):
+    novo_caixa = Caixa(
+        loja_id=dados.loja_id,
+        nome=dados.nome,
+        tipo=dados.tipo,
+        finalidade=dados.finalidade,
+        descricao=dados.descricao,
+        saldo_atual=dados.saldo_inicial
+    )
+    db_treasury.add(novo_caixa)
+    db_treasury.commit()
+    db_treasury.refresh(novo_caixa)
+    return novo_caixa
 
 class ExtratoMensalResponse(BaseModel):
     id: int

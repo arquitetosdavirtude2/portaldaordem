@@ -107,7 +107,7 @@ export default function ModalExtratos({
 
     return (
         <>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300">
+            <div className="fixed top-0 left-0 right-0 bottom-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300">
                 <div className="bg-[#0f1115] border border-white/10 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                     <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-white/5">
                         <div>
@@ -161,7 +161,12 @@ export default function ModalExtratos({
                                     <p className="text-[11px] text-gray-600 font-medium italic">Nenhum extrato anexado para este mês.</p>
                                 </div>
                             ) : (
-                                extratos.map(ex => (
+                                extratos.map(ex => {
+                                    const downloadUrl = ex.arquivo_url.startsWith('/api') 
+                                        ? ex.arquivo_url 
+                                        : `/api${ex.arquivo_url}`;
+                                    
+                                    return (
                                     <div key={ex.id} className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/5 rounded-xl group hover:bg-white/[0.05] transition-all">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/10">
@@ -178,7 +183,7 @@ export default function ModalExtratos({
                                         </div>
                                         <div className="flex gap-1">
                                             <a 
-                                                href={`${process.env.NEXT_PUBLIC_API_URL || ""}${ex.arquivo_url}`}
+                                                href={`${process.env.NEXT_PUBLIC_API_URL || ""}${downloadUrl}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="p-2 hover:bg-blue-500/10 rounded-lg text-blue-400 transition-colors"
@@ -199,8 +204,8 @@ export default function ModalExtratos({
                                             </button>
                                         </div>
                                     </div>
-                                ))
-                            )}
+                                 );})
+                             )}
                         </div>
                     </div>
 

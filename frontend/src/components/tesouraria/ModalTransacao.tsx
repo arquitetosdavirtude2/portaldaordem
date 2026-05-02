@@ -6,6 +6,7 @@ interface Caixa {
     id: number;
     nome: string;
     tipo?: string;
+    finalidade?: string;
 }
 
 interface Pessoa {
@@ -23,14 +24,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
 }) {
     const isEdit = !!transacaoInicial;
     const [pessoas, setPessoas] = useState<Pessoa[]>([]);
-    const [mostrarNovoCaixa, setMostrarNovoCaixa] = useState(false);
-    const [novoCaixaForm, setNovoCaixaForm] = useState({ 
-        nome: '', 
-        tipo: 'geral',
-        descricao: '',
-        saldo_inicial: '0' 
-    });
-    const [carregandoCaixa, setCarregandoCaixa] = useState(false);
     
     // Lógica de inicialização de datas
     const initialPagamento = transacaoInicial?.data_pagamento || transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0];
@@ -61,50 +54,98 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
     });
 
-    const categoriasHierarquicas: Record<string, { nome: string, categorias: { id: string, label: string }[] }[]> = {
-        entrada: [
-            { 
-                nome: 'Receitas de Obreiros',
-                categorias: [
-                    { id: 'mensalidade', label: 'Mensalidade' },
-                    { id: 'joia', label: 'Joia de Ingresso' },
-                    { id: 'benevolencia', label: 'Benevolência / Caridade' }
+    // Lógica Dinâmica de Categorias Baseada no Banco
+    const getCategoriasPorBanco = () => {
+        const caixaSelecionado = caixas.find(c => c.id === form.caixa_id);
+        const finalidade = caixaSelecionado?.finalidade || 'geral';
+
+        if (finalidade === 'benevolencia') {
+            return {
+                entrada: [
+                    { 
+                        nome: 'Receitas de Obreiros',
+                        categorias: [{ id: 'benevolencia', label: 'Benevolência / Caridade' }]
+                    },
+                    {
+                        nome: 'Outras Receitas',
+                        categorias: [
+                            { id: 'doacao', label: 'Doação / Patrocínio' },
+                            { id: 'evento', label: 'Arrecadação de Eventos' }
+                        ]
+                    }
+                ],
+                saida: [
+                    {
+                        nome: 'Despesas Variáveis',
+                        categorias: [{ id: 'caridade', label: 'Caridade / Donativos' }]
+                    }
                 ]
-            },
-            {
-                nome: 'Outras Receitas',
-                categorias: [
-                    { id: 'doacao', label: 'Doação / Patrocínio' },
-                    { id: 'evento', label: 'Arrecadação de Eventos' },
-                    { id: 'outro_entrada', label: 'Resíduo / Outros' }
-                ]
-            }
-        ],
-        saida: [
-            {
-                nome: 'Despesas Fixas',
-                categorias: [
-                    { id: 'aluguel', label: 'Aluguel / Condomínio' },
-                    { id: 'utilidades', label: 'Água / Luz / Internet' },
-                    { id: 'taxas_gomb', label: 'Per Capita / Taxas GOMB' }
-                ]
-            },
-            {
-                nome: 'Despesas Variáveis',
-                categorias: [
-                    { id: 'agape', label: 'Ágape / Refeições' },
-                    { id: 'manutencao', label: 'Manutenção de Templo' },
-                    { id: 'insumos', label: 'Velas / Incenso / Materiais' },
-                    { id: 'caridade', label: 'Caridade / Donativos' },
-                    { id: 'social', label: 'Social / Outros' }
-                ]
-            }
-        ]
+            };
+        }
+
+        // Padrão (Banco Pan / Geral)
+        return {
+            entrada: [
+                { 
+                    nome: 'Receitas de Obreiros',
+                    categorias: [
+                        { id: 'mensalidade', label: 'Mensalidade' },
+                        { id: 'joia', label: 'Joia de Ingresso' }
+                    ]
+                },
+                {
+                    nome: 'Outras Receitas',
+                    categorias: [
+                        { id: 'doacao', label: 'Doação / Patrocínio' },
+                        { id: 'evento', label: 'Arrecadação de Eventos' },
+                        { id: 'outro_entrada', label: 'Resíduo / Outros' }
+                    ]
+                }
+            ],
+            saida: [
+                {
+                    nome: 'Despesas Fixas',
+                    categorias: [
+                        { id: 'aluguel', label: 'Aluguel / Condomínio' },
+                        { id: 'utilidades', label: 'Água / Luz / Internet' },
+                        { id: 'taxas_gomb', label: 'Per Capita / Taxas GOMB' }
+                    ]
+                },
+                {
+                    nome: 'Despesas Variáveis',
+                    categorias: [
+                        { id: 'agape', label: 'Ágape / Refeições' },
+                        { id: 'manutencao', label: 'Manutenção de Templo' },
+                        { id: 'insumos', label: 'Velas / Incenso / Materiais' },
+                        { id: 'social', label: 'Social / Outros' }
+                    ]
+                }
+            ]
+        };
     };
+
+    const categoriasHierarquicas = getCategoriasPorBanco();
+
+    // Reset de categoria se ela não existir no novo conjunto
+    useEffect(() => {
+        const categoriasDisponiveis = categoriasHierarquicas[form.tipo as 'entrada' | 'saida'] || [];
+        const todasCategorias = categoriasDisponiveis.flatMap(g => g.categorias.map(c => c.id));
+        
+        if (!todasCategorias.includes(form.categoria)) {
+            const primeiroGrupo = categoriasDisponiveis[0];
+            if (primeiroGrupo) {
+                setForm(f => ({ 
+                    ...f, 
+                    grupo: primeiroGrupo.nome, 
+                    categoria: primeiroGrupo.categorias[0].id 
+                }));
+            }
+        }
+    }, [form.caixa_id, form.tipo]);
 
     useEffect(() => {
         if (form.tipo && form.categoria && !form.grupo) {
-            const grupos = categoriasHierarquicas[form.tipo] || [];
+            const grupos = categoriasHierarquicas[form.tipo as 'entrada' | 'saida'] || [];
             const grupoEncontrado = grupos.find(g => g.categorias.some(c => c.id === form.categoria));
             if (grupoEncontrado) {
                 setForm(f => ({ ...f, grupo: grupoEncontrado.nome }));
@@ -117,15 +158,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
             setForm(f => ({ ...f, caixa_id: caixas[0].id }));
         }
     }, [caixas]);
-
-    useEffect(() => {
-        if (form.categoria === 'joia' || form.categoria === 'mensalidade') {
-            const caixaPan = caixas.find(c => c.tipo === 'joias_mensalidade');
-            if (caixaPan && form.caixa_id !== caixaPan.id) {
-                setForm(f => ({ ...f, caixa_id: caixaPan.id }));
-            }
-        }
-    }, [form.categoria, caixas]);
 
     useEffect(() => {
         const carregarPessoas = async () => {
@@ -216,8 +248,8 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
     };
 
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all animate-in fade-in duration-300">
-            <div className="bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all animate-in fade-in duration-300 overflow-y-auto">
+            <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
                 
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
@@ -278,12 +310,12 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                 value={form.grupo}
                                 onChange={e => {
                                     const novoGrupo = e.target.value;
-                                    const categoriasDoGrupo = categoriasHierarquicas[form.tipo].find(g => g.nome === novoGrupo)?.categorias || [];
+                                    const categoriasDoGrupo = categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].find(g => g.nome === novoGrupo)?.categorias || [];
                                     setForm({ ...form, grupo: novoGrupo, categoria: categoriasDoGrupo[0]?.id || '' });
                                 }}
                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
-                                {categoriasHierarquicas[form.tipo].map(grupo => (
+                                {categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].map(grupo => (
                                     <option key={grupo.nome} value={grupo.nome}>{grupo.nome}</option>
                                 ))}
                             </select>
@@ -295,7 +327,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                 onChange={e => setForm({...form, categoria: e.target.value})}
                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
-                                {categoriasHierarquicas[form.tipo].find(g => g.nome === form.grupo)?.categorias.map(cat => (
+                                {categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].find(g => g.nome === form.grupo)?.categorias.map(cat => (
                                     <option key={cat.id} value={cat.id}>{cat.label}</option>
                                 ))}
                             </select>
@@ -401,7 +433,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     <button 
                         onClick={handleSubmit}
                         disabled={enviando}
-                        className={`flex-[2] py-4 rounded-xl text-[11px] uppercase font-black tracking-[0.2em] transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 ${isEdit ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-yellow-500 hover:bg-yellow-400 text-black'}`}
+                        className={`flex-[2] py-4 rounded-xl text-[11px] uppercase font-black tracking-[0.2em] transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 bg-yellow-500 hover:bg-yellow-400 text-black`}
                     >
                         {enviando ? 'Processando...' : isEdit ? 'Salvar Alterações' : 'Confirmar Lançamento'}
                     </button>

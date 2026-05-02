@@ -124,6 +124,7 @@ class Caixa(Base):
     loja_id = Column(Integer, ForeignKey("lojas.id"))
     nome = Column(String(100)) # Nome do Banco / Conta
     tipo = Column(String(50), default="geral") # 'geral', 'benevolencia', 'joias_mensalidade'
+    finalidade = Column(String(50), default="geral") # 'geral', 'benevolencia', 'mensalidade'
     descricao = Column(String(255), nullable=True) # Finalidade detalhada
     saldo_atual = Column(Float, default=0.0)
 
