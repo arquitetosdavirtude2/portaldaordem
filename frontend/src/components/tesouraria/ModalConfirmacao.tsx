@@ -1,4 +1,5 @@
-'use client';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalConfirmacaoProps {
     isOpen: boolean;
@@ -7,7 +8,7 @@ interface ModalConfirmacaoProps {
     titulo: string;
     mensagem: string;
     textoConfirmar?: string;
-    confirmText?: string; // Aliases for flexibility
+    confirmText?: string;
     textoCancelar?: string;
     cancelText?: string;
     corBotao?: 'red' | 'yellow' | 'blue';
@@ -25,9 +26,13 @@ export default function ModalConfirmacao({
     cancelText,
     corBotao = 'red'
 }: ModalConfirmacaoProps) {
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => { setIsMounted(true); }, []);
+
     const txtConfirm = textoConfirmar || confirmText || "Confirmar";
     const txtCancel = textoCancelar || cancelText || "Cancelar";
-    if (!isOpen) return null;
+
+    if (!isOpen || !isMounted) return null;
 
     const cores = {
         red: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500 hover:text-white',
@@ -35,8 +40,8 @@ export default function ModalConfirmacao({
         blue: 'bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500 hover:text-white'
     };
 
-    return (
-        <div className="fixed top-0 left-0 right-0 bottom-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300">
+    return createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300">
             <div className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
                 <div className="p-6">
                     <h3 className="text-lg font-black text-white uppercase tracking-widest mb-2">{titulo}</h3>
@@ -61,6 +66,7 @@ export default function ModalConfirmacao({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
