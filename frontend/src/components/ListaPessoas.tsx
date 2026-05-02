@@ -414,7 +414,7 @@ export default function ListaPessoas({
                                                     className="text-gray-400 hover:text-green-400 transition-colors flex items-center gap-2"
                                                 >
                                                     <span className="text-lg opacity-50 group-hover:opacity-100 transition-opacity">📱</span>
-                                                    <span className="group-hover:underline decoration-green-500/50 underline-offset-4">{pessoa.telefone}</span>
+                                                    <span className="group-hover:underline decoration-green-500/50 underline-offset-4 font-sans">{pessoa.telefone}</span>
                                                 </a>
                                             )}
                                         </td>
@@ -475,7 +475,7 @@ export default function ListaPessoas({
                                                         </select>
                                                     ) : (
                                                         <span
-                                                            className={`text-xs ${pessoa.cargo_nome ? 'text-yellow-400 font-bold' : 'text-gray-500 italic'} ${podeFullEdit ? 'cursor-pointer hover:underline underline-offset-2 decoration-white/20' : ''}`}
+                                                            className={`text-xs font-sans ${pessoa.cargo_nome ? 'text-yellow-400 font-bold' : 'text-gray-500 italic'} ${podeFullEdit ? 'cursor-pointer hover:underline underline-offset-2 decoration-white/20' : ''}`}
                                                             onClick={() => podeFullEdit && actStartEdit(pessoa)}
                                                             title={podeFullEdit ? "Clique para alterar cargo" : ""}
                                                         >
@@ -496,7 +496,7 @@ export default function ListaPessoas({
                                                             placeholder="Login"
                                                         />
                                                     ) : (
-                                                        <span className="text-[11px] text-gray-400 font-mono">
+                                                        <span className="text-[11px] text-gray-400 font-sans">
                                                             {pessoa.login || '-'}
                                                         </span>
                                                     )}
