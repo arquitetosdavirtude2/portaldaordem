@@ -105,8 +105,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 {
                     nome: 'Outras Receitas',
                     categorias: [
-                        { id: 'doacao', label: 'Doação / Patrocínio' },
-                        { id: 'evento', label: 'Arrecadação de Eventos' },
                         { id: 'outro_entrada', label: 'Resíduo / Outros' }
                     ]
                 }
@@ -116,7 +114,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     nome: 'Despesas Fixas',
                     categorias: [
                         { id: 'aluguel', label: 'Aluguel / Condomínio' },
-                        { id: 'utilidades', label: 'Água / Luz / Internet' },
                         { id: 'taxas_gomb', label: 'Per Capita / Taxas GOMB' }
                     ]
                 },
