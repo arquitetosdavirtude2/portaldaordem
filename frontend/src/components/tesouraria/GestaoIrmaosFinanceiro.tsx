@@ -18,6 +18,7 @@ interface IrmaoFinanceiro {
     data_adormecimento: string | null;
     ativo: number;
     tipo_ingresso: string;
+    meses_cobrados: number;
     meses_devidos: number;
     meses_pagos: number;
     joia_paga: number;
@@ -359,7 +360,14 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         )}
                                     </td>
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
-                                        <span className="text-[10px] text-gray-300 font-mono">{formatarData(irmao.data_admissao)}</span>
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-[10px] text-gray-300 font-mono">{formatarData(irmao.data_admissao)}</span>
+                                            {irmao.meses_cobrados > 0 && (
+                                                <span className="text-[8px] text-gray-500 uppercase font-black tracking-tighter mt-0.5">
+                                                    | {irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
                                         <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
