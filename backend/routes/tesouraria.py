@@ -676,8 +676,8 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 # Isento de Joia
                 j_pend = 0.0
                 j_paga_exibicao = 0.0
-            elif 'JOIA' in excecoes_map or joia_quitada_externa:
-                # Pago em outro banco (Justificado ou Quitado Externamente)
+            elif joia_quitada_externa:
+                # Pago em outro banco (Somente via Checkbox Global)
                 j_pend = 0.0
                 j_paga_exibicao = 2000.0
             else:
@@ -710,16 +710,34 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             m_pend = 0.0
             detalhes_meses = [] # Para o botão de detalhamento solicitado
 
-            # Adicionar Joia no início do detalhamento se houver pendência ou exceção
-            if j_pend > 0 or 'JOIA' in excecoes_map:
-                exc = excecoes_map.get('JOIA')
+            # Adicionar Joia no início do detalhamento
+            if joia_quitada_externa:
                 detalhes_meses.append({
                     "mes_ref": "JOIA",
                     "label": "JOIA (Taxa de Ingresso)",
-                    "ignorado": True if 'JOIA' in excecoes_map else False,
-                    "excecao_id": exc["id"] if exc else None,
-                    "justificativa": exc["justificativa"] if exc else None,
-                    "status": "justificado" if exc else "pendente"
+                    "ignorado": True,
+                    "excecao_id": None,
+                    "justificativa": "Pago para outra conta (via Checkbox)",
+                    "status": "justificado"
+                })
+            elif j_pend > 0:
+                detalhes_meses.append({
+                    "mes_ref": "JOIA",
+                    "label": "JOIA (Taxa de Ingresso)",
+                    "ignorado": False,
+                    "excecao_id": None,
+                    "justificativa": None,
+                    "status": "pendente"
+                })
+            else:
+                # Caso onde j_pend é 0 (pago via sistema)
+                detalhes_meses.append({
+                    "mes_ref": "JOIA",
+                    "label": "JOIA (Taxa de Ingresso)",
+                    "ignorado": False,
+                    "excecao_id": None,
+                    "justificativa": "Pago (Lançamento no sistema)",
+                    "status": "pago"
                 })
 
             if data_adm_str:
@@ -737,23 +755,20 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                             # Fallback para DD/MM/YYYY com %d/%m/%Y
                             data_adm = datetime.strptime(d_str, "%d/%m/%Y").date()
                     
-                    # Regra de início de cobrança
-                    if data_adm.year < 2026:
+                    # Regra de início de cobrança (Mesmo mês se < 15, mês seguinte se > 15)
+                    if data_adm.day > 15:
                         if data_adm.month == 12:
                             inicio_cobranca = date(data_adm.year + 1, 1, 1)
                         else:
                             inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
                     else:
-                        if data_adm.day > 15:
-                            if data_adm.month == 12:
-                                inicio_cobranca = date(data_adm.year + 1, 1, 1)
-                            else:
-                                inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
-                        else:
-                            inicio_cobranca = date(data_adm.year, data_adm.month, 1)
+                        inicio_cobranca = date(data_adm.year, data_adm.month, 1)
                     
-                    # Garantir que meses com exceção (justificativas) apareçam no histórico mesmo se forem antes do início da cobrança
+                    # O histórico no modal deve SEMPRE começar no mês de iniciação (ou primeiro mês de cobrança)
+                    # para que não suma se a justificativa for removida.
                     curr = date(inicio_cobranca.year, inicio_cobranca.month, 1)
+                    
+                    # Se houver qualquer justificativa anterior ao início da cobrança, começamos por ela
                     for mes_exc in excecoes_map.keys():
                         if mes_exc == 'JOIA': continue
                         try:
