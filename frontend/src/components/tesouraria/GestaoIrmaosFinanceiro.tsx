@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+bedecer import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 interface MesAtraso {
@@ -41,7 +41,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const [irmaoSelecionado, setIrmaoSelecionado] = useState<IrmaoFinanceiro | null>(null);
     const [mostrarAdormecidos, setMostrarAdormecidos] = useState(false);
     const [mesesModal, setMesesModal] = useState<MesAtraso[]>([]);
-    const [justificativaTemp, setJustificativaTemp] = useState<{[key: string]: string}>({});
+    const [justificativaTemp, setJustificativaTemp] = useState<{ [key: string]: string }>({});
     const [salvando, setSalvando] = useState<string | null>(null);
     const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
     const [visaoAtiva, setVisaoAtiva] = useState<'ativos' | 'inadimplentes'>('ativos');
@@ -403,8 +403,8 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                                 <span className="text-gray-600">/</span>
                                                 <span className={
                                                     irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' :
-                                                    irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' :
-                                                    'text-gray-500 italic'
+                                                        irmao.saude_financeira === 'PENDENTE' ? 'text-yellow-500 font-bold' :
+                                                            'text-gray-500 italic'
                                                 }>
                                                     R$ {formatarMoeda(irmao.mensalidade_pendente)}
                                                 </span>
@@ -489,11 +489,10 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                         <button
                                             onClick={() => handleIgnorarMes(mes)}
                                             disabled={salvando === mes.mes_ref}
-                                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-bold text-[11px] uppercase tracking-wider transition-all ${
-                                                mes.excecao_id
+                                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-bold text-[11px] uppercase tracking-wider transition-all ${mes.excecao_id
                                                     ? 'bg-green-400/10 border-green-400/30 text-green-400 hover:bg-green-400/20'
                                                     : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
-                                            }`}
+                                                }`}
                                         >
                                             <span>{mes.label}</span>
                                             <span className="text-[9px] normal-case font-normal">
