@@ -9,6 +9,7 @@ interface MesAtraso {
     ignorado: boolean;
     excecao_id: number | null;
     justificativa: string | null;
+    status?: 'pago' | 'justificado' | 'isento' | 'pendente';
 }
 
 interface IrmaoFinanceiro {
@@ -537,19 +538,22 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 return (
                                     <div key={mes.mes_ref} className="space-y-2">
                                         <button
-                                            onClick={() => handleIgnorarMes(mes)}
-                                            disabled={salvando === mes.mes_ref}
-                                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-bold text-[11px] uppercase tracking-wider transition-all ${mes.excecao_id
-                                                    ? 'bg-green-400/10 border-green-400/30 text-green-400 hover:bg-green-400/20'
-                                                    : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
-                                                }`}
+                                            onClick={() => { if (mes.status === 'pendente' || mes.status === 'justificado' || mes.mes_ref === 'JOIA') handleIgnorarMes(mes); }}
+                                            disabled={salvando === mes.mes_ref || (mes.status === 'pago' && mes.mes_ref !== 'JOIA') || mes.status === 'isento'}
+                                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-bold text-[11px] uppercase tracking-wider transition-all ${
+                                                mes.status === 'pago' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 cursor-default' :
+                                                mes.status === 'isento' ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 cursor-default' :
+                                                mes.status === 'justificado' ? 'bg-green-400/10 border-green-400/30 text-green-400 hover:bg-green-400/20' :
+                                                'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                                            }`}
                                         >
                                             <span>{mes.label}</span>
                                             <span className="text-[9px] normal-case font-normal">
                                                 {salvando === mes.mes_ref ? 'Salvando...' :
-                                                    mes.excecao_id
-                                                        ? `✓ Ignorado — ${mes.justificativa || 'sem justificativa'} (clique para remover)`
-                                                        : '✗ Não pago — clique para justificar e ignorar'
+                                                    mes.status === 'pago' ? '✓ Pago (Lançamento)' :
+                                                    mes.status === 'justificado' ? `✓ Justificado — ${mes.justificativa || ''} (clique para remover)` :
+                                                    mes.status === 'isento' ? '✓ Isento (Mês Iniciação)' :
+                                                    '✗ Pendente — clique para justificar'
                                                 }
                                             </span>
                                         </button>
