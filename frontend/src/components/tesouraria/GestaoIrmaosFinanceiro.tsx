@@ -534,22 +534,25 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 return (
                                     <div key={mes.mes_ref} className="space-y-2">
                                         <button
-                                            onClick={() => { if (mes.status === 'pendente' || mes.status === 'justificado' || mes.mes_ref === 'JOIA') handleIgnorarMes(mes); }}
-                                            disabled={salvando === mes.mes_ref || (mes.status === 'pago' && mes.mes_ref !== 'JOIA') || mes.status === 'isento'}
+                                            onClick={() => { 
+                                                if (mes.mes_ref === 'JOIA') return; // Bloqueia clique na Joia
+                                                if (mes.status === 'pendente' || mes.status === 'justificado') handleIgnorarMes(mes); 
+                                            }}
+                                            disabled={salvando === mes.mes_ref || (mes.status === 'pago' && mes.mes_ref !== 'JOIA') || mes.status === 'isento' || mes.mes_ref === 'JOIA'}
                                             className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-bold text-[11px] uppercase tracking-wider transition-all ${
                                                 mes.status === 'pago' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 cursor-default' :
                                                 mes.status === 'isento' ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 cursor-default' :
-                                                mes.status === 'justificado' ? 'bg-green-400/10 border-green-400/30 text-green-400 hover:bg-green-400/20' :
-                                                'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
-                                            }`}
+                                                mes.status === 'justificado' ? 'bg-green-400/10 border-green-400/30 text-green-400' :
+                                                'bg-red-500/10 border-red-500/30 text-red-400'
+                                            } ${mes.mes_ref === 'JOIA' ? 'cursor-default' : 'hover:opacity-80'}`}
                                         >
                                             <span>{mes.label}</span>
                                             <span className="text-[9px] normal-case font-normal">
                                                 {salvando === mes.mes_ref ? 'Salvando...' :
                                                     mes.status === 'pago' ? '✓ Pago (Lançamento)' :
-                                                    mes.status === 'justificado' ? `✓ Justificado — ${mes.justificativa || ''} (clique para remover)` :
+                                                    mes.status === 'justificado' ? (mes.mes_ref === 'JOIA' ? '✓ Pago Externamente (via Checkbox)' : `✓ Justificado — ${mes.justificativa || ''} (clique para remover)`) :
                                                     mes.status === 'isento' ? '✓ Isento (Mês Iniciação)' :
-                                                    '✗ Pendente — clique para justificar'
+                                                    (mes.mes_ref === 'JOIA' ? '✗ Pendente (Sem pagamento ou check)' : '✗ Pendente — clique para justificar')
                                                 }
                                             </span>
                                         </button>
