@@ -488,8 +488,16 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         from sqlalchemy import text
         db_treasury.expire_all()
         
-        # 1. Buscar Caixas (Contas) da Loja
-        query_caixas = text("SELECT id, nome, finalidade, saldo_atual, tipo FROM caixas WHERE loja_id = :lid")
+        # 1. Buscar Caixas (Contas) da Loja com SALDO CALCULADO EM TEMPO REAL
+        # Não confiamos mais no campo 'saldo_atual' da tabela caixas.
+        query_caixas = text("""
+            SELECT c.id, c.nome, c.finalidade,
+                (SELECT COALESCE(SUM(CASE WHEN t.tipo='entrada' THEN t.valor ELSE -t.valor END), 0)
+                 FROM transacoes t 
+                 WHERE t.caixa_id = c.id AND t.status = 'pago') as saldo_real
+            FROM caixas c 
+            WHERE c.loja_id = :lid
+        """)
         caixas_rows = db_treasury.execute(query_caixas, {"lid": loja_id}).fetchall()
         
         caixas = []
@@ -498,17 +506,11 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         saldo_jm = 0.0
         
         for r in caixas_rows:
-            # Tentar mapear colunas de forma segura (funciona em MySQL e SQLite)
-            try:
-                # SQLAlchemy Row mapping
-                row_map = r._mapping
-                c_id = row_map.get('id')
-                c_nome = row_map.get('nome')
-                c_fin = row_map.get('finalidade') or 'mensalidade'
-                c_saldo = float(row_map.get('saldo_atual') or 0.0)
-            except:
-                # Fallback para índices caso o _mapping falhe
-                c_id, c_nome, c_fin, c_saldo = r[0], r[1], r[2], r[3]
+            # c.id, c.nome, c.finalidade, saldo_real
+            c_id = r[0]
+            c_nome = r[1]
+            c_fin = r[2] or 'mensalidade'
+            c_saldo = float(r[3] or 0.0)
 
             caixas.append({
                 "id": c_id,
