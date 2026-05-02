@@ -497,7 +497,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 {irmaoSelecionado.meses_devidos > 0 && (
                                     <>
                                         <span className="ml-3 text-gray-600">·</span>
-                                        <span className="ml-3 text-red-400 font-black">{irmaoSelecionado.meses_devidos} meses devidos</span>
+                                        <span className="ml-3 text-red-400 font-black font-sans">{irmaoSelecionado.meses_devidos} meses devidos</span>
                                     </>
                                 )}
                             </div>
@@ -513,7 +513,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                             className="w-4 h-4 rounded border-white/20 bg-black/40 text-yellow-500 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
                                         />
                                     </div>
-                                    <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest group-hover:text-white transition-colors">Joia Paga Externamente (Forçar R$ 2.000)</span>
+                                    <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest group-hover:text-white transition-colors">Joia Paga Externamente (<span className="font-sans">Forçar R$ 2.000</span>)</span>
                                 </label>
 
                                 <label className="flex items-center gap-3 cursor-pointer group border-l border-white/10 pl-4">
@@ -546,7 +546,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                                 'bg-red-500/10 border-red-500/30 text-red-400'
                                             } ${mes.mes_ref === 'JOIA' ? 'cursor-default' : 'hover:opacity-80'}`}
                                         >
-                                            <span>{mes.label}</span>
+                                            <span className="font-sans">{mes.label}</span>
                                             <span className="text-[9px] normal-case font-normal">
                                                 {salvando === mes.mes_ref ? 'Salvando...' :
                                                     mes.status === 'pago' ? '✓ Pago (Lançamento)' :
