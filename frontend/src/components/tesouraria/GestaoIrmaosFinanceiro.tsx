@@ -553,7 +553,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                                 {salvando === mes.mes_ref ? 'Salvando...' :
                                                     mes.status === 'pago' ? '✓ Pago (Lançamento)' :
                                                     mes.status === 'justificado' ? (mes.mes_ref === 'JOIA' ? '✓ Pago Externamente (via Checkbox)' : `✓ Justificado — ${mes.justificativa || ''} (clique para remover)`) :
-                                                    mes.status === 'isento' ? '✓ Isento (Mês Iniciação)' :
+                                                    mes.status === 'isento' ? `✓ ${mes.justificativa || 'Isento'}` :
                                                     (mes.mes_ref === 'JOIA' ? '✗ Pendente (Sem pagamento ou check)' : '✗ Pendente — clique para justificar')
                                                 }
                                             </span>
