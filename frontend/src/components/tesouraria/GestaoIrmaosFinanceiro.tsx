@@ -20,8 +20,12 @@ interface IrmaoFinanceiro {
     meses_devidos: number;
     meses_pagos: number;
     joia_paga: number;
+    joia_real: number;
+    joia_justificada: number;
     joia_pendente: number;
     mensalidade_paga: number;
+    mensalidade_real: number;
+    mensalidade_justificada: number;
     mensalidade_pendente: number;
     saude_financeira: string;
     meses_atraso: MesAtraso[];
@@ -358,7 +362,12 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     </td>
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
                                         <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
-                                            <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.joia_paga)}</span>
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.joia_paga)}</span>
+                                                {irmao.joia_justificada > 0 && (
+                                                    <span className="text-[7px] text-yellow-500/50 uppercase font-black tracking-tighter mt-0.5">Externo</span>
+                                                )}
+                                            </div>
                                             <span className="mx-1 text-gray-600">/</span>
                                             <span className={irmao.joia_pendente > 0 ? 'text-yellow-500 font-bold' : 'text-gray-500 italic'}>
                                                 R$ {formatarMoeda(irmao.joia_pendente)}
@@ -367,7 +376,12 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     )}
                                     {(categoriaFiltro === 'todas' || categoriaFiltro === 'mensalidade') && (
                                         <td className="px-5 py-4 text-center font-sans text-[10px] whitespace-nowrap">
-                                            <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.mensalidade_paga)}</span>
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-green-400 font-bold">R$ {formatarMoeda(irmao.mensalidade_paga)}</span>
+                                                {irmao.mensalidade_justificada > 0 && (
+                                                    <span className="text-[7px] text-yellow-500/50 uppercase font-black tracking-tighter mt-0.5">Externo</span>
+                                                )}
+                                            </div>
                                             <span className="mx-1 text-gray-600">/</span>
                                             <span className={
                                                 irmao.saude_financeira === 'ATRASADO' ? 'text-red-400 font-bold' :
