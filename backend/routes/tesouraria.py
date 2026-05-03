@@ -792,7 +792,15 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                         data_adm = date(3000, 1, 1) # Data no futuro distante
                     
                     # Regra de início de cobrança: Michel quer que SEMPRE cobre o mês de iniciação por default
-                    inicio_cobranca = date(data_adm.year, data_adm.month, 1)
+                    # EXCETO se a iniciação for após o dia 15
+                    if data_adm.day > 15:
+                        if data_adm.month == 12:
+                            inicio_cobranca = date(data_adm.year + 1, 1, 1)
+                        else:
+                            inicio_cobranca = date(data_adm.year, data_adm.month + 1, 1)
+                    else:
+                        inicio_cobranca = date(data_adm.year, data_adm.month, 1)
+                    
                     curr = inicio_cobranca
 
                     # ALVO LIMITE: Se o irmão estiver adormecido, o limite de cobrança é a data de adormecimento
@@ -879,7 +887,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
                         # 4. Caso contrário, está PENDENTE
                         else:
-                            if curr < date(hoje.year, hoje.month, 1) or (curr == date(hoje.year, hoje.month, 1) and hoje.day > 10):
+                            if curr <= date(hoje.year, hoje.month, 1):
                                 meses_devidos += 1
                                 m_pend += 250.0
                                 detalhes_meses.append({
@@ -913,7 +921,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                     if d.get("ignorado"): continue # Pula os verdes
                     if d["mes_ref"] == "JOIA": continue # Pula a Joia, pois não é data
                     d_mes = datetime.strptime(d["mes_ref"], "%Y-%m").date()
-                    if d_mes < date(hoje.year, hoje.month, 1):
+                    if d_mes < date(hoje.year, hoje.month, 1) or (d_mes == date(hoje.year, hoje.month, 1) and hoje.day > 10):
                         tem_atraso_real = True
                         break
                 saude = "ATRASADO" if tem_atraso_real else "PENDENTE"
