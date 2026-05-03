@@ -599,6 +599,58 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
             "error": str(e)
         }
 
+@router.get("/contagem-per-capita/{loja_id}")
+def obter_contagem_per_capita(
+    loja_id: int, 
+    mes_ref: str, # Formato YYYY-MM
+    db_treasury: Session = Depends(get_treasury_db)
+):
+    """Calcula quantos obreiros ativos devem pagar Per Capita no mês de referência."""
+    try:
+        from sqlalchemy import text
+        from datetime import datetime
+        
+        # Parse do mês de referência
+        ref_date = datetime.strptime(mes_ref, "%Y-%m")
+        ref_ano = ref_date.year
+        ref_mes = ref_date.month
+        
+        # Query para pegar obreiros ativos que não sejam o Venerável Mestre (cargo_id=1)
+        query = text("""
+            SELECT data_admissao, tipo_ingresso, data_iniciacao
+            FROM pessoas
+            WHERE loja_id = :lid
+              AND (cargo_id != 1 OR cargo_id IS NULL)
+              AND (COALESCE(data_adormecimento, '') = '' AND COALESCE(ativo, 1) = 1)
+        """)
+        rows = db_treasury.execute(query, {"lid": loja_id}).fetchall()
+        
+        contagem = 0
+        for r in rows:
+            data_adm_str = r[0] or r[2] # data_admissao ou data_iniciacao
+            if not data_adm_str:
+                contagem += 1
+                continue
+                
+            try:
+                dt_adm = datetime.strptime(data_adm_str, "%Y-%m-%d").date()
+                
+                # Regra: Se iniciou no mês de referência após o dia 15, não conta
+                if dt_adm.year == ref_ano and dt_adm.month == ref_mes:
+                    if dt_adm.day <= 15:
+                        contagem += 1
+                # Se iniciou antes do mês de referência, conta
+                elif dt_adm.year < ref_ano or (dt_adm.year == ref_ano and dt_adm.month < ref_mes):
+                    contagem += 1
+                # Se for no futuro, não conta
+            except:
+                contagem += 1
+                
+        return {"contagem": contagem, "valor_unitario": 50.0, "total": contagem * 50.0}
+    except Exception as e:
+        print(f"Erro contagem per capita: {e}")
+        return {"contagem": 0, "valor_unitario": 50.0, "total": 0.0}
+
 
 class IrmaoFinanceiro(BaseModel):
     id: int
@@ -1045,6 +1097,46 @@ def relatorio_inadimplentes(
     }
     
     return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
+    
+@router.get("/relatorio/contas-pagar/{loja_id}")
+def relatorio_contas_pagar(
+    loja_id: int,
+    db_treasury: Session = Depends(get_treasury_db)
+):
+    """Gera um relatório CSV de contas a pagar (pendentes)."""
+    try:
+        from sqlalchemy import text
+        query = text("""
+            SELECT t.data_vencimento, t.descricao, t.categoria, t.valor
+            FROM transacoes t
+            JOIN caixas c ON t.caixa_id = c.id
+            WHERE t.status = 'pendente' 
+              AND t.tipo = 'saida'
+              AND c.loja_id = :lid
+            ORDER BY t.data_vencimento ASC
+        """)
+        rows = db_treasury.execute(query, {"lid": loja_id}).fetchall()
+        
+        output = io.StringIO()
+        output.write('\ufeff')
+        writer = csv.writer(output, delimiter=';')
+        writer.writerow(['Vencimento', 'Descrição', 'Categoria', 'Valor'])
+        
+        for r in rows:
+            writer.writerow([
+                datetime.strptime(r[0], "%Y-%m-%d").strftime("%d/%m/%Y"),
+                r[1],
+                r[2].upper(),
+                f"R$ {r[3]:.2f}"
+            ])
+            
+        output.seek(0)
+        headers = {
+            'Content-Disposition': f'attachment; filename="contas_a_pagar_{loja_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
+        }
+        return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/relatorio/individual/{transacao_id}")
 def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
