@@ -84,7 +84,8 @@ export default function FormCadastro({
   // Academia e Ingresso
   const [tipoIngresso, setTipoIngresso] = useState<'iniciacao' | 'transferencia'>('iniciacao');
   const [indicadorId, setIndicadorId] = useState<number | ''>('');
-  const [indicadores, setIndicadores] = useState<Indicador[]>([]);
+  const [membrosLoja, setMembrosLoja] = useState<Pessoa[]>([]);
+  const [mostrarAdormecidosIndicador, setMostrarAdormecidosIndicador] = useState(false);
 
   // Novos campos de Categorização
   const [tipoPessoa, setTipoPessoa] = useState<string>('obreiro');
@@ -99,12 +100,15 @@ export default function FormCadastro({
       .then(setCargos)
       .catch(() => {});
 
-    // Carregar indicadores
-    fetch(`${apiUrl}/api/academia/indicadores/${acesso?.loja_id || 0}`)
-      .then(r => r.ok ? r.json() : [])
-      .then(setIndicadores)
-      .catch(() => {});
-  }, [acesso?.loja_id]);
+    // Carregar membros da loja para indicação
+    const currentLojaId = lojaId || acesso?.loja_id || 0;
+    if (currentLojaId) {
+      fetch(`${apiUrl}/api/pessoas/loja/${currentLojaId}`)
+        .then(r => r.ok ? r.json() : [])
+        .then(setMembrosLoja)
+        .catch(() => {});
+    }
+  }, [acesso?.loja_id, lojaId]);
   
   // New financial fields for registration
   const [dataAdmissao, setDataAdmissao] = useState(new Date().toISOString().split('T')[0]);
@@ -398,17 +402,33 @@ export default function FormCadastro({
               </div>
 
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                  Indicador (Academia)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                    Obreiro Relacionado (Indicação)
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      checked={mostrarAdormecidosIndicador}
+                      onChange={(e) => setMostrarAdormecidosIndicador(e.target.checked)}
+                      className="w-3 h-3 rounded border-white/10 bg-black/40 text-yellow-500 focus:ring-0 focus:ring-offset-0"
+                    />
+                    <span className="text-[8px] font-bold text-gray-500 group-hover:text-gray-400 uppercase tracking-tighter transition-colors">Ver Adormecidos</span>
+                  </label>
+                </div>
                 <select
                   value={indicadorId}
                   onChange={(e) => setIndicadorId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
+                  className="w-full p-2 bg-[#0a0a0a] border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
                 >
-                  <option value="">Ninguém (Indicação Direta)</option>
-                  {indicadores.map(ind => (
-                    <option key={ind.id} value={ind.id}>{ind.nome}</option>
+                  <option value="" className="bg-[#0a0a0a]">Ninguém (Indicação Direta)</option>
+                  {membrosLoja
+                    .filter(m => mostrarAdormecidosIndicador || m.ativo === 1)
+                    .filter(m => m.id !== pessoaParaEditar?.id) // Não indicar a si mesmo
+                    .map(ind => (
+                    <option key={ind.id} value={ind.id} className="bg-[#0a0a0a]">
+                      {ind.nome} {ind.ativo === 0 ? '(ADORMECIDO)' : ''}
+                    </option>
                   ))}
                 </select>
                 <p className="text-[8px] text-gray-500 mt-1 uppercase italic">* Se for transferência, a Joia não será cobrada.</p>
@@ -502,7 +522,7 @@ export default function FormCadastro({
                 value={lojaId}
                 onChange={(e) => setLojaId(e.target.value ? Number(e.target.value) : '')}
                 disabled={isLojaUser}
-                className={`w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs font-sans ${isLojaUser ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full p-2 bg-[#0a0a0a] border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs font-sans ${isLojaUser ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 <option value="">Sem vínculo</option>
                 {lojas.map(loja => (

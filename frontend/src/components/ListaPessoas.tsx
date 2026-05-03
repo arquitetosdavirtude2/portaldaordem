@@ -567,13 +567,19 @@ export default function ListaPessoas({
                                                 )}
 
                                                 {podeDeletar && (
-                                                    <button
-                                                        onClick={() => confirmarDelecao(pessoa)}
-                                                        className="p-1.5 text-red-500 hover:text-red-400 hover:bg-red-900/30 rounded transition"
-                                                        title="Remover"
-                                                    >
-                                                        🗑️
-                                                    </button>
+                                                   pessoa.cargo_nome === 'Venerável Mestre' ? (
+                                                       <span className="p-1.5 text-gray-600 cursor-not-allowed opacity-50" title="Exclusão via Grão-Mestrado">
+                                                           🔒
+                                                       </span>
+                                                   ) : (
+                                                       <button
+                                                           onClick={() => confirmarDelecao(pessoa)}
+                                                           className="p-1.5 text-red-500 hover:text-red-400 hover:bg-red-900/30 rounded transition"
+                                                           title="Remover"
+                                                       >
+                                                           🗑️
+                                                       </button>
+                                                   )
                                                 )}
                                             </div>
                                         </td>
