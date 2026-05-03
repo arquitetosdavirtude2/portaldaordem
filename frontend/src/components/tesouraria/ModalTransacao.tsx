@@ -13,6 +13,7 @@ interface Caixa {
 interface Pessoa {
     id: number;
     nome: string;
+    ativo: number;
 }
 
 export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onCaixaAdicionado, transacaoInicial }: {
