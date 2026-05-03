@@ -183,7 +183,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
             <div className="bg-black/20 rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="border-b border-white/5 bg-white/5 uppercase tracking-widest text-gray-500 font-sans font-medium text-[8px]">
+                        <tr className="border-b border-white/5 bg-white/5 uppercase tracking-widest text-gray-500 font-sans font-medium text-[9px]">
                             <th className="px-5 py-3 w-[110px]">Vencimento</th>
                             <th className="px-5 py-3">Descrição</th>
                             <th className="px-5 py-3 text-right w-[130px]">Valor</th>
@@ -201,13 +201,13 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                             pendentes.map(t => (
                                 <tr key={t.id} className="hover:bg-red-500/[0.02] transition-colors group">
                                     <td className="px-5 py-3 w-[110px]">
-                                        <div className="text-[10px] font-medium text-gray-400 font-sans">
+                                        <div className="text-[10px] font-medium font-sans tabular-nums tracking-widest text-gray-400">
                                             {t.data_vencimento.split('-').reverse().join('/')}
                                         </div>
                                     </td>
                                     <td className="px-5 py-3">
                                         <div className="flex flex-wrap items-center gap-2 max-w-xl">
-                                            <div className="text-[11px] font-medium text-gray-300 group-hover:text-red-400/80 transition-colors uppercase leading-relaxed">
+                                            <div className="text-[11px] font-medium font-sans tabular-nums tracking-widest text-gray-300 group-hover:text-red-400/80 transition-colors uppercase leading-relaxed">
                                                 {t.descricao}
                                             </div>
                                             {statusAtivo === 'pendente' && (
@@ -230,7 +230,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                             {t.categoria.replace('_', ' ')}
                                         </div>
                                     </td>
-                                    <td className="px-5 py-3 text-right font-sans tracking-wider w-[130px]">
+                                    <td className="px-5 py-3 text-right font-sans tabular-nums tracking-widest w-[130px]">
                                         <div className={`text-[12px] font-medium ${statusAtivo === 'pendente' ? 'text-red-400/80' : 'text-green-400/80'}`}>
                                             R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </div>

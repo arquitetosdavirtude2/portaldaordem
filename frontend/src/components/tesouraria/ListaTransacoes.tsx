@@ -202,22 +202,22 @@ export default function ListaTransacoes({
                 <tbody className="divide-y divide-white/5">
                     {transacoesOrdenadas.map(t => (
                         <tr key={t.id} className="hover:bg-white/[0.03] transition-colors group">
-                            <td className="px-5 py-4 text-[10px] text-gray-400 font-mono">
+                            <td className="px-5 py-4 text-[10px] text-gray-400 font-sans tabular-nums tracking-widest">
                                 {t.data_vencimento ? t.data_vencimento.split('-').slice(0,2).reverse().join('/') : '-'}
                             </td>
-                            <td className="px-5 py-4 text-[11px] text-gray-300 whitespace-nowrap font-bold">
+                            <td className="px-5 py-4 text-[11px] text-gray-300 whitespace-nowrap font-medium font-sans tabular-nums tracking-widest">
                                 {(t.data_pagamento || t.data_vencimento)?.split('-').reverse().join('/') || '---'}
                             </td>
                             <td className="px-5 py-4">
-                                <div className="text-[11px] font-bold text-gray-200">{t.descricao}</div>
+                                <div className="text-[11px] font-medium font-sans tracking-widest text-gray-200">{t.descricao}</div>
                                 {t.pessoa_nome && (
-                                    <div className="text-[9px] text-yellow-500 uppercase tracking-tighter mt-0.5">Irmão: {t.pessoa_nome}</div>
+                                    <div className="text-[9px] text-yellow-500 uppercase tracking-wider font-sans mt-0.5">Irmão: {t.pessoa_nome}</div>
                                 )}
                             </td>
-                            <td className="px-5 py-4 text-[10px] uppercase tracking-wider text-gray-500 font-bold italic">
+                            <td className="px-5 py-4 text-[10px] uppercase tracking-widest text-gray-500 font-medium font-sans">
                                 {t.categoria}
                             </td>
-                            <td className={`px-5 py-4 text-xs font-bold whitespace-nowrap ${t.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'}`}>
+                            <td className={`px-5 py-4 text-xs font-medium tabular-nums ${t.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'}`}>
                                 {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             {podeEditar && (
