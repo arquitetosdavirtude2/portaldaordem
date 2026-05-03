@@ -297,9 +297,11 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
             caixa.saldo_atual += transacao.valor
         else:
             caixa.saldo_atual -= transacao.valor
-    elif dados.valor is not None:
+    
+    # Update core fields for both PAGO and PENDENTE
+    if dados.valor is not None:
          transacao.valor = dados.valor
-    elif dados.tipo is not None:
+    if dados.tipo is not None:
          transacao.tipo = dados.tipo
 
     if dados.caixa_id is not None:
