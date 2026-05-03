@@ -474,7 +474,6 @@ export default function FormCadastro({
                   <option value="Companheiro" className="bg-[#0a0a0a]">Companheiro</option>
                   <option value="Mestre" className="bg-[#0a0a0a]">Mestre</option>
                   <option value="Mestre Instalado" className="bg-[#0a0a0a]">Mestre Instalado</option>
-                  <option value="Candidato" className="bg-[#0a0a0a]">Candidato</option>
                 </>
               )}
             </select>

@@ -365,6 +365,11 @@ export default function ListaPessoas({
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-2">
                                                                 <span className={`text-[11px] font-bold ${pessoa.ativo === 0 ? 'text-red-500/50' : 'text-gray-200'}`}>{pessoa.nome}</span>
+                                                                {pessoa.tipo_pessoa === 'candidato' && (
+                                                                    <span className="text-[8px] text-orange-400 font-black uppercase tracking-tighter ml-1">
+                                                                        - CANDIDATO
+                                                                    </span>
+                                                                )}
                                                                 {pessoa.ativo === 0 && (
                                                                     <span className="text-[7px] text-red-500/50 font-bold uppercase tracking-tighter">
                                                                         Adormecido {pessoa.data_adormecimento ? `desde ${pessoa.data_adormecimento.split('-').reverse().join('/')}` : ''}
@@ -435,11 +440,10 @@ export default function ListaPessoas({
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <option value="Aprendiz">Aprendiz</option>
-                                                            <option value="Companheiro">Companheiro</option>
-                                                            <option value="Mestre">Mestre</option>
-                                                            <option value="Mestre Instalado">Mestre Instalado</option>
-                                                            <option value="Candidato">Candidato</option>
+                                                            <option value="Aprendiz" className="bg-[#0a0a0a]">Aprendiz</option>
+                                                            <option value="Companheiro" className="bg-[#0a0a0a]">Companheiro</option>
+                                                            <option value="Mestre" className="bg-[#0a0a0a]">Mestre</option>
+                                                            <option value="Mestre Instalado" className="bg-[#0a0a0a]">Mestre Instalado</option>
                                                         </>
                                                     )}
                                                 </select>
@@ -457,7 +461,7 @@ export default function ListaPessoas({
                                                     onClick={() => podeMudarStatus && actStartEdit(pessoa)}
                                                     title={podeEditar ? "Clique para alterar" : "Apenas leitura"}
                                                 >
-                                                    {pessoa.status === 'Candidato' || pessoa.tipo_pessoa === 'candidato' ? 'Candidato' : (pessoa.status || 'Aprendiz')}
+                                                    {pessoa.tipo_pessoa === 'candidato' ? '...' : (pessoa.status || 'Aprendiz')}
                                                 </span>
                                             )}
                                         </td>
