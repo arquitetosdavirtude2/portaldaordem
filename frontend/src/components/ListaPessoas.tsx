@@ -446,7 +446,6 @@ export default function ListaPessoas({
                                             ) : (
                                                 <span
                                                     className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
-                                                        pessoa.tipo_pessoa === 'candidato' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.1)]' :
                                                         pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                                         pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
                                                         pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
@@ -458,7 +457,7 @@ export default function ListaPessoas({
                                                     onClick={() => podeMudarStatus && actStartEdit(pessoa)}
                                                     title={podeEditar ? "Clique para alterar" : "Apenas leitura"}
                                                 >
-                                                    {pessoa.tipo_pessoa === 'candidato' ? 'Candidato' : pessoa.status}
+                                                    {pessoa.status === 'Candidato' || pessoa.tipo_pessoa === 'candidato' ? 'Candidato' : (pessoa.status || 'Aprendiz')}
                                                 </span>
                                             )}
                                         </td>

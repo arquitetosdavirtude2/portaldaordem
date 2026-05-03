@@ -319,11 +319,11 @@ export default function FormCadastro({
               <select
                 value={tipoPessoa}
                 onChange={(e) => setTipoPessoa(e.target.value)}
-                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-yellow-500 font-bold focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
+                className="w-full p-2 bg-[#0a0a0a] border border-white/10 rounded-lg text-yellow-500 font-bold focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
               >
-                <option value="obreiro">Irmão (Obreiro Ativo)</option>
-                <option value="candidato">Candidato / Profano</option>
-                <option value="adormecido">Adormecido</option>
+                <option value="obreiro" className="bg-[#0a0a0a]">Irmão (Obreiro Ativo)</option>
+                <option value="candidato" className="bg-[#0a0a0a]">Candidato / Profano</option>
+                <option value="adormecido" className="bg-[#0a0a0a]">Adormecido</option>
               </select>
               <p className="text-[8px] text-gray-500 mt-1 uppercase italic">* Candidatos não entram na contagem de Per Capita.</p>
             </div>
@@ -461,19 +461,20 @@ export default function FormCadastro({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
+              className="w-full p-2 bg-[#0a0a0a] border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
             >
               {isCandidato ? (
                 <>
-                  <option value="Profano">Profano</option>
-                  <option value="Candidato">Candidato</option>
+                  <option value="Profano" className="bg-[#0a0a0a]">Profano</option>
+                  <option value="Candidato" className="bg-[#0a0a0a]">Candidato</option>
                 </>
               ) : (
                 <>
-                  <option value="Aprendiz">Aprendiz</option>
-                  <option value="Companheiro">Companheiro</option>
-                  <option value="Mestre">Mestre</option>
-                  <option value="Mestre Instalado">Mestre Instalado</option>
+                  <option value="Aprendiz" className="bg-[#0a0a0a]">Aprendiz</option>
+                  <option value="Companheiro" className="bg-[#0a0a0a]">Companheiro</option>
+                  <option value="Mestre" className="bg-[#0a0a0a]">Mestre</option>
+                  <option value="Mestre Instalado" className="bg-[#0a0a0a]">Mestre Instalado</option>
+                  <option value="Candidato" className="bg-[#0a0a0a]">Candidato</option>
                 </>
               )}
             </select>
@@ -487,11 +488,11 @@ export default function FormCadastro({
               <select
                 value={cargoId}
                 onChange={(e) => setCargoId(Number(e.target.value))}
-                className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
+                className="w-full p-2 bg-[#0a0a0a] border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
               >
-                <option value={0}>Sem cargo</option>
+                <option value={0} className="bg-[#0a0a0a]">Sem cargo</option>
                 {cargos.map(c => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
+                  <option key={c.id} value={c.id} className="bg-[#0a0a0a]">{c.nome}</option>
                 ))}
               </select>
             </div>
