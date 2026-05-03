@@ -487,6 +487,16 @@ async def subir_extrato(
     from models import ExtratoMensal
     from datetime import datetime
     
+    @router.get("/debug/migrate")
+    def debug_migrate(db: Session = Depends(get_db)):
+        try:
+            from sqlalchemy import text
+            db.execute(text("ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS recorrencia VARCHAR(50) DEFAULT 'nenhuma' AFTER status"))
+            db.commit()
+            return {"status": "success", "message": "Coluna recorrencia verificada/adicionada"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     # Salvar arquivo
     ext = os.path.splitext(arquivo.filename)[1]
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -1308,3 +1318,13 @@ def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_t
     """
     
     return Response(content=html, media_type='text/html')
+
+@router.get("/debug/migrate")
+def debug_migrate(db_treasury: Session = Depends(get_treasury_db)):
+    try:
+        from sqlalchemy import text
+        db_treasury.execute(text("ALTER TABLE transacoes ADD COLUMN recorrencia VARCHAR(50) DEFAULT 'nenhuma' AFTER status"))
+        db_treasury.commit()
+        return {"status": "success", "message": "Coluna recorrencia verificada/adicionada"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
