@@ -952,7 +952,8 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 "saude_financeira": saude,
                 "meses_atraso": detalhes_meses,
                 "joia_quitada_externa": joia_quitada_externa,
-                "isencao_inicio": isencao_inicio
+                "isencao_inicio": isencao_inicio,
+                "tipo_pessoa": p_tipo
             })
 
         return res
