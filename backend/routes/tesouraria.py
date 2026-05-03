@@ -386,12 +386,28 @@ def listar_transacoes(
             query += " AND status = :status"
             params["status"] = status
             
-        if mes:
+        if mes and ano:
+            if status == 'pendente':
+                # Lógica de atrasados: mostra tudo o que venceu até o fim do mês selecionado
+                import calendar
+                from datetime import date
+                _, last_day = calendar.monthrange(ano, mes)
+                data_limite = date(ano, mes, last_day).strftime("%Y-%m-%d")
+                query += " AND t.data_vencimento <= :data_limite"
+                params["data_limite"] = data_limite
+            else:
+                # Filtro estrito por mês para pagos ou geral
+                mes_str = f"-{mes:02d}-"
+                ano_str = f"{ano}-"
+                query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :mes"
+                query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
+                params["mes"] = f"%{mes_str}%"
+                params["ano"] = f"{ano_str}%"
+        elif mes:
             mes_str = f"-{mes:02d}-"
             query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :mes"
             params["mes"] = f"%{mes_str}%"
-            
-        if ano:
+        elif ano:
             ano_str = f"{ano}-"
             query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
             params["ano"] = f"{ano_str}%"
