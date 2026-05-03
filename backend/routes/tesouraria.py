@@ -304,45 +304,50 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
     if dados.tipo is not None:
          transacao.tipo = dados.tipo
 
-    if dados.caixa_id is not None:
-        transacao.caixa_id = dados.caixa_id
-    if dados.pessoa_id is not None:
-        transacao.pessoa_id = dados.pessoa_id if dados.pessoa_id != 0 else None
-    if dados.descricao is not None:
-        transacao.descricao = dados.descricao
-    if dados.notas is not None:
-        transacao.notas = dados.notas
-    if dados.data_vencimento is not None:
-        transacao.data_vencimento = dados.data_vencimento
-    if dados.categoria is not None:
-        transacao.categoria = dados.categoria
-    if dados.anexo_url is not None:
-        transacao.anexo_url = dados.anexo_url
+    try:
+        if dados.caixa_id is not None:
+            transacao.caixa_id = dados.caixa_id
+        if dados.pessoa_id is not None:
+            transacao.pessoa_id = dados.pessoa_id if dados.pessoa_id != 0 else None
+        if dados.descricao is not None:
+            transacao.descricao = dados.descricao
+        if dados.notas is not None:
+            transacao.notas = dados.notas
+        if dados.data_vencimento is not None:
+            transacao.data_vencimento = dados.data_vencimento
+        if dados.categoria is not None:
+            transacao.categoria = dados.categoria
+        if dados.anexo_url is not None:
+            transacao.anexo_url = dados.anexo_url
 
-    if dados.data_pagamento is not None:
-        transacao.data_pagamento = dados.data_pagamento
+        if dados.data_pagamento is not None:
+            transacao.data_pagamento = dados.data_pagamento
 
-    if dados.recorrencia is not None:
-        transacao.recorrencia = dados.recorrencia
+        if dados.recorrencia is not None:
+            transacao.recorrencia = dados.recorrencia
+            
+        db_treasury.commit()
+        db_treasury.refresh(transacao)
         
-    db_treasury.commit()
-    db_treasury.refresh(transacao)
-    
-    return TransacaoResponse(
-        id=transacao.id,
-        caixa_id=transacao.caixa_id,
-        pessoa_id=transacao.pessoa_id,
-        tipo=transacao.tipo,
-        categoria=transacao.categoria,
-        valor=transacao.valor,
-        recorrencia=transacao.recorrencia,
-        data_vencimento=transacao.data_vencimento,
-        data_pagamento=transacao.data_pagamento,
-        descricao=transacao.descricao,
-        notas=transacao.notas,
-        anexo_url=transacao.anexo_url,
-        status=transacao.status
-    )
+        return TransacaoResponse(
+            id=transacao.id,
+            caixa_id=transacao.caixa_id,
+            pessoa_id=transacao.pessoa_id,
+            tipo=transacao.tipo,
+            categoria=transacao.categoria,
+            valor=transacao.valor,
+            recorrencia=transacao.recorrencia,
+            data_vencimento=transacao.data_vencimento,
+            data_pagamento=transacao.data_pagamento,
+            descricao=transacao.descricao,
+            notas=transacao.notas,
+            anexo_url=transacao.anexo_url,
+            status=transacao.status
+        )
+    except Exception as e:
+        db_treasury.rollback()
+        print(f"ERRO AO ATUALIZAR TRANSACAO: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/transacoes/{transacao_id}")
 def excluir_transacao(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
