@@ -72,6 +72,7 @@ class TransacaoResponse(BaseModel):
     notas: Optional[str] = None
     anexo_url: Optional[str] = None
     status: Optional[str] = 'pendente'
+    recorrencia: Optional[str] = "nenhuma"
     pessoa_nome: Optional[str] = "N/A"
     caixa_nome: Optional[str] = "Geral"
     
@@ -90,6 +91,7 @@ class TransacaoUpdate(BaseModel):
     tipo: Optional[str] = None
     categoria: Optional[str] = None
     data_vencimento: Optional[str] = None
+    recorrencia: Optional[str] = None
 
 class IrmaoFlagsUpdate(BaseModel):
     joia_quitada_externa: Optional[bool] = None
@@ -317,6 +319,9 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
 
     if dados.data_pagamento is not None:
         transacao.data_pagamento = dados.data_pagamento
+
+    if dados.recorrencia is not None:
+        transacao.recorrencia = dados.recorrencia
         
     db_treasury.commit()
     db_treasury.refresh(transacao)
@@ -328,6 +333,7 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         tipo=transacao.tipo,
         categoria=transacao.categoria,
         valor=transacao.valor,
+        recorrencia=transacao.recorrencia,
         data_vencimento=transacao.data_vencimento,
         data_pagamento=transacao.data_pagamento,
         descricao=transacao.descricao,
@@ -397,12 +403,15 @@ def listar_transacoes(
                 params["data_limite"] = data_limite
             else:
                 # Filtro estrito por mês para pagos ou geral
-                mes_str = f"-{mes:02d}-"
-                ano_str = f"{ano}-"
-                query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :mes"
-                query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
-                params["mes"] = f"%{mes_str}%"
-                params["ano"] = f"{ano_str}%"
+                # Se for PAGO, priorizamos data_pagamento. Se não tiver (pendente), usamos data_vencimento.
+                query += """ AND (
+                    CASE 
+                        WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') 
+                        THEN data_pagamento 
+                        ELSE data_vencimento 
+                    END
+                ) LIKE :ano_mes """
+                params["ano_mes"] = f"{ano}-{mes:02d}%"
         elif mes:
             mes_str = f"-{mes:02d}-"
             query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :mes"
