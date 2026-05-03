@@ -425,7 +425,7 @@ export default function ListaPessoas({
                                                 <select
                                                     defaultValue={pessoa.status}
                                                     onChange={(e) => handleMudarStatus(pessoa, e.target.value)}
-                                                    className="bg-gray-800 border border-yellow-500/50 text-yellow-100 text-xs rounded p-1 w-full"
+                                                    className="bg-[#0a0a0a] border border-white/10 text-gray-200 text-xs rounded p-1 w-full focus:border-yellow-500/50 outline-none"
                                                 >
                                                     {isCandidato ? (
                                                         <>
@@ -446,8 +446,9 @@ export default function ListaPessoas({
                                                     className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
                                                         pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                                         pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                                        (pessoa.status === 'Mestre' || pessoa.status === 'Mestre Instalado') ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                        pessoa.status === 'Candidato' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                                                        pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                        pessoa.status === 'Mestre Instalado' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.1)]' :
+                                                        pessoa.status === 'Candidato' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                                                         pessoa.status === 'Profano' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                                                         'bg-gray-500/10 text-gray-400 border-gray-500/20'
                                                     } ${podeMudarStatus ? 'cursor-pointer hover:bg-opacity-40' : 'cursor-default opacity-80'}`}
