@@ -1020,8 +1020,11 @@ def relatorio_inadimplentes(
     writer.writerow(['Obreiro', 'WhatsApp', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
     
     for d in inadimplentes:
-        # Pega a lista pré-calculada e limpa de meses pendentes
+        # Adiciona um espaço no início para forçar o Excel a tratar como TEXTO (evita virar data e alinhar à direita)
         meses_aberto = ", ".join(d.get('meses_lista_aberto', []))
+        if meses_aberto:
+            meses_aberto = " " + meses_aberto
+            
         status_txt = "Ativo" if d['ativo'] == 1 else f"Adormecido ({d['data_adormecimento']})"
         
         writer.writerow([
