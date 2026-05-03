@@ -88,7 +88,7 @@ class Pessoa(Base):
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")
     cargo_rel = relationship("Cargo", back_populates="pessoas")
-    indicador = relationship("Pessoa", remote_side=[id])
+    indicador = relationship("Indicador", back_populates="indicados")
 
 class MensalidadeExcecao(Base):
     __tablename__ = "mensalidade_excecoes"
