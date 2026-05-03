@@ -90,7 +90,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
 
     const [form, setForm] = useState({
         caixa_id: transacaoInicial?.caixa_id || caixas[0]?.id || 1,
-        categoria: transacaoInicial?.categoria || 'per_capita',
+        categoria: transacaoInicial?.categoria || 'outro_saida',
         valor: transacaoInicial?.valor?.toString() || '',
         data_vencimento: transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0],
         descricao: transacaoInicial?.descricao || '',
