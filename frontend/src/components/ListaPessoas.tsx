@@ -439,6 +439,7 @@ export default function ListaPessoas({
                                                             <option value="Companheiro">Companheiro</option>
                                                             <option value="Mestre">Mestre</option>
                                                             <option value="Mestre Instalado">Mestre Instalado</option>
+                                                            <option value="Candidato">Candidato</option>
                                                         </>
                                                     )}
                                                 </select>
@@ -450,7 +451,8 @@ export default function ListaPessoas({
                                                         pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
                                                         pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
                                                         pessoa.status === 'Mestre Instalado' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.1)]' :
-                                                        pessoa.status === 'Candidato' || pessoa.status === 'Profano' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40' :
+                                                        pessoa.status === 'Candidato' || pessoa.tipo_pessoa === 'candidato' ? 'bg-orange-500/20 text-orange-400 border-orange-500/40 shadow-[0_0_10px_rgba(249,115,22,0.1)]' :
+                                                        pessoa.status === 'Profano' ? 'bg-gray-500/10 text-gray-400 border-gray-500/20' :
                                                         'bg-gray-500/10 text-gray-400 border-gray-500/20'
                                                     } ${podeMudarStatus ? 'cursor-pointer hover:bg-opacity-40' : 'cursor-default opacity-80'}`}
                                                     onClick={() => podeMudarStatus && actStartEdit(pessoa)}
