@@ -21,8 +21,8 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
 
     const categoriasSaida = [
         { id: 'aluguel', label: 'Aluguel / Condomínio' },
-        { id: 'utilidades', label: 'Água / Luz / Internet' },
-        { id: 'taxas_gomb', label: 'Per Capita / Taxas GOMB' },
+        { id: 'per_capita', label: 'Per Capita (Mensal)' },
+        { id: 'taxas_gomb', label: 'Taxas GOMB (Eventuais)' },
         { id: 'agape', label: 'Ágape / Refeições' },
         { id: 'manutencao', label: 'Manutenção de Templo' },
         { id: 'insumos', label: 'Velas / Incenso / Materiais' },
@@ -71,7 +71,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
 
     const [form, setForm] = useState({
         caixa_id: transacaoInicial?.caixa_id || caixas[0]?.id || 1,
-        categoria: transacaoInicial?.categoria || 'utilidades',
+        categoria: transacaoInicial?.categoria || 'per_capita',
         valor: transacaoInicial?.valor?.toString() || '',
         data_vencimento: transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0],
         descricao: transacaoInicial?.descricao || '',
@@ -80,6 +80,34 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         mes_ref: new Date().toISOString().slice(0, 7), // YYYY-MM
         recorrencia: 'nenhuma'
     });
+
+    const [calculandoPerCapita, setCalculandoPerCapita] = useState(false);
+    const [infoPerCapita, setInfoPerCapita] = useState<{ contagem: number, total: number } | null>(null);
+
+    // Efeito para cálculo automático de Per Capita
+    useEffect(() => {
+        if (form.categoria === 'per_capita' && !isEdit) {
+            const calcular = async () => {
+                setCalculandoPerCapita(true);
+                try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+                    const res = await fetch(`${apiUrl}/api/tesouraria/contagem-per-capita/${acesso.loja_id}?mes_ref=${form.mes_ref}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setInfoPerCapita(data);
+                        setForm(prev => ({ ...prev, valor: data.total.toString(), descricao: `Per Capita - ${data.contagem} Obreiros` }));
+                    }
+                } catch (error) {
+                    console.error('Erro ao calcular per capita:', error);
+                } finally {
+                    setCalculandoPerCapita(false);
+                }
+            };
+            calcular();
+        } else {
+            setInfoPerCapita(null);
+        }
+    }, [form.categoria, form.mes_ref, acesso.loja_id]);
 
     const [isMounted, setIsMounted] = useState(false);
     useEffect(() => { setIsMounted(true); }, []);
@@ -167,11 +195,22 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                     type="number" 
                                     step="0.01"
                                     required
+                                    readOnly={form.categoria === 'per_capita'}
                                     value={form.valor}
                                     onChange={e => setForm({...form, valor: e.target.value})}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-9 text-xs text-gray-200 outline-none focus:border-red-500/50 font-bold"
+                                    className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-9 text-xs text-gray-200 outline-none focus:border-red-500/50 font-bold ${form.categoria === 'per_capita' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 />
+                                {calculandoPerCapita && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                        <div className="w-3 h-3 border border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
+                                    </div>
+                                )}
                             </div>
+                            {infoPerCapita && (
+                                <p className="text-[9px] text-yellow-500/70 font-bold uppercase tracking-widest mt-1 px-1">
+                                    Cálculo Automático: {infoPerCapita.contagem} Obreiros x R$ 50,00 (VM Isento)
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-1.5">
