@@ -171,7 +171,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
     const handleDownloadRelatorio = async () => {
         setBaixandoRelatorio(true);
         try {
-            const url = `${apiUrl}/api/tesouraria/relatorio/inadimplentes/${acesso.loja_id}`;
+            const url = `${apiUrl}/api/tesouraria/relatorio/inadimplentes/${acesso.loja_id}?incluir_adormecidos=${mostrarAdormecidos}`;
             const res = await fetch(url);
             if (res.ok) {
                 const blob = await res.blob();
