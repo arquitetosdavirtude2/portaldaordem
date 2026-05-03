@@ -863,6 +863,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                                 "justificativa": None, "status": "pendente"
                             })
                         
+                        # Incremento seguro do mês
                         if curr.month == 12: curr = date(curr.year + 1, 1, 1)
                         else: curr = date(curr.year, curr.month + 1, 1)
                         
@@ -1017,8 +1018,13 @@ def relatorio_inadimplentes(
     writer.writerow(['Obreiro', 'WhatsApp', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
     
     for d in inadimplentes:
-        # FILTRO CRÍTICO: No CSV de Meses em Aberto, mostrar APENAS o que está realmente pendente
-        meses_lista = [m['label'] for m in d['meses_atraso'] if m.get('status') == 'pendente']
+        # FILTRO ROBUSTO: Pega qualquer item que não esteja pago/isento/justificado
+        meses_lista = []
+        for m in d.get('meses_atraso', []):
+            st = str(m.get('status', '')).lower()
+            if st == 'pendente':
+                meses_lista.append(m.get('label', ''))
+        
         meses_aberto = ", ".join(meses_lista)
         status_txt = "Ativo" if d['ativo'] == 1 else f"Adormecido ({d['data_adormecimento']})"
         
