@@ -138,58 +138,64 @@ HIERARQUIA = {
 @router.get("/loja/{loja_id}")
 def listar_pessoas_loja(loja_id: int, db: Session = Depends(get_db)):
     """Lista pessoas de uma loja específica, incluindo o Venerável Mestre da tabela de usuários."""
-    # 1. Pessoas cadastradas na loja
-    pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
-    
-    # 2. Usuário vinculado como VM da loja
-    vms_usuarios = db.query(Usuario).filter(Usuario.loja_id == loja_id, Usuario.role == 'loja').all()
-    
-    # Verificamos se esses usuários já estão na lista de pessoas (pelo login)
-    logins_na_lista = {p.login for p in pessoas if p.login}
-    
-    lista_final = list(pessoas)
-    
-    for vm in vms_usuarios:
-        if vm.login not in logins_na_lista:
-            # Criamos uma representação de "Pessoa" para o VM que só existe como Usuário
-            # Isso evita ter que cadastrar ele duas vezes
-            vm_virtual = Pessoa(
-                id=-(vm.id), # ID negativo para não conflitar, mas indicar que é virtual
-                nome=vm.nome,
-                loja_id=loja_id,
-                status="Mestre Instalado",
-                login=vm.login,
-                ativo=1,
-                tipo_pessoa="obreiro",
-                cargo_id=1 # Assume 1 as VM ID or look it up
-            )
-            # Tenta buscar o nome real do cargo se possível
-            lista_final.append(vm_virtual)
-
-    # Ordenação Customizada
-    def get_peso(p):
-        # Se for virtual, damos o peso do VM
-        if p.id < 0: return 1
+    try:
+        # 1. Pessoas cadastradas na loja
+        pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
         
-        cargo = (p.cargo_rel.nome if p.cargo_rel else "").lower()
-        for key, peso in HIERARQUIA.items():
-            if key in cargo:
-                return peso
-        return 999 
-
-    # Ordena por peso da hierarquia e depois por nome
-    pessoas_ordenadas = sorted(lista_final, key=lambda x: (get_peso(x), x.nome))
-    
-    # Construímos a resposta tratando os virtuais
-    res = []
-    for p in pessoas_ordenadas:
-        item = _build_response(p)
-        if p.id < 0:
-            item.cargo_nome = "Venerável Mestre"
-            item.id = p.id # Mantém o ID negativo para o front saber
-        res.append(item)
+        # 2. Usuário vinculado como VM da loja
+        vms_usuarios = db.query(Usuario).filter(Usuario.loja_id == loja_id, Usuario.role == 'loja').all()
         
-    return res
+        # Verificamos se esses usuários já estão na lista de pessoas (pelo login)
+        logins_na_lista = {p.login for p in pessoas if p.login}
+        
+        lista_final = list(pessoas)
+        
+        for vm in vms_usuarios:
+            if vm.login not in logins_na_lista:
+                # Criamos um objeto Pessoa para o VM que só existe como Usuário
+                # Usamos um objeto que simula o modelo para passar pelo _build_response
+                vm_virtual = Pessoa(
+                    id=-(vm.id), 
+                    nome=vm.nome,
+                    loja_id=loja_id,
+                    status="Mestre Instalado",
+                    login=vm.login,
+                    ativo=1,
+                    tipo_pessoa="obreiro",
+                    telefone="",
+                    data_admissao=None,
+                    tipo_ingresso="transferencia"
+                )
+                lista_final.append(vm_virtual)
+
+        # Ordenação Customizada
+        def get_peso(p):
+            if p.id < 0: return 1
+            cargo = (p.cargo_rel.nome if p.cargo_rel else "").lower()
+            for key, peso in HIERARQUIA.items():
+                if key in cargo:
+                    return peso
+            return 999 
+
+        pessoas_ordenadas = sorted(lista_final, key=lambda x: (get_peso(x), x.nome))
+        
+        res = []
+        for p in pessoas_ordenadas:
+            try:
+                item = _build_response(p)
+                # Ajuste manual para o VM virtual
+                if p.id < 0:
+                    item.cargo_nome = "Venerável Mestre"
+                    item.id = p.id
+                res.append(item)
+            except Exception as e:
+                print(f"Erro ao buildar resposta para {p.id}: {e}")
+                continue
+                
+        return res
+    except Exception as e:
+        print(f"Erro crítico na listagem da loja {loja_id}: {e}")
+        return []
 
 
 @router.get("/{estado_sigla}", response_model=List[PessoaResponse])
