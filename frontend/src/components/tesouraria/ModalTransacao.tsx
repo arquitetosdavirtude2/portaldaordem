@@ -34,6 +34,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         saldo_inicial: '0' 
     });
     const [carregandoCaixa, setCarregandoCaixa] = useState(false);
+    const [mostrarAdormecidos, setMostrarAdormecidos] = useState(false);
     
     // Lógica de inicialização de datas
     const initialPagamento = transacaoInicial?.data_pagamento || transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0];
@@ -424,14 +425,31 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     {/* Linha 3: Irmão e Valor */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Obreiro Relacionado</label>
+                            <div className="flex justify-between items-center ml-1">
+                                <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Obreiro Relacionado</label>
+                                <label className="flex items-center gap-1.5 cursor-pointer group">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={mostrarAdormecidos}
+                                        onChange={(e) => setMostrarAdormecidos(e.target.checked)}
+                                        className="w-3.5 h-3.5 rounded border-white/10 bg-black/40 text-yellow-500 focus:ring-0 focus:ring-offset-0"
+                                    />
+                                    <span className="text-[9px] font-black text-gray-500 group-hover:text-gray-400 uppercase tracking-tighter transition-colors">Ver Adormecidos</span>
+                                </label>
+                            </div>
                             <select 
                                 value={form.pessoa_id}
                                 onChange={e => setForm({...form, pessoa_id: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
+                                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
-                                <option value="">Nenhum</option>
-                                {pessoas.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                                <option value="" className="bg-[#0a0a0a]">Nenhum</option>
+                                {pessoas
+                                  .filter(p => mostrarAdormecidos || p.ativo === 1)
+                                  .map(p => (
+                                    <option key={p.id} value={p.id} className="bg-[#0a0a0a]">
+                                        {p.nome} {p.ativo === 0 ? '(ADORMECIDO)' : ''}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div className="space-y-2">
