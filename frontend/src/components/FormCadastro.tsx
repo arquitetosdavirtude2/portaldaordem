@@ -470,6 +470,7 @@ export default function FormCadastro({
                 </>
               ) : (
                 <>
+                  <option value="" className="bg-[#0a0a0a]">Sem Grau</option>
                   <option value="Aprendiz" className="bg-[#0a0a0a]">Aprendiz</option>
                   <option value="Companheiro" className="bg-[#0a0a0a]">Companheiro</option>
                   <option value="Mestre" className="bg-[#0a0a0a]">Mestre</option>

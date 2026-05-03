@@ -449,7 +449,7 @@ export default function ListaPessoas({
                                             ) : (
                                                 <>
                                                     {pessoa.tipo_pessoa === 'candidato' ? (
-                                                        <div className="text-center w-full text-gray-600 tracking-tighter">---</div>
+                                                        <div className="flex justify-center items-center w-full text-gray-600 tracking-tighter text-center">---</div>
                                                     ) : (
                                                         <span className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
                                                             pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :

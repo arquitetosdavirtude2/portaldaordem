@@ -14,6 +14,8 @@ interface Pessoa {
     id: number;
     nome: string;
     ativo: number;
+    status?: string;
+    cargo_nome?: string | null;
 }
 
 export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onCaixaAdicionado, transacaoInicial }: {
@@ -36,6 +38,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
     });
     const [carregandoCaixa, setCarregandoCaixa] = useState(false);
     const [mostrarAdormecidos, setMostrarAdormecidos] = useState(false);
+    const [buscaPessoa, setBuscaPessoa] = useState('');
     
     // Lógica de inicialização de datas
     const initialPagamento = transacaoInicial?.data_pagamento || transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0];
@@ -438,20 +441,44 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     <span className="text-[9px] font-black text-gray-500 group-hover:text-gray-400 uppercase tracking-tighter transition-colors">Ver Adormecidos</span>
                                 </label>
                             </div>
-                            <select 
-                                value={form.pessoa_id}
-                                onChange={e => setForm({...form, pessoa_id: e.target.value})}
-                                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
-                            >
-                                <option value="" className="bg-[#0a0a0a]">Nenhum</option>
-                                {pessoas
-                                  .filter(p => mostrarAdormecidos || p.ativo === 1)
-                                  .map(p => (
-                                    <option key={p.id} value={p.id} className="bg-[#0a0a0a]">
-                                        {p.nome} {p.ativo === 0 ? '(ADORMECIDO)' : ''}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="relative group/select">
+                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                    <span className="text-gray-500 text-xs">🔍</span>
+                                </div>
+                                <input 
+                                    type="text"
+                                    autoFocus
+                                    placeholder="Buscar obreiro por nome ou cargo..."
+                                    className="w-full bg-black/40 border border-white/10 rounded-t-xl p-4 pl-10 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
+                                    onChange={(e) => setBuscaPessoa(e.target.value)}
+                                    value={buscaPessoa}
+                                    onFocus={(e) => {
+                                        // Garante que o dropdown abra visualmente ou apenas facilite a busca
+                                    }}
+                                />
+                                <select 
+                                    value={form.pessoa_id}
+                                    onChange={e => setForm({...form, pessoa_id: e.target.value})}
+                                    className="w-full bg-[#0a0a0a] border-x border-b border-white/10 rounded-b-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
+                                    size={5} // Mostra 5 itens para simular um dropdown aberto com busca
+                                >
+                                    <option value="" className="bg-[#0a0a0a] py-2">Nenhum</option>
+                                    {pessoas
+                                      .filter(p => (mostrarAdormecidos || p.ativo === 1))
+                                      .filter(p => {
+                                          if (!buscaPessoa) return true;
+                                          const b = buscaPessoa.toLowerCase();
+                                          return p.nome.toLowerCase().includes(b) || 
+                                                 (p.cargo_nome || '').toLowerCase().includes(b) ||
+                                                 (p.status || '').toLowerCase().includes(b);
+                                      })
+                                      .map(p => (
+                                        <option key={p.id} value={p.id} className="bg-[#0a0a0a] py-2 px-4 border-b border-white/5 last:border-0">
+                                            {p.nome} ({p.cargo_nome || p.status || 'Aprendiz'}) {p.ativo === 0 ? '- ADORMECIDO' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Valor Total (R$)</label>
