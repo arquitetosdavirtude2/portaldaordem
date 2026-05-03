@@ -356,14 +356,14 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <div className="flex items-center gap-2">
+                                            <span className={`text-[11px] font-bold group-hover:text-yellow-500 transition-colors ${isAdormecido ? 'text-red-500/60' : 'text-gray-100'}`}>
+                                                {irmao.nome}
+                                            </span>
                                             {irmao.tipo_pessoa === 'candidato' && (
                                                 <span className="text-[8px] text-orange-400 font-black uppercase tracking-tighter">
                                                     CANDIDATO
                                                 </span>
                                             )}
-                                            <span className={`text-[11px] font-bold group-hover:text-yellow-500 transition-colors ${isAdormecido ? 'text-red-500/60' : 'text-gray-100'}`}>
-                                                {irmao.nome}
-                                            </span>
                                         </div>
                                         {isAdormecido && (
                                             <div className="text-[8px] text-red-500/60 font-bold uppercase tracking-tighter mt-0.5">
@@ -384,7 +384,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                                 <span className="text-[10px] text-gray-300 font-sans">{formatarData(irmao.data_admissao)}</span>
                                                 <div className="flex items-center gap-1">
                                                     <span className="text-[9px] text-gray-500 font-sans">
-                                                        ({Math.max(0, irmao.meses_cobrados)} {irmao.meses_cobrados <= 1 ? 'mês' : 'meses'})
+                                                        ({Math.max(0, irmao.meses_cobrados)} {Math.max(0, irmao.meses_cobrados) === 1 ? 'mês' : 'meses'})
                                                     </span>
                                                 </div>
                                             </div>
