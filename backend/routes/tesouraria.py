@@ -638,7 +638,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
         query_pessoas = text("""
             SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso, p.data_iniciacao,
-                   p.joia_quitada_externa, p.isencao_inicio, p.login, p.status
+                   p.joia_quitada_externa, p.isencao_inicio, p.login, p.status, p.tipo_pessoa
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
@@ -661,6 +661,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             joia_quitada_externa = bool(p[8])
             isencao_inicio = bool(p[9])
             p_status = (p[11] or "").strip()
+            p_tipo = (p[12] or "obreiro").strip()
 
             # Prioriza data_iniciacao (campo do cadastro) como única fonte da verdade
             data_ref_calc = data_iniciacao if data_iniciacao else data_adm_original
@@ -783,18 +784,11 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                     alvo_limite = date(alvo.year, alvo.month, 1)
 
                     # NOVO: Candidatos não pagam mensalidade até serem iniciados
-                    is_candidato_status = (p_status == 'Candidato')
-                    data_iniciacao_futura = False
-                    if data_iniciacao:
-                        try:
-                            d_ini = datetime.strptime(str(data_iniciacao).strip(), "%Y-%m-%d").date()
-                            if d_ini > hoje:
-                                data_iniciacao_futura = True
-                        except:
-                            pass
+                    # Usamos o tipo de cadastro (tipo_pessoa) como fonte da verdade
+                    is_candidato_tipo = (p_tipo == 'candidato')
                     
-                    if is_candidato_status or data_iniciacao_futura:
-                        # Pula o cálculo de mensalidades (loop não será executado ou alvo_limite será atingido)
+                    if is_candidato_tipo:
+                        # Pula o cálculo de mensalidades (loop não será executado)
                         data_adm = date(3000, 1, 1) # Data no futuro distante
                     
                     # Regra de início de cobrança: Michel quer que SEMPRE cobre o mês de iniciação por default
