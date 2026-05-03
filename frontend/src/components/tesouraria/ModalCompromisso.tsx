@@ -226,7 +226,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 )}
                             </div>
                             {infoPerCapita && (
-                                <p className="text-[9px] text-yellow-500/70 font-bold uppercase tracking-widest mt-1 px-1">
+                                <p className="text-[9px] text-yellow-500/70 font-medium uppercase tracking-widest font-sans mt-1 px-1">
                                     Cálculo Automático: {infoPerCapita.contagem} Obreiros x R$ 50,00 (VM Isento)
                                 </p>
                             )}
@@ -248,7 +248,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                         <button
                             type="submit"
                             disabled={enviando}
-                            className="w-full py-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white font-bold uppercase tracking-[0.2em] text-[11px] rounded-xl transition-all shadow-xl active:scale-95 h-14"
+                            className="w-full py-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white font-medium uppercase tracking-widest font-sans text-[11px] rounded-xl transition-all shadow-xl active:scale-95 h-14"
                         >
                             {enviando ? 'Gravando no Banco...' : isEdit ? 'Salvar Alterações' : 'Lançar Compromisso'}
                         </button>

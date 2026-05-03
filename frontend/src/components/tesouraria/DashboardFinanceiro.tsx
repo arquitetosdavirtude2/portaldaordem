@@ -96,7 +96,7 @@ export default function DashboardFinanceiro({
             {/* Action Bar - Highly Visible */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/20 shadow-inner">
                 <div className="flex flex-col">
-                    <h2 className="text-xl font-medium text-yellow-500 uppercase tracking-tight font-serif italic">
+                    <h2 className="text-xl font-medium text-yellow-500 uppercase tracking-wider font-sans">
                         Fluxo de Caixa
                     </h2>
                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans font-medium">Controle e Lançamentos Financeiros</p>

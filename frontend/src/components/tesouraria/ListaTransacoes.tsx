@@ -160,13 +160,13 @@ export default function ListaTransacoes({
     }, [caixaId, mes, ano, statusFiltro, busca]);
 
     if (carregando) {
-        return <div className="text-center py-10 text-gray-400 text-[10px] uppercase tracking-widest font-bold font-sans">Atualizando histórico...</div>;
+        return <div className="text-center py-10 text-gray-400 text-[10px] uppercase tracking-widest font-medium font-sans">Atualizando histórico...</div>;
     }
 
     if (transacoes.length === 0) {
         return (
             <div className="text-center py-20 bg-white/5 rounded-xl border border-dashed border-white/10">
-                <p className="text-gray-500 font-serif italic text-sm">Nenhum lançamento encontrado para este caixa.</p>
+                <p className="text-gray-500 font-sans text-xs uppercase tracking-widest font-medium">Nenhum lançamento encontrado para este caixa.</p>
             </div>
         );
     }
@@ -180,7 +180,7 @@ export default function ListaTransacoes({
             <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm">
             <table className="w-full text-left border-collapse font-sans">
                 <thead>
-                    <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-bold">
+                    <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-medium">
                         <th className={thClass} onClick={() => handleSort('data_vencimento')}>
                             Referência <SortIcon active={sortKey === 'data_vencimento'} dir={sortDir} />
                         </th>

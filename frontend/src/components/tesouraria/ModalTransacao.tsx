@@ -438,7 +438,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                         onChange={(e) => setMostrarAdormecidos(e.target.checked)}
                                         className="w-3.5 h-3.5 rounded border-white/10 bg-black/40 text-yellow-500 focus:ring-0 focus:ring-offset-0"
                                     />
-                                    <span className="text-[9px] font-medium text-gray-500 group-hover:text-gray-400 uppercase tracking-tighter transition-colors">Ver Adormecidos</span>
+                                    <span className="text-[9px] font-medium text-gray-500 group-hover:text-gray-400 uppercase tracking-wider transition-colors">Ver Adormecidos</span>
                                 </label>
                             </div>
                             <div className="relative group/select">

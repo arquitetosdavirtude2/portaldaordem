@@ -94,7 +94,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
     };
 
     if (carregando) {
-        return <div className="text-center py-10 text-gray-500 uppercase text-[10px] tracking-widest font-bold animate-pulse">Consultando obrigações...</div>;
+        return <div className="text-center py-10 text-gray-500 uppercase text-[10px] tracking-widest font-medium animate-pulse">Consultando obrigações...</div>;
     }
 
     const totalPendente = pendentes.reduce((acc, t) => acc + t.valor, 0);
@@ -104,7 +104,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                        <h2 className={`text-lg font-bold uppercase tracking-tight ${statusAtivo === 'pendente' ? 'text-red-400' : 'text-green-400'}`}>
+                        <h2 className={`text-lg font-medium uppercase tracking-widest font-sans ${statusAtivo === 'pendente' ? 'text-red-400' : 'text-green-400'}`}>
                             {statusAtivo === 'pendente' ? 'Compromissos Pendentes' : 'Histórico de Pagamentos'}
                         </h2>
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
@@ -114,26 +114,26 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
 
                     {/* Toggle Status & Month Filter */}
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 w-fit">
+                        <div className="flex h-9 bg-white/5 p-1 rounded-lg border border-white/10 w-fit">
                             <button 
                                 onClick={() => setStatusAtivo('pendente')}
-                                className={`px-4 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all ${statusAtivo === 'pendente' ? 'bg-red-500/20 text-red-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                className={`px-4 h-full rounded-md text-[9px] font-medium uppercase tracking-widest font-sans transition-all ${statusAtivo === 'pendente' ? 'bg-red-500/20 text-red-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                             >
                                 Pendentes
                             </button>
                             <button 
                                 onClick={() => setStatusAtivo('pago')}
-                                className={`px-4 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all ${statusAtivo === 'pago' ? 'bg-green-500/20 text-green-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                className={`px-4 h-full rounded-md text-[9px] font-medium uppercase tracking-widest font-sans transition-all ${statusAtivo === 'pago' ? 'bg-green-500/20 text-green-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                             >
                                 Pagos (Histórico)
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-2 bg-white/5 p-1 rounded-lg border border-white/10">
+                        <div className="flex items-center h-9 gap-2 bg-white/5 p-1 rounded-lg border border-white/10">
                             <select 
                                 value={mesAtivo}
                                 onChange={(e) => setMesAtivo(Number(e.target.value))}
-                                className="bg-transparent text-[10px] font-bold uppercase text-gray-300 outline-none px-2 cursor-pointer"
+                                className="bg-transparent h-full text-[10px] font-medium uppercase text-gray-300 outline-none px-2 cursor-pointer"
                             >
                                 {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
                                     <option key={m} value={i + 1} className="bg-[#0a1536]">{m}</option>
@@ -142,7 +142,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                             <select 
                                 value={anoAtivo}
                                 onChange={(e) => setAnoAtivo(Number(e.target.value))}
-                                className="bg-transparent text-[10px] font-bold uppercase text-gray-300 outline-none px-2 cursor-pointer border-l border-white/10"
+                                className="bg-transparent h-full text-[10px] font-medium uppercase text-gray-300 outline-none px-2 cursor-pointer border-l border-white/10"
                             >
                                 {[2024, 2025, 2026].map(a => (
                                     <option key={a} value={a} className="bg-[#0a1536]">{a}</option>
@@ -157,7 +157,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                         <div className="text-[9px] font-medium text-gray-500 uppercase tracking-widest mb-1">
                             {statusAtivo === 'pendente' ? 'Total a Regularizar' : 'Total Pago no Período'}
                         </div>
-                        <div className={`text-xl font-medium tracking-tighter ${statusAtivo === 'pendente' ? 'text-red-500' : 'text-green-500'}`}>
+                        <div className={`text-xl font-medium tracking-wider ${statusAtivo === 'pendente' ? 'text-red-500' : 'text-green-500'}`}>
                             R$ {totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -166,13 +166,13 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                         <button 
                             onClick={handleDownloadRelatorio}
                             disabled={baixandoRelatorio}
-                            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 rounded-xl text-[10px] font-medium uppercase tracking-widest transition-all"
                         >
                             {baixandoRelatorio ? '...' : '📄 Relatório'}
                         </button>
                         <button 
                             onClick={onNovoLancamento}
-                            className="px-6 py-2.5 bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(239,68,68,0.05)]"
+                            className="px-6 py-2.5 bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-500/30 rounded-xl text-[10px] font-medium uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(239,68,68,0.05)]"
                         >
                             + Lançar Compromisso
                         </button>
@@ -193,7 +193,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                     <tbody className="divide-y divide-white/5">
                         {pendentes.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="px-5 py-20 text-center text-gray-600 text-[11px] italic uppercase tracking-wider">
+                                <td colSpan={4} className="px-5 py-20 text-center text-gray-600 text-[11px] italic uppercase tracking-widest">
                                     Sem compromissos pendentes.
                                 </td>
                             </tr>
@@ -217,7 +217,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                                     const vMes = parseInt(v[1]);
                                                     if (vAno < anoAtivo || (vAno === anoAtivo && vMes < mesAtivo)) {
                                                         return (
-                                                            <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-400/80 text-[7px] font-medium rounded border border-orange-500/20 uppercase tracking-tighter">
+                                                            <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-400/80 text-[7px] font-medium rounded border border-orange-500/20 uppercase tracking-widerer">
                                                                 Atrasado
                                                             </span>
                                                         );
@@ -230,7 +230,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                             {t.categoria.replace('_', ' ')}
                                         </div>
                                     </td>
-                                    <td className="px-5 py-3 text-right font-sans tracking-tight w-[130px]">
+                                    <td className="px-5 py-3 text-right font-sans tracking-wider w-[130px]">
                                         <div className={`text-[12px] font-medium ${statusAtivo === 'pendente' ? 'text-red-400/80' : 'text-green-400/80'}`}>
                                             R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </div>
