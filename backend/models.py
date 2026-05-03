@@ -78,7 +78,7 @@ class Pessoa(Base):
     ativo = Column(Integer, default=1)  # 1=ativo, 0=adormecido
     data_adormecimento = Column(String(20), nullable=True)  # YYYY-MM-DD
     tipo_ingresso = Column(String(30), default="iniciacao") # 'iniciacao', 'transferencia'
-    indicador_id = Column(Integer, ForeignKey("indicadores.id"), nullable=True)
+    indicador_id = Column(Integer, ForeignKey("pessoas.id"), nullable=True)
     tipo_pessoa = Column(String(50), default="obreiro") # 'obreiro', 'candidato', 'adormecido'
     motivo_adormecimento = Column(String(500), nullable=True)
     data_iniciacao = Column(String(20), nullable=True)
@@ -88,7 +88,7 @@ class Pessoa(Base):
     estado = relationship("Estado", back_populates="pessoas")
     loja = relationship("Loja", back_populates="pessoas")
     cargo_rel = relationship("Cargo", back_populates="pessoas")
-    indicador = relationship("Indicador", back_populates="indicados")
+    indicador = relationship("Pessoa", remote_side=[id])
 
 class MensalidadeExcecao(Base):
     __tablename__ = "mensalidade_excecoes"
