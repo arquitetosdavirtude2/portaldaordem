@@ -360,7 +360,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                                 {irmao.nome}
                                             </span>
                                             {irmao.tipo_pessoa === 'candidato' && (
-                                                <span className="text-[8px] text-orange-400 font-black uppercase tracking-tighter">
+                                                <span className="text-[8px] text-orange-400 font-bold uppercase tracking-tighter">
                                                     CANDIDATO
                                                 </span>
                                             )}
@@ -395,7 +395,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                             {irmao.tipo_ingresso === 'transferencia' ? (
                                                 <div className="flex flex-col items-center">
                                                     <span className="text-gray-500 italic">—</span>
-                                                    <span className="text-[7px] text-blue-500/50 uppercase font-black tracking-tighter mt-0.5">Transferido</span>
+                                                    <span className="text-[7px] text-blue-500/50 uppercase font-bold tracking-tighter mt-0.5">Transferido</span>
                                                 </div>
                                             ) : (
                                                 <div className="inline-flex items-center gap-1">
@@ -426,7 +426,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
                                         <button
                                             onClick={() => setIrmaoSelecionado(irmao)}
-                                            className="px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded text-[9px] font-black uppercase tracking-widest hover:bg-blue-600/30 transition-all shadow-sm"
+                                            className="px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded text-[9px] font-bold uppercase tracking-widest hover:bg-blue-600/30 transition-all shadow-sm"
                                         >
                                             DETALHES
                                         </button>
@@ -446,7 +446,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                             );
                         })}
                     </tbody>
-                    <tfoot className="border-t border-white/10 bg-white/5 font-sans font-black text-[10px] uppercase tracking-widest">
+                    <tfoot className="border-t border-white/10 bg-white/5 font-sans font-bold text-[10px] uppercase tracking-widest">
                         <tr>
                             <td colSpan={3} className="px-5 py-4 text-right text-gray-500">Totais:</td>
                             {(categoriaFiltro === 'todas' || categoriaFiltro === 'joia') && (
@@ -489,7 +489,7 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 {irmaoSelecionado.meses_devidos > 0 && (
                                     <>
                                         <span className="ml-3 text-gray-600">·</span>
-                                        <span className="ml-3 text-red-400 font-black font-sans">{irmaoSelecionado.meses_devidos} meses devidos</span>
+                                        <span className="ml-3 text-red-400 font-bold font-sans">{irmaoSelecionado.meses_devidos} meses devidos</span>
                                     </>
                                 )}
                             </div>

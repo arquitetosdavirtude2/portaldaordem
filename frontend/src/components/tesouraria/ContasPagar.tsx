@@ -128,10 +128,10 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                 
                 <div className="flex items-center gap-6">
                     <div className="text-right">
-                        <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">
+                        <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                             {statusAtivo === 'pendente' ? 'Total a Regularizar' : 'Total Pago no Período'}
                         </div>
-                        <div className={`text-2xl font-black tracking-tighter ${statusAtivo === 'pendente' ? 'text-red-500' : 'text-green-500'}`}>
+                        <div className={`text-2xl font-bold tracking-tighter ${statusAtivo === 'pendente' ? 'text-red-500' : 'text-green-500'}`}>
                             R$ {totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -158,10 +158,10 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
-                            <th className="px-5 py-4">Vencimento</th>
+                            <th className="px-5 py-4 w-[120px]">Vencimento</th>
                             <th className="px-5 py-4">Descrição</th>
-                            <th className="px-5 py-4 text-center">Valor</th>
-                            <th className="px-5 py-4 text-right pr-8">Ação</th>
+                            <th className="px-5 py-4 text-center w-[150px]">Valor</th>
+                            <th className="px-5 py-4 text-right pr-8 w-[180px]">Ação</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -174,21 +174,21 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                         ) : (
                             pendentes.map(t => (
                                 <tr key={t.id} className="hover:bg-red-500/5 transition-colors group">
-                                    <td className="px-5 py-4">
+                                    <td className="px-5 py-4 w-[120px]">
                                         <div className="text-[12px] font-bold text-gray-300">
                                             {t.data_vencimento.split('-').reverse().join('/')}
                                         </div>
                                     </td>
                                     <td className="px-5 py-4">
-                                        <div className="text-[12px] font-bold text-gray-100 group-hover:text-red-400 transition-colors uppercase">
+                                        <div className="text-[12px] font-bold text-gray-100 group-hover:text-red-400 transition-colors uppercase whitespace-nowrap">
                                             {t.descricao}
                                         </div>
                                         <div className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
                                             {t.categoria}
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4 text-center font-sans tracking-tight">
-                                        <div className="text-[14px] font-black text-red-400">
+                                    <td className="px-5 py-4 text-center font-sans tracking-tight w-[150px]">
+                                        <div className="text-[14px] font-bold text-red-400">
                                             R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </div>
                                     </td>

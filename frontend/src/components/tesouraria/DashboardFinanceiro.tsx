@@ -103,7 +103,7 @@ export default function DashboardFinanceiro({
                 </div>
                 <button
                     onClick={onNovoLancamento}
-                    className="w-full md:w-auto px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-black uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.4)] active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full md:w-auto px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-bold uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.4)] active:scale-95 flex items-center justify-center gap-2"
                 >
                     <span className="text-lg leading-none">+</span>
                     ADICIONAR NOVO LANÇAMENTO
@@ -122,7 +122,7 @@ export default function DashboardFinanceiro({
                     </div>
                     <div className="relative z-10">
                         <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Saldo Consolidado</div>
-                        <div className="text-2xl font-black text-white tracking-tight">
+                        <div className="text-2xl font-bold text-white tracking-tight">
                             R$ {resumo?.saldo_geral?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                         </div>
                     </div>
@@ -140,7 +140,7 @@ export default function DashboardFinanceiro({
                         <span className="text-4xl text-green-500">🕊️</span>
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Benevolência</div>
-                    <div className="text-2xl font-black text-green-400 tracking-tight">
+                    <div className="text-2xl font-bold text-green-400 tracking-tight">
                         R$ {resumo?.saldo_benevolencia?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
                     <div className="mt-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest">
@@ -160,7 +160,7 @@ export default function DashboardFinanceiro({
                         <span className="text-4xl text-blue-500">💎</span>
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Joias e Mensalidades</div>
-                    <div className="text-2xl font-black text-blue-400 tracking-tight">
+                    <div className="text-2xl font-bold text-blue-400 tracking-tight">
                         R$ {resumo?.saldo_joias_mensalidade?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
                     <div className="mt-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest">
@@ -174,7 +174,7 @@ export default function DashboardFinanceiro({
                         <span className="text-4xl text-orange-500">⏳</span>
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Recebimentos Pendentes</div>
-                    <div className="text-2xl font-black text-orange-400 tracking-tight">
+                    <div className="text-2xl font-bold text-orange-400 tracking-tight">
                         R$ {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
                 </div>
@@ -183,7 +183,7 @@ export default function DashboardFinanceiro({
             {/* Filters Bar */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10 shadow-lg items-end">
                 <div className="md:col-span-3 flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Período</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] ml-1">Período</label>
                     <div className="flex items-center gap-2">
                         <select 
                             value={mesAtivo}
@@ -211,7 +211,7 @@ export default function DashboardFinanceiro({
                 </div>
 
                 <div className="md:col-span-5 flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Pesquisar</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] ml-1">Pesquisar</label>
                     <div className="relative group">
                         <input 
                             type="text"
@@ -225,11 +225,11 @@ export default function DashboardFinanceiro({
                 </div>
 
                 <div className="md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] ml-1">Anexos</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] ml-1">Anexos</label>
                     <button 
                         onClick={() => setIsModalExtratosOpen(true)}
                         disabled={caixaAtivo === 0 || mesAtivo === 0}
-                        className="w-full bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="w-full bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 rounded-xl px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                         title={caixaAtivo === 0 ? "Selecione um caixa específico para ver os anexos" : "Ver extratos bancários do mês"}
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,8 +241,8 @@ export default function DashboardFinanceiro({
 
                 <div className="md:col-span-2 flex flex-col gap-1.5 items-end justify-end pb-1">
                     <div className="text-right">
-                        <div className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em] mb-1">Saldo Período</div>
-                        <div className={`text-sm font-black ${saldoPeriodo >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] mb-1">Saldo Período</div>
+                        <div className={`text-sm font-bold ${saldoPeriodo >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             R$ {saldoPeriodo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
