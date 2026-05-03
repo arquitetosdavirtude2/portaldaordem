@@ -802,107 +802,70 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                         inicio_cobranca = date(data_adm.year, data_adm.month, 1)
                     
                     curr = inicio_cobranca
-
-                    # ALVO LIMITE: Se o irmão estiver adormecido, o limite de cobrança é a data de adormecimento
                     alvo_limite = date(alvo.year, alvo.month, 1)
+                    
                     if data_adormecimento and not ativo:
                         try:
-                            # Tenta converter data_adormecimento (pode vir como string ou date)
                             d_ador_str = str(data_adormecimento).strip()
                             try:
                                 data_adorm = datetime.strptime(d_ador_str, "%Y-%m-%d").date()
                             except:
                                 data_adorm = datetime.strptime(d_ador_str, "%d/%m/%Y").date()
-                            
                             alvo_limite = min(alvo_limite, date(data_adorm.year, data_adorm.month, 1))
-                        except:
-                            pass
+                        except: pass
 
-                    # Contagem total de meses que deveriam ser pagos (respeitando o limite de adormecimento)
-                    total_meses_devidos_ate_hoje = 0
-                    temp_curr = curr
-                    while temp_curr <= alvo_limite:
-                        total_meses_devidos_ate_hoje += 1
-                        if temp_curr.month == 12:
-                            temp_curr = date(temp_curr.year + 1, 1, 1)
-                        else:
-                            temp_curr = date(temp_curr.year, temp_curr.month + 1, 1)
-
-                    # NOVO: Se o mês de iniciação for isento, subtraímos do contador global para que o valor final bata
-                    if isencao_inicio and total_meses_devidos_ate_hoje > 0:
-                        total_meses_devidos_ate_hoje -= 1
-
-                    inicio_cobranca_str = inicio_cobranca.strftime("%Y-%m")
+                    # LOGICA DE CRÉDITO: Abater meses do valor total pago
+                    saldo_mensalidade = m_paga_real_dinheiro
+                    valor_mensalidade = 250.0 # Valor padrão
+                    m_pagas_count_calc = 0
+                    
                     while curr <= alvo_limite:
                         mes_ref_str = curr.strftime("%Y-%m")
-                        is_mes_isento_inicio = (mes_ref_str == inicio_cobranca_str and isencao_inicio)
+                        label_mes = f"{MESES_PT[curr.month]}/{curr.year}"
+                        is_mes_isento_inicio = (mes_ref_str == inicio_cobranca.strftime("%Y-%m") and isencao_inicio)
                         
-                        # Verifica se existe algum lançamento de mensalidade pago neste mês
-                        count_pago = db_treasury.execute(text("""
-                            SELECT COUNT(id)
-                            FROM transacoes 
-                            WHERE pessoa_id = :pid 
-                              AND categoria = 'mensalidade' 
-                              AND status = 'pago'
-                              AND data_vencimento LIKE :ref
-                        """), {"pid": pid, "ref": f"{mes_ref_str}%"}).fetchone()[0]
-
                         # 1. Verifica se é exceção manual (Histórico)
                         if mes_ref_str in excecoes_map:
                             exc = excecoes_map[mes_ref_str]
                             detalhes_meses.append({
-                                "mes_ref": mes_ref_str,
-                                "label": f"{MESES_PT[curr.month]}/{curr.year}",
-                                "ignorado": True,
-                                "excecao_id": exc["id"],
-                                "justificativa": exc["justificativa"],
-                                "status": "justificado"
+                                "mes_ref": mes_ref_str, "label": label_mes,
+                                "ignorado": True, "excecao_id": exc["id"],
+                                "justificativa": exc["justificativa"], "status": "justificado"
                             })
-                            m_paga_total += 250.0
-                            m_pagas_count += 1
+                            m_paga_justificada += valor_mensalidade
                         
-                        # 2. Verifica se está pago (Dinheiro Real)
-                        elif count_pago > 0:
-                            detalhes_meses.append({
-                                "mes_ref": mes_ref_str,
-                                "label": f"{MESES_PT[curr.month]}/{curr.year}",
-                                "ignorado": False,
-                                "excecao_id": None,
-                                "justificativa": "Pago (Lançamento no sistema)",
-                                "status": "pago"
-                            })
-                            # O valor pago já foi somado no m_paga_real_dinheiro lá em cima
-
-                        # 3. Verifica se é isento pelo novo flag global
+                        # 2. Verifica se é isento pelo flag global
                         elif is_mes_isento_inicio:
                             detalhes_meses.append({
-                                "mes_ref": mes_ref_str,
-                                "label": f"{MESES_PT[curr.month]}/{curr.year}",
-                                "ignorado": True,
-                                "excecao_id": None,
-                                "justificativa": "Isento (Mês de Iniciação)",
-                                "status": "isento"
+                                "mes_ref": mes_ref_str, "label": label_mes,
+                                "ignorado": True, "excecao_id": None,
+                                "justificativa": "Isento (Mês de Iniciação)", "status": "isento"
                             })
-                            # NÃO soma no valor pago, apenas limpa a dívida
 
+                        # 3. Verifica se o saldo cobre este mês
+                        elif saldo_mensalidade >= valor_mensalidade:
+                            detalhes_meses.append({
+                                "mes_ref": mes_ref_str, "label": label_mes,
+                                "ignorado": False, "excecao_id": None,
+                                "justificativa": "Pago (Saldo de Mensalidades)", "status": "pago"
+                            })
+                            saldo_mensalidade -= valor_mensalidade
+                            m_pagas_count_calc += 1
+                        
                         # 4. Caso contrário, está PENDENTE
                         else:
-                            if curr <= date(hoje.year, hoje.month, 1):
-                                meses_devidos += 1
-                                m_pend += 250.0
-                                detalhes_meses.append({
-                                    "mes_ref": mes_ref_str,
-                                    "label": f"{MESES_PT[curr.month]}/{curr.year}",
-                                    "ignorado": False,
-                                    "excecao_id": None,
-                                    "justificativa": None,
-                                    "status": "pendente"
-                                })
+                            meses_devidos += 1
+                            m_pend += valor_mensalidade
+                            detalhes_meses.append({
+                                "mes_ref": mes_ref_str, "label": label_mes,
+                                "ignorado": False, "excecao_id": None,
+                                "justificativa": None, "status": "pendente"
+                            })
                         
-                        if curr.month == 12:
-                            curr = date(curr.year + 1, 1, 1)
-                        else:
-                            curr = date(curr.year, curr.month + 1, 1)
+                        if curr.month == 12: curr = date(curr.year + 1, 1, 1)
+                        else: curr = date(curr.year, curr.month + 1, 1)
+                        
+                    total_meses_devidos_ate_hoje = meses_devidos + m_pagas_count_calc
                 except Exception as ex:
                     print(f"ERRO no cálculo de mensalidade para pessoa {pid}: {ex}")
 
@@ -918,7 +881,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             if m_pend > 0:
                 tem_atraso_real = False
                 for d in detalhes_meses:
-                    if d.get("ignorado"): continue # Pula os verdes
+                    if d.get("ignorado") or d.get("status") == "pago": continue # Pula os verdes e pagos
                     if d["mes_ref"] == "JOIA": continue # Pula a Joia, pois não é data
                     d_mes = datetime.strptime(d["mes_ref"], "%Y-%m").date()
                     if d_mes < date(hoje.year, hoje.month, 1) or (d_mes == date(hoje.year, hoje.month, 1) and hoje.day > 10):
