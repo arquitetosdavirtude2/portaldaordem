@@ -803,6 +803,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                         inicio_cobranca = date(data_adm.year, data_adm.month, 1)
                     
                     curr = inicio_cobranca
+                    # Alvo limite agora é sempre o primeiro dia do mês alvo (Maio/2026 neste caso)
                     alvo_limite = date(alvo.year, alvo.month, 1)
                     
                     if data_adormecimento and not ativo:
@@ -1006,6 +1007,7 @@ def relatorio_inadimplentes(
 ):
     """Gera um relatório CSV consolidado de irmãos inadimplentes."""
     # Obter dados financeiros respeitando o filtro de adormecidos do usuário
+    # Importante: O parâmetro incluir_adormecidos deve ser respeitado aqui
     dados = _calcular_financeiro_irmaos_logic(loja_id, None, None, incluir_adormecidos, db_main, db_treasury)
     
     # Filtrar apenas inadimplentes (Atrasados ou Pendentes)
