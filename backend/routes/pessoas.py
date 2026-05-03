@@ -85,7 +85,7 @@ def _build_response(p: Pessoa) -> PessoaResponse:
         id=p.id,
         nome=p.nome,
         telefone=p.telefone or "",
-        status=(p.status or "Aprendiz").strip(),
+        status=(p.status if p.status is not None else "Aprendiz").strip(),
         cargo_id=p.cargo_id,
         cargo_nome=p.cargo_rel.nome if p.cargo_rel else None,
         loja_id=p.loja_id,
