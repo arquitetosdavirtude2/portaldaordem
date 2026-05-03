@@ -446,7 +446,8 @@ export default function ListaPessoas({
                                                         </>
                                                     )}
                                                 </select>
-                                                >
+                                            ) : (
+                                                <>
                                                     {pessoa.tipo_pessoa === 'candidato' ? (
                                                         <div className="text-center w-full text-gray-600 tracking-tighter">---</div>
                                                     ) : (
@@ -460,7 +461,7 @@ export default function ListaPessoas({
                                                             { (pessoa.status === 'Candidato' || pessoa.status === 'Profano') ? 'Aprendiz' : (pessoa.status || 'Aprendiz') }
                                                         </span>
                                                     )}
-                                                </span>
+                                                </>
                                             )}
                                         </td>
 
