@@ -36,31 +36,50 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         setEnviando(true);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            
-            const formData = new FormData();
-            formData.append('caixa_id', form.caixa_id.toString());
-            formData.append('tipo', 'saida');
-            formData.append('categoria', form.categoria);
-            formData.append('valor', form.valor);
-            formData.append('data_vencimento', form.data_vencimento);
-            // Append recurrence and ref month to description or handle specifically if backend updated
-            const descFinal = `${form.descricao} ${form.recorrencia !== 'nenhuma' ? `(${form.recorrencia})` : ''} - Ref: ${form.mes_ref}`;
-            formData.append('descricao', descFinal);
-            formData.append('notas', form.notas);
-            formData.append('status', form.status);
-            formData.append('usuario_id', (acesso.id || acesso.usuario_id || 1).toString());
-
             const url = isEdit 
                 ? `${apiUrl}/api/tesouraria/transacoes/${transacaoInicial.id}`
                 : `${apiUrl}/api/tesouraria/transacoes/`;
-            
-            const res = await fetch(url, {
-                method: isEdit ? 'PATCH' : 'POST',
-                body: formData // Form data fixed
-            });
 
-            if (res.ok) {
-                onSuccess();
+            if (isEdit) {
+                // PATCH expects JSON
+                const payload = {
+                    caixa_id: form.caixa_id,
+                    tipo: 'saida',
+                    categoria: form.categoria,
+                    valor: parseFloat(form.valor),
+                    data_vencimento: form.data_vencimento,
+                    descricao: form.descricao,
+                    notas: form.notas,
+                    status: form.status,
+                    recorrencia: form.recorrencia
+                };
+                const res = await fetch(url, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) onSuccess();
+            } else {
+                // POST expects Form (because it might have files in other modes)
+                const formData = new FormData();
+                formData.append('caixa_id', form.caixa_id.toString());
+                formData.append('tipo', 'saida');
+                formData.append('categoria', form.categoria);
+                formData.append('valor', form.valor);
+                formData.append('data_vencimento', form.data_vencimento);
+                formData.append('recorrencia', form.recorrencia);
+                
+                const descFinal = `${form.descricao} ${form.recorrencia !== 'nenhuma' ? `(${form.recorrencia})` : ''} - Ref: ${form.mes_ref}`;
+                formData.append('descricao', descFinal);
+                formData.append('notas', form.notas);
+                formData.append('status', form.status);
+                formData.append('usuario_id', (acesso.id || acesso.usuario_id || 1).toString());
+
+                const res = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) onSuccess();
             }
         } catch (error) {
             console.error('Erro ao salvar compromisso:', error);
@@ -78,7 +97,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         notas: transacaoInicial?.notas || '',
         status: transacaoInicial?.status || 'pendente',
         mes_ref: new Date().toISOString().slice(0, 7), // YYYY-MM
-        recorrencia: 'nenhuma'
+        recorrencia: transacaoInicial?.recorrencia || 'nenhuma'
     });
 
     const [calculandoPerCapita, setCalculandoPerCapita] = useState(false);
