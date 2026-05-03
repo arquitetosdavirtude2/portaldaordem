@@ -154,10 +154,10 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                 
                 <div className="flex items-center gap-6">
                     <div className="text-right">
-                        <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                        <div className="text-[9px] font-medium text-gray-500 uppercase tracking-widest mb-1">
                             {statusAtivo === 'pendente' ? 'Total a Regularizar' : 'Total Pago no Período'}
                         </div>
-                        <div className={`text-2xl font-bold tracking-tighter ${statusAtivo === 'pendente' ? 'text-red-500' : 'text-green-500'}`}>
+                        <div className={`text-xl font-medium tracking-tighter ${statusAtivo === 'pendente' ? 'text-red-500' : 'text-green-500'}`}>
                             R$ {totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -183,11 +183,11 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
             <div className="bg-black/20 rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-sans font-bold text-[9px]">
-                            <th className="px-5 py-4 w-[120px]">Vencimento</th>
-                            <th className="px-5 py-4">Descrição</th>
-                            <th className="px-5 py-4 text-center w-[150px]">Valor</th>
-                            <th className="px-5 py-4 text-right pr-8 w-[180px]">Ação</th>
+                        <tr className="border-b border-white/5 bg-white/5 uppercase tracking-widest text-gray-500 font-sans font-medium text-[8px]">
+                            <th className="px-5 py-3 w-[110px]">Vencimento</th>
+                            <th className="px-5 py-3">Descrição</th>
+                            <th className="px-5 py-3 text-right w-[130px]">Valor</th>
+                            <th className="px-5 py-3 text-right pr-8 w-[160px]">Ação</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -199,15 +199,15 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                             </tr>
                         ) : (
                             pendentes.map(t => (
-                                <tr key={t.id} className="hover:bg-red-500/5 transition-colors group">
-                                    <td className="px-5 py-4 w-[120px]">
-                                        <div className="text-[12px] font-bold text-gray-300">
+                                <tr key={t.id} className="hover:bg-red-500/[0.02] transition-colors group">
+                                    <td className="px-5 py-3 w-[110px]">
+                                        <div className="text-[10px] font-medium text-gray-400 font-sans">
                                             {t.data_vencimento.split('-').reverse().join('/')}
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-[12px] font-bold text-gray-100 group-hover:text-red-400 transition-colors uppercase whitespace-nowrap">
+                                    <td className="px-5 py-3">
+                                        <div className="flex flex-wrap items-center gap-2 max-w-xl">
+                                            <div className="text-[11px] font-medium text-gray-300 group-hover:text-red-400/80 transition-colors uppercase leading-relaxed">
                                                 {t.descricao}
                                             </div>
                                             {statusAtivo === 'pendente' && (
@@ -217,7 +217,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                                     const vMes = parseInt(v[1]);
                                                     if (vAno < anoAtivo || (vAno === anoAtivo && vMes < mesAtivo)) {
                                                         return (
-                                                            <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[7px] font-bold rounded-full border border-orange-500/30 uppercase tracking-tighter">
+                                                            <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-400/80 text-[7px] font-medium rounded border border-orange-500/20 uppercase tracking-tighter">
                                                                 Atrasado
                                                             </span>
                                                         );
@@ -226,36 +226,36 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                                 })()
                                             )}
                                         </div>
-                                        <div className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
-                                            {t.categoria}
+                                        <div className="text-[8px] text-gray-600 font-medium uppercase tracking-widest mt-0.5">
+                                            {t.categoria.replace('_', ' ')}
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4 text-center font-sans tracking-tight w-[150px]">
-                                        <div className="text-[14px] font-bold text-red-400">
+                                    <td className="px-5 py-3 text-right font-sans tracking-tight w-[130px]">
+                                        <div className={`text-[12px] font-medium ${statusAtivo === 'pendente' ? 'text-red-400/80' : 'text-green-400/80'}`}>
                                             R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4 text-right pr-5">
-                                        <div className="flex items-center justify-end gap-2">
+                                    <td className="px-5 py-3 text-right pr-5 w-[160px]">
+                                        <div className="flex items-center justify-end gap-1.5">
                                             {statusAtivo === 'pendente' ? (
                                                 <>
                                                     <button 
                                                         onClick={() => onEdit(t)}
-                                                        className="p-2 bg-white/5 hover:bg-white/10 text-gray-400 border border-white/10 rounded-lg text-[10px] transition-all"
-                                                        title="Editar conta (útil para valores variáveis)"
+                                                        className="p-1.5 bg-white/5 hover:bg-white/10 text-gray-500 border border-white/5 rounded transition-all"
+                                                        title="Editar"
                                                     >
-                                                        ✏️
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                     </button>
                                                     <button 
                                                         onClick={() => handlePagar(t)}
-                                                        className="px-4 py-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                                                        className="px-3 py-1.5 bg-red-900/10 hover:bg-red-900/20 text-red-500/80 border border-red-500/10 rounded text-[8px] font-medium uppercase tracking-widest transition-all"
                                                     >
-                                                        EFETUAR PAGAMENTO
+                                                        PAGAR
                                                     </button>
                                                 </>
                                             ) : (
-                                                <div className="px-3 py-1 bg-green-500/10 text-green-500 text-[8px] font-black border border-green-500/20 rounded-full uppercase tracking-widest">
-                                                    Pago em {t.status === 'pago' ? 'Check' : 'N/A'}
+                                                <div className="px-2 py-0.5 bg-green-500/5 text-green-500/60 text-[7px] font-medium border border-green-500/10 rounded uppercase tracking-widest">
+                                                    Liquidado
                                                 </div>
                                             )}
                                         </div>

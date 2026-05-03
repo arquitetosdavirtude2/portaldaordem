@@ -300,7 +300,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 <div className="px-6 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className={`w-2.5 h-2.5 rounded-full ${isEdit ? 'bg-blue-500' : 'bg-yellow-500'} animate-pulse`}></div>
-                        <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">
+                        <h3 className="text-sm font-medium text-white uppercase tracking-[0.2em]">
                             {isEdit ? 'Editar Movimentação' : 'Novo Lançamento'}
                         </h3>
                     </div>
@@ -317,12 +317,12 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
                             <div className="flex justify-between items-center ml-1">
-                                <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Conta de Origem/Destino</label>
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Conta de Origem/Destino</label>
                                 {!isEdit && (
                                     <button 
                                         type="button"
                                         onClick={() => setMostrarNovoCaixa(!mostrarNovoCaixa)}
-                                        className="text-[9px] uppercase font-black text-yellow-500 hover:text-yellow-400 transition-colors"
+                                        className="text-[9px] uppercase font-medium text-yellow-500 hover:text-yellow-400 transition-colors"
                                     >
                                         {mostrarNovoCaixa ? 'Voltar' : '+ Nova Conta'}
                                     </button>
@@ -366,7 +366,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                         type="button"
                                         onClick={handleCriarCaixa}
                                         disabled={carregandoCaixa}
-                                        className="w-full py-3 bg-yellow-500 text-black text-[10px] font-black uppercase rounded-lg hover:bg-yellow-400 transition-all"
+                                        className="w-full py-3 bg-yellow-500 text-black text-[10px] font-medium uppercase rounded-lg hover:bg-yellow-400 transition-all"
                                     >
                                         {carregandoCaixa ? 'Cadastrando...' : 'Confirmar Cadastro'}
                                     </button>
@@ -374,19 +374,19 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             )}
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Tipo de Operação</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Tipo de Operação</label>
                             <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
                                 <button 
                                     type="button"
                                     onClick={() => setForm({...form, tipo: 'entrada'})}
-                                    className={`flex-1 py-3 rounded-lg text-[10px] uppercase font-black transition-all ${form.tipo === 'entrada' ? 'bg-green-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                    className={`flex-1 py-3 rounded-lg text-[10px] uppercase font-medium transition-all ${form.tipo === 'entrada' ? 'bg-green-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                                 >
                                     Entrada (+)
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setForm({...form, tipo: 'saida'})}
-                                    className={`flex-1 py-3 rounded-lg text-[10px] uppercase font-black transition-all ${form.tipo === 'saida' ? 'bg-red-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                    className={`flex-1 py-3 rounded-lg text-[10px] uppercase font-medium transition-all ${form.tipo === 'saida' ? 'bg-red-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                                 >
                                     Saída (-)
                                 </button>
@@ -397,7 +397,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     {/* Linha 2: Categoria e Subcategoria */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Grupo</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Grupo</label>
                             <select 
                                 value={form.grupo}
                                 onChange={e => {
@@ -413,7 +413,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Categoria</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Categoria</label>
                             <select 
                                 value={form.categoria}
                                 onChange={e => setForm({...form, categoria: e.target.value})}
@@ -430,7 +430,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
                             <div className="flex justify-between items-center ml-1">
-                                <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Obreiro Relacionado</label>
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Obreiro Relacionado</label>
                                 <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <input 
                                         type="checkbox" 
@@ -438,7 +438,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                         onChange={(e) => setMostrarAdormecidos(e.target.checked)}
                                         className="w-3.5 h-3.5 rounded border-white/10 bg-black/40 text-yellow-500 focus:ring-0 focus:ring-offset-0"
                                     />
-                                    <span className="text-[9px] font-black text-gray-500 group-hover:text-gray-400 uppercase tracking-tighter transition-colors">Ver Adormecidos</span>
+                                    <span className="text-[9px] font-medium text-gray-500 group-hover:text-gray-400 uppercase tracking-tighter transition-colors">Ver Adormecidos</span>
                                 </label>
                             </div>
                             <div className="relative group/select">
@@ -481,14 +481,14 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Valor Total (R$)</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Valor Total (R$)</label>
                             <input 
                                 type="number" 
                                 step="0.01"
                                 required
                                 value={form.valor}
                                 onChange={e => setForm({...form, valor: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white font-black outline-none focus:border-yellow-500/50 transition-all"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
                                 placeholder="0,00"
                             />
                         </div>
@@ -498,7 +498,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {(form.categoria === 'mensalidade' || form.categoria === 'joia') ? (
                             <div className="space-y-2 animate-in slide-in-from-top-2">
-                                <label className="text-[10px] uppercase font-black text-yellow-500 tracking-widest ml-1 flex items-center gap-2">
+                                <label className="text-[10px] uppercase font-medium text-yellow-500 tracking-widest ml-1 flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
                                     Mês de Referência
                                 </label>
@@ -506,12 +506,12 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     type="month"
                                     value={mesReferencia}
                                     onChange={e => setMesReferencia(e.target.value)}
-                                    className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 color-scheme-dark transition-all font-bold"
+                                    className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 color-scheme-dark transition-all font-medium"
                                 />
                             </div>
                         ) : null}
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Data Efetiva do Pagamento</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Data Efetiva do Pagamento</label>
                             <input 
                                 type="date"
                                 required
@@ -524,7 +524,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
 
                     {/* Linha 5: Descrição */}
                     <div className="space-y-2">
-                        <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Descrição do Lançamento</label>
+                        <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Descrição do Lançamento</label>
                         <input 
                             type="text"
                             required
@@ -537,7 +537,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
 
                     {/* Linha 6: Notas */}
                     <div className="space-y-2">
-                        <label className="text-[10px] uppercase font-black text-gray-500 tracking-widest ml-1">Observações Internas</label>
+                        <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Observações Internas</label>
                         <textarea 
                             rows={3}
                             value={form.notas}
@@ -548,7 +548,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     </div>
 
                     {erro && (
-                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] uppercase font-black tracking-widest text-center animate-pulse">
+                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] uppercase font-medium tracking-widest text-center animate-pulse">
                             {erro}
                         </div>
                     )}
@@ -559,14 +559,14 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     <button 
                         type="button" 
                         onClick={onClose}
-                        className="flex-1 py-4 text-[10px] uppercase font-black text-gray-500 hover:bg-white/5 rounded-xl transition-all tracking-widest"
+                        className="flex-1 py-4 text-[10px] uppercase font-medium text-gray-500 hover:bg-white/5 rounded-xl transition-all tracking-widest"
                     >
                         Cancelar
                     </button>
                     <button 
                         onClick={handleSubmit}
                         disabled={enviando}
-                        className={`flex-[2] py-4 rounded-xl text-[11px] uppercase font-black tracking-[0.2em] transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 bg-yellow-500 hover:bg-yellow-400 text-black`}
+                        className={`flex-[2] py-4 rounded-xl text-[11px] uppercase font-medium tracking-[0.2em] transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 bg-yellow-500 hover:bg-yellow-400 text-black`}
                     >
                         {enviando ? 'Processando...' : isEdit ? 'Salvar Alterações' : 'Confirmar Lançamento'}
                     </button>

@@ -175,11 +175,11 @@ export default function ListaPessoas({
                         {/* Situação (Somente se não for candidato) */}
                         {!isCandidato && (
                             <div className="flex items-center gap-2">
-                                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Situação:</label>
+                                <label className="text-[9px] font-medium text-gray-500 uppercase tracking-widest whitespace-nowrap">Situação:</label>
                                 <select
                                     value={filtroSituacao}
                                     onChange={(e) => setFiltroSituacao(e.target.value)}
-                                    className="bg-gray-900/80 border border-gray-700 text-gray-300 text-[9px] font-bold rounded-lg p-2 focus:outline-none focus:border-yellow-500 transition-colors uppercase tracking-widest"
+                                    className="bg-gray-900/80 border border-gray-700 text-gray-300 text-[9px] font-medium rounded-lg p-2 focus:outline-none focus:border-yellow-500 transition-colors uppercase tracking-widest"
                                 >
                                     <option value="ativos">Ativos</option>
                                     <option value="adormecidos">Adormecidos</option>
@@ -189,11 +189,11 @@ export default function ListaPessoas({
                         )}
 
                         <div className="flex items-center gap-2">
-                            <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Grau:</label>
+                            <label className="text-[9px] font-medium text-gray-500 uppercase tracking-widest whitespace-nowrap">Grau:</label>
                             <select
                                 value={filtroStatus}
                                 onChange={(e) => setFiltroStatus(e.target.value)}
-                                className="bg-gray-900/80 border border-gray-700 text-gray-300 text-[9px] font-bold rounded-lg p-2 focus:outline-none focus:border-yellow-500 transition-colors uppercase tracking-widest"
+                                className="bg-gray-900/80 border border-gray-700 text-gray-300 text-[9px] font-medium rounded-lg p-2 focus:outline-none focus:border-yellow-500 transition-colors uppercase tracking-widest"
                             >
                                 <option value="todos">Todos</option>
                                 {isCandidato ? (
@@ -227,7 +227,7 @@ export default function ListaPessoas({
                     <div className="overflow-x-auto overflow-y-visible">
                         <table className="w-full text-left table-auto">
                             <thead>
-                                <tr className="bg-white/5 text-gray-500 uppercase tracking-widest text-[9px] font-bold">
+                                <tr className="bg-white/5 text-gray-500 uppercase tracking-widest text-[9px] font-medium">
                                     <th className="py-3 px-3 font-medium whitespace-nowrap">{isCandidato ? 'Candidato' : 'Obreiro'}</th>
                                     <th className="py-3 px-3 font-medium whitespace-nowrap">Contato</th>
                                     <th className="py-3 px-3 font-medium text-center whitespace-nowrap">{isCandidato ? 'Situação' : 'Grau'}</th>
@@ -250,7 +250,7 @@ export default function ListaPessoas({
                                         <td className="py-3 px-3 font-medium text-gray-200 tracking-wide whitespace-nowrap">
                                             <div className="flex flex-col">
                                                 {isCandidato ? (
-                                                    <span className="text-[11px] text-gray-200 font-bold">{pessoa.nome}</span>
+                                                    <span className="text-[11px] text-gray-200 font-medium">{pessoa.nome}</span>
                                                 ) : (
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function ListaPessoas({
                                                                     </span>
                                                                 )}
                                                                 {pessoa.ativo === 0 && (
-                                                                    <span className="text-[7px] text-red-500/50 font-bold uppercase tracking-tighter">
+                                                                    <span className="text-[7px] text-red-500/50 font-medium uppercase tracking-tighter">
                                                                         Adormecido {pessoa.data_adormecimento ? `desde ${pessoa.data_adormecimento.split('-').reverse().join('/')}` : ''}
                                                                     </span>
                                                                 )}
@@ -344,7 +344,7 @@ export default function ListaPessoas({
                                                 {!isLojaUser && (
                                                     <td className="py-3 px-3">
                                                         {pessoa.loja_nome ? (
-                                                            <span className="bg-yellow-900/10 text-yellow-500 px-2 py-1 rounded text-[10px] uppercase font-bold border border-yellow-500/20 font-sans">
+                                                            <span className="bg-yellow-900/10 text-yellow-500 px-2 py-1 rounded text-[10px] uppercase font-medium border border-yellow-500/20 font-sans">
                                                                 {pessoa.loja_nome}
                                                             </span>
                                                         ) : (
@@ -406,7 +406,7 @@ export default function ListaPessoas({
                             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-900/20 text-red-500 mb-4 border border-red-500/20 mx-auto">
                                 <span className="text-2xl">⚠️</span>
                             </div>
-                            <h3 className="text-xl font-bold text-center text-red-500 font-serif mb-2 uppercase tracking-wide">
+                            <h3 className="text-xl font-medium text-center text-red-500 font-serif mb-2 uppercase tracking-wide">
                                 Confirmar Exclusão
                             </h3>
                             <p className="text-gray-400 text-center text-sm mb-6">
@@ -427,7 +427,7 @@ export default function ListaPessoas({
                                 <button
                                     onClick={executarDelecao}
                                     disabled={deletando}
-                                    className="px-6 py-2.5 rounded bg-red-900/80 hover:bg-red-800 text-white border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.2)] hover:shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all font-bold text-sm tracking-wider uppercase disabled:opacity-50"
+                                    className="px-6 py-2.5 rounded bg-red-900/80 hover:bg-red-800 text-white border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.2)] hover:shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all font-medium text-sm tracking-wider uppercase disabled:opacity-50"
                                 >
                                     {deletando ? 'REMOVENDO...' : 'SIM, EXCLUIR'}
                                 </button>

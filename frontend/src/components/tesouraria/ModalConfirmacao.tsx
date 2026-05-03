@@ -44,14 +44,14 @@ export default function ModalConfirmacao({
         <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300">
             <div className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
                 <div className="p-6">
-                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-2">{titulo}</h3>
+                    <h3 className="text-lg font-medium text-white uppercase tracking-widest mb-2">{titulo}</h3>
                     <p className="text-gray-400 text-sm leading-relaxed">{mensagem}</p>
                 </div>
                 
                 <div className="flex border-t border-white/5">
                     <button 
                         onClick={onClose}
-                        className="flex-1 px-6 py-4 text-[10px] uppercase font-black text-gray-500 hover:bg-white/5 transition-colors tracking-widest"
+                        className="flex-1 px-6 py-4 text-[10px] uppercase font-medium text-gray-500 hover:bg-white/5 transition-colors tracking-widest"
                     >
                         {txtCancel}
                     </button>
@@ -60,7 +60,7 @@ export default function ModalConfirmacao({
                             onConfirm();
                             onClose();
                         }}
-                        className={`flex-1 px-6 py-4 text-[10px] uppercase font-black transition-all tracking-widest border-l border-white/5 ${cores[corBotao]}`}
+                        className={`flex-1 px-6 py-4 text-[10px] uppercase font-medium transition-all tracking-widest border-l border-white/5 ${cores[corBotao]}`}
                     >
                         {txtConfirm}
                     </button>

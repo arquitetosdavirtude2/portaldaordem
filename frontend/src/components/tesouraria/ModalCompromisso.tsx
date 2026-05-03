@@ -121,7 +121,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        <h3 className="text-sm font-bold text-white uppercase tracking-[0.2em]">
+                        <h3 className="text-sm font-medium text-white uppercase tracking-[0.2em]">
                             {isEdit ? 'Editar Despesa' : 'Novo Compromisso de Pagamento'}
                         </h3>
                     </div>
@@ -131,7 +131,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 <form onSubmit={handleSubmit} className="p-8 space-y-6 font-sans">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Conta de Origem</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">Conta de Origem</label>
                             <select 
                                 value={form.caixa_id}
                                 onChange={e => setForm({...form, caixa_id: parseInt(e.target.value)})}
@@ -142,7 +142,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Descrição / Motivo da Despesa</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">Descrição / Motivo da Despesa</label>
                             <input 
                                 type="text"
                                 required
@@ -154,7 +154,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Mês de Referência</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">Mês de Referência</label>
                             <input 
                                 type="month"
                                 value={form.mes_ref}
@@ -164,7 +164,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Recorrência</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">Recorrência</label>
                             <select 
                                 value={form.recorrencia}
                                 onChange={e => setForm({...form, recorrencia: e.target.value})}
@@ -177,7 +177,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Categoria</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">Categoria</label>
                             <select 
                                 value={form.categoria}
                                 onChange={e => setForm({...form, categoria: e.target.value})}
@@ -188,9 +188,9 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Valor Previsto</label>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">Valor Previsto</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">R$</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">R$</span>
                                 <input 
                                     type="number" 
                                     step="0.01"
@@ -198,7 +198,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                     readOnly={form.categoria === 'per_capita'}
                                     value={form.valor}
                                     onChange={e => setForm({...form, valor: e.target.value})}
-                                    className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-9 text-xs text-gray-200 outline-none focus:border-red-500/50 font-bold ${form.categoria === 'per_capita' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-9 text-xs text-gray-200 outline-none focus:border-red-500/50 font-medium ${form.categoria === 'per_capita' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 />
                                 {calculandoPerCapita && (
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2">

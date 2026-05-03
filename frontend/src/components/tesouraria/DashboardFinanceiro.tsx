@@ -87,7 +87,7 @@ export default function DashboardFinanceiro({
     if (carregando) {
         return <div className="text-center py-20 text-yellow-500/50 flex flex-col items-center gap-4">
             <div className="w-8 h-8 border-2 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin"></div>
-            <span className="text-[10px] uppercase font-bold tracking-[0.3em]">Atualizando Cofres...</span>
+            <span className="text-[10px] uppercase font-medium tracking-[0.3em]">Atualizando Cofres...</span>
         </div>;
     }
 
@@ -96,14 +96,14 @@ export default function DashboardFinanceiro({
             {/* Action Bar - Highly Visible */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/20 shadow-inner">
                 <div className="flex flex-col">
-                    <h2 className="text-xl font-bold text-yellow-500 uppercase tracking-tight font-serif italic">
+                    <h2 className="text-xl font-medium text-yellow-500 uppercase tracking-tight font-serif italic">
                         Fluxo de Caixa
                     </h2>
                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans font-medium">Controle e Lançamentos Financeiros</p>
                 </div>
                 <button
                     onClick={onNovoLancamento}
-                    className="w-full md:w-auto px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-bold uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.4)] active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full md:w-auto px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-medium uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.4)] active:scale-95 flex items-center justify-center gap-2"
                 >
                     <span className="text-lg leading-none">+</span>
                     ADICIONAR NOVO LANÇAMENTO
@@ -121,8 +121,8 @@ export default function DashboardFinanceiro({
                         <span className="text-4xl text-yellow-500">🏦</span>
                     </div>
                     <div className="relative z-10">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Saldo Consolidado</div>
-                        <div className="text-2xl font-bold text-white tracking-tight">
+                        <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Saldo Consolidado</div>
+                        <div className="text-2xl font-medium text-white tracking-tight">
                             R$ {resumo?.saldo_geral?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                         </div>
                     </div>
@@ -139,11 +139,11 @@ export default function DashboardFinanceiro({
                     <div className="absolute top-0 right-0 p-3 opacity-10">
                         <span className="text-4xl text-green-500">🕊️</span>
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Benevolência</div>
-                    <div className="text-2xl font-bold text-green-400 tracking-tight">
+                    <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Benevolência</div>
+                    <div className="text-2xl font-medium text-green-400 tracking-tight">
                         R$ {resumo?.saldo_benevolencia?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
-                    <div className="mt-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest">
+                    <div className="mt-2 text-[9px] text-gray-500 uppercase font-medium tracking-widest">
                         {resumo?.caixas.find(c => c.finalidade === 'benevolencia')?.nome || 'Benevolência'}
                     </div>
                 </div>
@@ -159,11 +159,11 @@ export default function DashboardFinanceiro({
                     <div className="absolute top-0 right-0 p-3 opacity-10">
                         <span className="text-4xl text-blue-500">💎</span>
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Joias e Mensalidades</div>
-                    <div className="text-2xl font-bold text-blue-400 tracking-tight">
+                    <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Joias e Mensalidades</div>
+                    <div className="text-2xl font-medium text-blue-400 tracking-tight">
                         R$ {resumo?.saldo_joias_mensalidade?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
-                    <div className="mt-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest">
+                    <div className="mt-2 text-[9px] text-gray-500 uppercase font-medium tracking-widest">
                         {resumo?.caixas.find(c => c.finalidade === 'mensalidade')?.nome || 'Geral'}
                     </div>
                 </div>
@@ -173,8 +173,8 @@ export default function DashboardFinanceiro({
                     <div className="absolute top-0 right-0 p-3 opacity-10">
                         <span className="text-4xl text-orange-500">⏳</span>
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Recebimentos Pendentes</div>
-                    <div className="text-2xl font-bold text-orange-400 tracking-tight">
+                    <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Recebimentos Pendentes</div>
+                    <div className="text-2xl font-medium text-orange-400 tracking-tight">
                         R$ {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
                 </div>
@@ -183,12 +183,12 @@ export default function DashboardFinanceiro({
             {/* Filters Bar */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10 shadow-lg items-end">
                 <div className="md:col-span-3 flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] ml-1">Período</label>
+                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-[0.2em] ml-1">Período</label>
                     <div className="flex items-center gap-2">
                         <select 
                             value={mesAtivo}
                             onChange={(e) => setMesAtivo(Number(e.target.value))}
-                            className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
+                            className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-medium text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
                         >
                             <option value={0} className="bg-[#0a0a0a]">Tudo (Sem Filtro)</option>
                             {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
@@ -200,7 +200,7 @@ export default function DashboardFinanceiro({
                             <select 
                                 value={anoAtivo}
                                 onChange={(e) => setAnoAtivo(Number(e.target.value))}
-                                className="bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all cursor-pointer hover:bg-black/60"
+                                className="bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-medium text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all cursor-pointer hover:bg-black/60"
                             >
                                 {[2024, 2025, 2026].map(val => (
                                     <option key={val} value={val} className="bg-[#0a0a0a]">{val}</option>
@@ -211,7 +211,7 @@ export default function DashboardFinanceiro({
                 </div>
 
                 <div className="md:col-span-5 flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] ml-1">Pesquisar</label>
+                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-[0.2em] ml-1">Pesquisar</label>
                     <div className="relative group">
                         <input 
                             type="text"
@@ -225,11 +225,11 @@ export default function DashboardFinanceiro({
                 </div>
 
                 <div className="md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] ml-1">Anexos</label>
+                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-[0.2em] ml-1">Anexos</label>
                     <button 
                         onClick={() => setIsModalExtratosOpen(true)}
                         disabled={caixaAtivo === 0 || mesAtivo === 0}
-                        className="w-full bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 rounded-xl px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="w-full bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-400 rounded-xl px-4 py-2.5 text-[10px] font-medium uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                         title={caixaAtivo === 0 ? "Selecione um caixa específico para ver os anexos" : "Ver extratos bancários do mês"}
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,8 +241,8 @@ export default function DashboardFinanceiro({
 
                 <div className="md:col-span-2 flex flex-col gap-1.5 items-end justify-end pb-1">
                     <div className="text-right">
-                        <div className="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] mb-1">Saldo Período</div>
-                        <div className={`text-sm font-bold ${saldoPeriodo >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className="text-[10px] uppercase font-medium text-gray-500 tracking-[0.2em] mb-1">Saldo Período</div>
+                        <div className={`text-sm font-medium ${saldoPeriodo >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             R$ {saldoPeriodo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
