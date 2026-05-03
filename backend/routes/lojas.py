@@ -60,7 +60,15 @@ def list_lojas(db: Session = Depends(get_db)):
     for l in lojas:
         estado_sigla = l.estado.sigla if l.estado else ""
         try:
-            total_membros = db.query(Pessoa).filter(Pessoa.loja_id == l.id).count()
+            total_real = db.query(Pessoa).filter(Pessoa.loja_id == l.id).count()
+            # Conta VMs que existem apenas na tabela de usuários
+            logins_pessoas = [p.login for p in db.query(Pessoa.login).filter(Pessoa.loja_id == l.id).all() if p.login]
+            vms_virtuais = db.query(Usuario).filter(
+                Usuario.loja_id == l.id, 
+                Usuario.role == 'loja',
+                ~Usuario.login.in_(logins_pessoas) if logins_pessoas else True
+            ).count()
+            total_membros = total_real + vms_virtuais
         except:
             total_membros = 0
 
@@ -84,7 +92,14 @@ def get_loja(loja_id: int, db: Session = Depends(get_db)):
     
     estado_sigla = db_loja.estado.sigla if db_loja.estado else ""
     try:
-        total_membros = db.query(Pessoa).filter(Pessoa.loja_id == db_loja.id).count()
+        total_real = db.query(Pessoa).filter(Pessoa.loja_id == db_loja.id).count()
+        logins_pessoas = [p.login for p in db.query(Pessoa.login).filter(Pessoa.loja_id == db_loja.id).all() if p.login]
+        vms_virtuais = db.query(Usuario).filter(
+            Usuario.loja_id == db_loja.id, 
+            Usuario.role == 'loja',
+            ~Usuario.login.in_(logins_pessoas) if logins_pessoas else True
+        ).count()
+        total_membros = total_real + vms_virtuais
     except:
         total_membros = 0
 

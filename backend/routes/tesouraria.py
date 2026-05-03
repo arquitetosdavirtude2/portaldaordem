@@ -630,7 +630,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
         query_pessoas = text("""
             SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso, p.data_iniciacao,
-                   p.joia_quitada_externa, p.isencao_inicio
+                   p.joia_quitada_externa, p.isencao_inicio, p.login
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
@@ -638,7 +638,21 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
               AND (:incl_adorm = 1 OR (COALESCE(p.data_adormecimento, '') = '' AND COALESCE(p.ativo, 1) = 1))
             ORDER BY c.id, p.nome
         """)
-        pessoas = db_treasury.execute(query_pessoas, {"lid": loja_id, "incl_adorm": 1 if incluir_adormecidos else 0}).fetchall()
+        pessoas_rows = db_treasury.execute(query_pessoas, {"lid": loja_id, "incl_adorm": 1 if incluir_adormecidos else 0}).fetchall()
+
+        # 1.5 Injetar VM Virtual se necessário
+        vms_usuarios = db_main.query(Usuario).filter(Usuario.loja_id == loja_id, Usuario.role == 'loja').all()
+        logins_na_lista = {r[10] for r in pessoas_rows if r[10]}
+        
+        pessoas = list(pessoas_rows)
+        for vm in vms_usuarios:
+            if vm.login not in logins_na_lista:
+                # Mock a Row-like object for the loop
+                from collections import namedtuple
+                VirtualRow = namedtuple('VirtualRow', ['id', 'nome', 'cargo_nome', 'data_admissao', 'ativo', 'data_adormecimento', 'tipo_ingresso', 'data_iniciacao', 'joia_quitada_externa', 'isencao_inicio', 'login'])
+                pessoas.append(VirtualRow(
+                    id=-(vm.id), nome=vm.nome, cargo_nome="Venerável Mestre", data_admissao=None, ativo=1, data_adormecimento=None, tipo_ingresso='transferencia', data_iniciacao=None, joia_quitada_externa=False, isencao_inicio=True, login=vm.login
+                ))
 
         res = []
         for p in pessoas:
