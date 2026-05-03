@@ -122,7 +122,7 @@ export default function DashboardFinanceiro({
                     </div>
                     <div className="relative z-10">
                         <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Saldo Consolidado</div>
-                        <div className="text-2xl font-medium text-white tracking-tight">
+                        <div className="text-2xl font-medium text-white tracking-wider font-sans tabular-nums">
                             R$ {resumo?.saldo_geral?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                         </div>
                     </div>
@@ -140,7 +140,7 @@ export default function DashboardFinanceiro({
                         <span className="text-4xl text-green-500">🕊️</span>
                     </div>
                     <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Benevolência</div>
-                    <div className="text-2xl font-medium text-green-400 tracking-tight">
+                    <div className="text-2xl font-medium text-green-400 tracking-wider font-sans tabular-nums">
                         R$ {resumo?.saldo_benevolencia?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
                     <div className="mt-2 text-[9px] text-gray-500 uppercase font-medium tracking-widest">
@@ -160,7 +160,7 @@ export default function DashboardFinanceiro({
                         <span className="text-4xl text-blue-500">💎</span>
                     </div>
                     <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Joias e Mensalidades</div>
-                    <div className="text-2xl font-medium text-blue-400 tracking-tight">
+                    <div className="text-2xl font-medium text-blue-400 tracking-wider font-sans tabular-nums">
                         R$ {resumo?.saldo_joias_mensalidade?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
                     <div className="mt-2 text-[9px] text-gray-500 uppercase font-medium tracking-widest">
@@ -174,7 +174,7 @@ export default function DashboardFinanceiro({
                         <span className="text-4xl text-orange-500">⏳</span>
                     </div>
                     <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Recebimentos Pendentes</div>
-                    <div className="text-2xl font-medium text-orange-400 tracking-tight">
+                    <div className="text-2xl font-medium text-orange-400 tracking-wider font-sans tabular-nums">
                         R$ {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </div>
                 </div>

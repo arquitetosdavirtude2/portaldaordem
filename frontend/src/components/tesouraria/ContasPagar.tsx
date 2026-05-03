@@ -157,7 +157,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                         <div className="text-[9px] font-medium text-gray-500 uppercase tracking-widest mb-1">
                             {statusAtivo === 'pendente' ? 'Total a Regularizar' : 'Total Pago no Período'}
                         </div>
-                        <div className={`text-xl font-medium tracking-wider ${statusAtivo === 'pendente' ? 'text-red-500' : 'text-green-500'}`}>
+                        <div className={`text-xl font-medium tracking-wider font-sans tabular-nums ${statusAtivo === 'pendente' ? 'text-red-500' : 'text-green-500'}`}>
                             R$ {totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -207,7 +207,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                     </td>
                                     <td className="px-5 py-3">
                                         <div className="flex flex-wrap items-center gap-2 max-w-xl">
-                                            <div className="text-[11px] font-medium font-sans tabular-nums tracking-widest text-gray-300 group-hover:text-red-400/80 transition-colors uppercase leading-relaxed">
+                                            <div className="text-[11px] font-medium font-sans tracking-widest text-gray-300 group-hover:text-red-400/80 transition-colors uppercase leading-relaxed">
                                                 {t.descricao}
                                             </div>
                                             {statusAtivo === 'pendente' && (
@@ -231,7 +231,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                         </div>
                                     </td>
                                     <td className="px-5 py-3 text-right font-sans tabular-nums tracking-widest w-[130px]">
-                                        <div className={`text-[12px] font-medium ${statusAtivo === 'pendente' ? 'text-red-400/80' : 'text-green-400/80'}`}>
+                                        <div className={`text-[12px] font-medium font-sans tabular-nums tracking-widest ${statusAtivo === 'pendente' ? 'text-red-400/80' : 'text-green-400/80'}`}>
                                             R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </div>
                                     </td>
