@@ -16,6 +16,8 @@ interface Transacao {
 
 export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtualizacao }: { acesso: any, onNovoLancamento: () => void, onEdit: (t: any) => void, chaveAtualizacao: number }) {
     const [statusAtivo, setStatusAtivo] = useState<'pendente' | 'pago'>('pendente');
+    const [mesAtivo, setMesAtivo] = useState<number>(new Date().getMonth() + 1);
+    const [anoAtivo, setAnoAtivo] = useState<number>(new Date().getFullYear());
     const [pendentes, setPendentes] = useState<Transacao[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [isModalConfirmacaoAberto, setIsModalConfirmacaoAberto] = useState(false);
@@ -26,8 +28,9 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
         setCarregando(true);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            // Consolidated view (caixa 0) + status filter
-            const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/0?loja_id=${acesso.loja_id}&status=${statusAtivo}`);
+            // Consolidated view (caixa 0) + status filter + period
+            let url = `${apiUrl}/api/tesouraria/transacoes/0?loja_id=${acesso.loja_id}&status=${statusAtivo}&mes=${mesAtivo}&ano=${anoAtivo}`;
+            const res = await fetch(url);
             if (res.ok) {
                 const data: Transacao[] = await res.json();
                 setPendentes(data.filter(t => t.tipo === 'saida'));
@@ -41,7 +44,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
 
     useEffect(() => {
         carregarContasPagar();
-    }, [acesso.loja_id, chaveAtualizacao, statusAtivo]);
+    }, [acesso.loja_id, chaveAtualizacao, statusAtivo, mesAtivo, anoAtivo]);
 
     const handleDownloadRelatorio = async () => {
         setBaixandoRelatorio(true);
@@ -109,20 +112,43 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                         </p>
                     </div>
 
-                    {/* Toggle Status */}
-                    <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 w-fit">
-                        <button 
-                            onClick={() => setStatusAtivo('pendente')}
-                            className={`px-4 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${statusAtivo === 'pendente' ? 'bg-red-500/20 text-red-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Pendentes
-                        </button>
-                        <button 
-                            onClick={() => setStatusAtivo('pago')}
-                            className={`px-4 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${statusAtivo === 'pago' ? 'bg-green-500/20 text-green-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Pagos (Histórico)
-                        </button>
+                    {/* Toggle Status & Month Filter */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 w-fit">
+                            <button 
+                                onClick={() => setStatusAtivo('pendente')}
+                                className={`px-4 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all ${statusAtivo === 'pendente' ? 'bg-red-500/20 text-red-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                Pendentes
+                            </button>
+                            <button 
+                                onClick={() => setStatusAtivo('pago')}
+                                className={`px-4 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all ${statusAtivo === 'pago' ? 'bg-green-500/20 text-green-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                Pagos (Histórico)
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-white/5 p-1 rounded-lg border border-white/10">
+                            <select 
+                                value={mesAtivo}
+                                onChange={(e) => setMesAtivo(Number(e.target.value))}
+                                className="bg-transparent text-[10px] font-bold uppercase text-gray-300 outline-none px-2 cursor-pointer"
+                            >
+                                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+                                    <option key={m} value={i + 1} className="bg-[#0a1536]">{m}</option>
+                                ))}
+                            </select>
+                            <select 
+                                value={anoAtivo}
+                                onChange={(e) => setAnoAtivo(Number(e.target.value))}
+                                className="bg-transparent text-[10px] font-bold uppercase text-gray-300 outline-none px-2 cursor-pointer border-l border-white/10"
+                            >
+                                {[2024, 2025, 2026].map(a => (
+                                    <option key={a} value={a} className="bg-[#0a1536]">{a}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
@@ -180,8 +206,25 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                         </div>
                                     </td>
                                     <td className="px-5 py-4">
-                                        <div className="text-[12px] font-bold text-gray-100 group-hover:text-red-400 transition-colors uppercase whitespace-nowrap">
-                                            {t.descricao}
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-[12px] font-bold text-gray-100 group-hover:text-red-400 transition-colors uppercase whitespace-nowrap">
+                                                {t.descricao}
+                                            </div>
+                                            {statusAtivo === 'pendente' && (
+                                                (() => {
+                                                    const v = t.data_vencimento.split('-');
+                                                    const vAno = parseInt(v[0]);
+                                                    const vMes = parseInt(v[1]);
+                                                    if (vAno < anoAtivo || (vAno === anoAtivo && vMes < mesAtivo)) {
+                                                        return (
+                                                            <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[7px] font-bold rounded-full border border-orange-500/30 uppercase tracking-tighter">
+                                                                Atrasado
+                                                            </span>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()
+                                            )}
                                         </div>
                                         <div className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
                                             {t.categoria}
