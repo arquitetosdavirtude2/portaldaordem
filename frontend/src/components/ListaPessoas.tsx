@@ -276,83 +276,31 @@ export default function ListaPessoas({
                                         
                                         {/* Telefone Edit or Link */}
                                         <td className="py-3 px-3 whitespace-nowrap">
-                                            {editandoId === pessoa.id && podeFullEdit ? (
-                                                <input
-                                                    type="text"
-                                                    value={editandoTelefone}
-                                                    onChange={(e) => {
-                                                        const formatarTelefone = (valor: string) => {
-                                                            const numeros = valor.replace(/\D/g, '');
-                                                            if (numeros.length <= 11) {
-                                                                return numeros
-                                                                    .replace(/^(\d{2})/, '($1) ')
-                                                                    .replace(/(\d{5})(\d)/, '$1-$2');
-                                                            }
-                                                            return valor;
-                                                        };
-                                                        setEditandoTelefone(formatarTelefone(e.target.value));
-                                                    }}
-                                                    onBlur={() => handleMudarTelefone(pessoa, editandoTelefone)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                            e.currentTarget.blur();
-                                                        }
-                                                    }}
-                                                    className="bg-gray-800 border border-yellow-500/50 text-yellow-100 text-xs rounded p-1 w-[130px] focus:outline-none"
-                                                    maxLength={15}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <a
-                                                    href={`https://wa.me/55${pessoa.telefone.replace(/\D/g, '')}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-gray-400 hover:text-green-400 transition-colors flex items-center gap-2"
-                                                >
-                                                    <span className="text-lg opacity-50 group-hover:opacity-100 transition-opacity">📱</span>
-                                                    <span className="group-hover:underline decoration-green-500/50 underline-offset-4 font-sans">{pessoa.telefone}</span>
-                                                </a>
-                                            )}
+                                            <a
+                                                href={`https://wa.me/55${pessoa.telefone.replace(/\D/g, '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-gray-400 hover:text-green-400 transition-colors flex items-center gap-2"
+                                            >
+                                                <span className="text-lg opacity-50 group-hover:opacity-100 transition-opacity">📱</span>
+                                                <span className="group-hover:underline decoration-green-500/50 underline-offset-4 font-sans">{pessoa.telefone}</span>
+                                            </a>
                                         </td>
                                         
-                                        {/* Grau/Status Dropdown/Label */}
+                                        {/* Grau/Status Label */}
                                         <td className="py-3 px-3 text-center">
-                                            {editandoId === pessoa.id && podeMudarStatus ? (
-                                                <select
-                                                    defaultValue={pessoa.status}
-                                                    onChange={(e) => handleMudarStatus(pessoa, e.target.value)}
-                                                    className="bg-[#0a0a0a] border border-white/10 text-gray-200 text-xs rounded p-1 w-full focus:border-yellow-500/50 outline-none"
-                                                >
-                                                    {isCandidato ? (
-                                                        <>
-                                                            <option value="Profano">Profano</option>
-                                                            <option value="Candidato">Candidato</option>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <option value="Aprendiz" className="bg-[#0a0a0a]">Aprendiz</option>
-                                                            <option value="Companheiro" className="bg-[#0a0a0a]">Companheiro</option>
-                                                            <option value="Mestre" className="bg-[#0a0a0a]">Mestre</option>
-                                                            <option value="Mestre Instalado" className="bg-[#0a0a0a]">Mestre Instalado</option>
-                                                        </>
-                                                    )}
-                                                </select>
+                                            {pessoa.tipo_pessoa === 'candidato' ? (
+                                                <div className="flex justify-center items-center w-full text-gray-600 tracking-tighter text-center">---</div>
                                             ) : (
-                                                <>
-                                                    {pessoa.tipo_pessoa === 'candidato' ? (
-                                                        <div className="flex justify-center items-center w-full text-gray-600 tracking-tighter text-center">---</div>
-                                                    ) : (
-                                                        <span className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
-                                                            pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                                            pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                                            pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                            pessoa.status === 'Mestre Instalado' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.1)]' :
-                                                            'bg-gray-500/10 text-gray-400 border-gray-500/20'
-                                                        }`}>
-                                                            { (pessoa.status === 'Candidato' || pessoa.status === 'Profano') ? 'Aprendiz' : (pessoa.status || 'Aprendiz') }
-                                                        </span>
-                                                    )}
-                                                </>
+                                                <span className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
+                                                    pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                    pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                    pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                    pessoa.status === 'Mestre Instalado' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.1)]' :
+                                                    'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                                                }`}>
+                                                    { (pessoa.status === 'Candidato' || pessoa.status === 'Profano') ? 'Aprendiz' : (pessoa.status || 'Aprendiz') }
+                                                </span>
                                             )}
                                         </td>
 
