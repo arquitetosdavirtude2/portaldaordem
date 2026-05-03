@@ -616,11 +616,13 @@ def obter_contagem_per_capita(
         ref_mes = ref_date.month
         
         # Query para pegar obreiros ativos que não sejam o Venerável Mestre (cargo_id=1)
+        # E EXCLUIR CANDIDATOS (tipo_pessoa='candidato')
         query = text("""
             SELECT data_admissao, tipo_ingresso, data_iniciacao
             FROM pessoas
             WHERE loja_id = :lid
               AND (cargo_id != 1 OR cargo_id IS NULL)
+              AND (COALESCE(tipo_pessoa, 'obreiro') != 'candidato')
               AND (COALESCE(data_adormecimento, '') = '' AND COALESCE(ativo, 1) = 1)
         """)
         rows = db_treasury.execute(query, {"lid": loja_id}).fetchall()
