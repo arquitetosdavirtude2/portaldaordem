@@ -280,11 +280,12 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
     
     # Handle balance updates if valor OR tipo changes while status is already 'pago'
     if transacao.status == "pago" and (dados.valor is not None or dados.tipo is not None):
-        # 1. Reverse the current value
+        # 1. Reverse the current value (using 0.0 if valor is None)
+        valor_atual = transacao.valor if transacao.valor is not None else 0.0
         if transacao.tipo == "entrada":
-            caixa.saldo_atual -= transacao.valor
+            caixa.saldo_atual -= valor_atual
         else:
-            caixa.saldo_atual += transacao.valor
+            caixa.saldo_atual += valor_atual
         
         # 2. Apply new values
         if dados.valor is not None:
@@ -293,10 +294,11 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
              transacao.tipo = dados.tipo
              
         # 3. Apply the impact of the new values
+        novo_valor = transacao.valor if transacao.valor is not None else 0.0
         if transacao.tipo == "entrada":
-            caixa.saldo_atual += transacao.valor
+            caixa.saldo_atual += novo_valor
         else:
-            caixa.saldo_atual -= transacao.valor
+            caixa.saldo_atual -= novo_valor
     
     # Update core fields for both PAGO and PENDENTE
     if dados.valor is not None:
