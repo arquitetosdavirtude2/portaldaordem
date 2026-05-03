@@ -382,9 +382,9 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                                             ({irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'})
                                                         </span>
                                                     )}
-                                                    {irmao.data_admissao && new Date(irmao.data_admissao) > new Date() && (
-                                                        <span className="text-[7px] text-blue-400 font-bold uppercase tracking-tighter">
-                                                            • Candidato
+                                                    {irmao.tipo_pessoa === 'candidato' && (
+                                                        <span className="text-[7px] text-orange-400 font-bold uppercase tracking-tighter">
+                                                            Candidato
                                                         </span>
                                                     )}
                                                 </div>

@@ -366,7 +366,7 @@ export default function ListaPessoas({
                                                                 <span className={`text-[11px] font-semibold ${pessoa.ativo === 0 ? 'text-red-500/50' : 'text-gray-300'}`}>{pessoa.nome}</span>
                                                                 {pessoa.tipo_pessoa === 'candidato' && (
                                                                     <span className="text-[8px] text-orange-400 font-black uppercase tracking-tighter ml-1">
-                                                                        - CANDIDATO
+                                                                        CANDIDATO
                                                                     </span>
                                                                 )}
                                                                 {pessoa.ativo === 0 && (
@@ -446,21 +446,20 @@ export default function ListaPessoas({
                                                         </>
                                                     )}
                                                 </select>
-                                            ) : (
-                                                <span
-                                                    className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
-                                                        pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                                        pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                                        pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                        pessoa.status === 'Mestre Instalado' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.1)]' :
-                                                        pessoa.status === 'Candidato' || pessoa.tipo_pessoa === 'candidato' ? 'bg-orange-500/20 text-orange-400 border-orange-500/40 shadow-[0_0_10px_rgba(249,115,22,0.1)]' :
-                                                        pessoa.status === 'Profano' ? 'bg-gray-500/10 text-gray-400 border-gray-500/20' :
-                                                        'bg-gray-500/10 text-gray-400 border-gray-500/20'
-                                                    } ${podeMudarStatus ? 'cursor-pointer hover:bg-opacity-40' : 'cursor-default opacity-80'}`}
-                                                    onClick={() => podeMudarStatus && actStartEdit(pessoa)}
-                                                    title={podeEditar ? "Clique para alterar" : "Apenas leitura"}
                                                 >
-                                                    {pessoa.tipo_pessoa === 'candidato' ? '...' : (pessoa.status || 'Aprendiz')}
+                                                    {pessoa.tipo_pessoa === 'candidato' ? (
+                                                        <div className="text-center w-full text-gray-600 tracking-tighter">---</div>
+                                                    ) : (
+                                                        <span className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
+                                                            pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                            pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                            pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                            pessoa.status === 'Mestre Instalado' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.1)]' :
+                                                            'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                                                        }`}>
+                                                            { (pessoa.status === 'Candidato' || pessoa.status === 'Profano') ? 'Aprendiz' : (pessoa.status || 'Aprendiz') }
+                                                        </span>
+                                                    )}
                                                 </span>
                                             )}
                                         </td>

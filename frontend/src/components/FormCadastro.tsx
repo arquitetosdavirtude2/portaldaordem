@@ -191,7 +191,7 @@ export default function FormCadastro({
           nome: nome.trim(),
           telefone: telefone.trim(),
           estado_sigla: estadoSigla,
-          status,
+          status: (tipoPessoa === 'obreiro' && (status === 'Candidato' || status === 'Profano')) ? 'Aprendiz' : status,
           cargo_id: isCandidato ? 0 : (cargoId || 0),
           loja_id: isCandidato ? 0 : (lojaId || acesso?.loja_id || 0),
           login: isCandidato ? null : (login.trim() || null),
