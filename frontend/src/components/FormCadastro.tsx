@@ -91,6 +91,15 @@ export default function FormCadastro({
   const [motivoAdormecimento, setMotivoAdormecimento] = useState<string>('');
   const [dataIniciacao, setDataIniciacao] = useState<string>('');
 
+  // Sync status with tipoPessoa
+  useEffect(() => {
+    if (tipoPessoa === 'candidato') {
+      setStatus('');
+    } else if (tipoPessoa === 'obreiro' && status === '') {
+      setStatus('Aprendiz');
+    }
+  }, [tipoPessoa, status]);
+
   // Carregar cargos da API
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -460,7 +469,8 @@ export default function FormCadastro({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full p-2 bg-[#0a0a0a] border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs"
+              disabled={tipoPessoa === 'candidato'}
+              className={`w-full p-2 bg-[#0a0a0a] border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/20 transition-all text-xs ${tipoPessoa === 'candidato' ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isCandidato ? (
                 <>
@@ -469,11 +479,16 @@ export default function FormCadastro({
                 </>
               ) : (
                 <>
-                  <option value="" className="bg-[#0a0a0a]">Sem Grau</option>
-                  <option value="Aprendiz" className="bg-[#0a0a0a]">Aprendiz</option>
-                  <option value="Companheiro" className="bg-[#0a0a0a]">Companheiro</option>
-                  <option value="Mestre" className="bg-[#0a0a0a]">Mestre</option>
-                  <option value="Mestre Instalado" className="bg-[#0a0a0a]">Mestre Instalado</option>
+                  {tipoPessoa === 'candidato' ? (
+                    <option value="" className="bg-[#0a0a0a]">Sem Grau</option>
+                  ) : (
+                    <>
+                      <option value="Aprendiz" className="bg-[#0a0a0a]">Aprendiz</option>
+                      <option value="Companheiro" className="bg-[#0a0a0a]">Companheiro</option>
+                      <option value="Mestre" className="bg-[#0a0a0a]">Mestre</option>
+                      <option value="Mestre Instalado" className="bg-[#0a0a0a]">Mestre Instalado</option>
+                    </>
+                  )}
                 </>
               )}
             </select>
