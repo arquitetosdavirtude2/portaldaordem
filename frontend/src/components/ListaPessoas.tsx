@@ -339,7 +339,7 @@ export default function ListaPessoas({
                                 <tr className="bg-white/5 text-gray-500 uppercase tracking-widest text-[9px] font-bold">
                                     <th className="py-3 px-3 font-medium whitespace-nowrap">{isCandidato ? 'Candidato' : 'Obreiro'}</th>
                                     <th className="py-3 px-3 font-medium whitespace-nowrap">Contato</th>
-                                    <th className="py-3 px-3 font-medium whitespace-nowrap">{isCandidato ? 'Situação' : 'Grau'}</th>
+                                    <th className="py-3 px-3 font-medium text-center whitespace-nowrap">{isCandidato ? 'Situação' : 'Grau'}</th>
                                     
                                     {!isCandidato && (
                                         <>
@@ -425,7 +425,7 @@ export default function ListaPessoas({
                                         </td>
                                         
                                         {/* Grau/Status Dropdown/Label */}
-                                        <td className="py-3 px-3">
+                                        <td className="py-3 px-3 text-center">
                                             {editandoId === pessoa.id && podeMudarStatus ? (
                                                 <select
                                                     defaultValue={pessoa.status}

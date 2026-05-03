@@ -321,9 +321,8 @@ export default function FormCadastro({
                 onChange={(e) => setTipoPessoa(e.target.value)}
                 className="w-full p-2 bg-[#0a0a0a] border border-white/10 rounded-lg text-yellow-500 font-bold focus:outline-none focus:border-yellow-500/50 transition-all text-xs"
               >
-                <option value="obreiro" className="bg-[#0a0a0a]">Irmão (Obreiro Ativo)</option>
+                <option value="obreiro" className="bg-[#0a0a0a]">Irmão</option>
                 <option value="candidato" className="bg-[#0a0a0a]">Candidato / Profano</option>
-                <option value="adormecido" className="bg-[#0a0a0a]">Adormecido</option>
               </select>
               <p className="text-[8px] text-gray-500 mt-1 uppercase italic">* Candidatos não entram na contagem de Per Capita.</p>
             </div>

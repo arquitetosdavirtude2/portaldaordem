@@ -356,6 +356,11 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                 <tr key={irmao.id} className={`hover:bg-white/[0.02] transition-colors group ${isAdormecido ? 'opacity-50' : ''}`}>
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <div className="flex items-center gap-2">
+                                            {irmao.tipo_pessoa === 'candidato' && (
+                                                <span className="text-[8px] text-orange-400 font-black uppercase tracking-tighter">
+                                                    CANDIDATO
+                                                </span>
+                                            )}
                                             <span className={`text-[11px] font-bold group-hover:text-yellow-500 transition-colors ${isAdormecido ? 'text-red-500/60' : 'text-gray-100'}`}>
                                                 {irmao.nome}
                                             </span>
@@ -376,18 +381,11 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                                     <td className="px-5 py-4 text-center whitespace-nowrap">
                                         <div className="flex flex-col items-center justify-center">
                                             <div className="flex items-center justify-center gap-1.5">
-                                                {irmao.tipo_pessoa === 'candidato' && (
-                                                    <span className="text-[7px] text-orange-400 font-bold uppercase tracking-tighter">
-                                                        Candidato
-                                                    </span>
-                                                )}
                                                 <span className="text-[10px] text-gray-300 font-sans">{formatarData(irmao.data_admissao)}</span>
                                                 <div className="flex items-center gap-1">
-                                                    {irmao.meses_cobrados > 0 && (
-                                                        <span className="text-[9px] text-gray-500 font-sans">
-                                                            ({irmao.meses_cobrados} {irmao.meses_cobrados === 1 ? 'mês' : 'meses'})
-                                                        </span>
-                                                    )}
+                                                    <span className="text-[9px] text-gray-500 font-sans">
+                                                        ({Math.max(0, irmao.meses_cobrados)} {irmao.meses_cobrados <= 1 ? 'mês' : 'meses'})
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
