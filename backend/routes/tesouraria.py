@@ -642,19 +642,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
         """)
         pessoas_rows = db_treasury.execute(query_pessoas, {"lid": loja_id, "incl_adorm": 1 if incluir_adormecidos else 0}).fetchall()
 
-        # 1.5 Injetar VM Virtual se necessário
-        vms_usuarios = db_main.query(Usuario).filter(Usuario.loja_id == loja_id, Usuario.role == 'loja').all()
-        logins_na_lista = {r[10] for r in pessoas_rows if r[10]}
-        
         pessoas = list(pessoas_rows)
-        for vm in vms_usuarios:
-            if vm.login not in logins_na_lista:
-                # Mock a Row-like object for the loop
-                from collections import namedtuple
-                VirtualRow = namedtuple('VirtualRow', ['id', 'nome', 'cargo_nome', 'data_admissao', 'ativo', 'data_adormecimento', 'tipo_ingresso', 'data_iniciacao', 'joia_quitada_externa', 'isencao_inicio', 'login'])
-                pessoas.append(VirtualRow(
-                    id=-(vm.id), nome=vm.nome, cargo_nome="Venerável Mestre", data_admissao=None, ativo=1, data_adormecimento=None, tipo_ingresso='transferencia', data_iniciacao=None, joia_quitada_externa=False, isencao_inicio=True, login=vm.login
-                ))
 
         res = []
         for p in pessoas:
