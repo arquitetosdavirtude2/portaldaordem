@@ -401,6 +401,7 @@ def listar_transacoes(
                 t.descricao LIKE :busca 
                 OR t.categoria LIKE :busca 
                 OR t.pessoa_id IN (SELECT id FROM pessoas WHERE nome LIKE :busca)
+                OR t.pessoa_id IN (SELECT -id FROM usuarios WHERE nome LIKE :busca)
             )"""
             params["busca"] = f"%{busca}%"
 
@@ -410,9 +411,14 @@ def listar_transacoes(
         for r in rows:
             p_nome = "N/A"
             if r[2]: # pessoa_id
-                p = db_treasury.execute(text("SELECT nome FROM pessoas WHERE id = :id"), {"id": r[2]}).fetchone()
+                if r[2] < 0:
+                    # Busca em usuarios (Mestre Loja virtual)
+                    p = db_treasury.execute(text("SELECT nome FROM usuarios WHERE id = :id"), {"id": abs(r[2])}).fetchone()
+                else:
+                    # Busca em pessoas
+                    p = db_treasury.execute(text("SELECT nome FROM pessoas WHERE id = :id"), {"id": r[2]}).fetchone()
+                
                 if p: p_nome = p[0]
-            
             res.append({
                 "id": r[0],
                 "caixa_id": r[1],
@@ -1055,9 +1061,8 @@ def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_t
     from sqlalchemy import text
     query = """
         SELECT t.id, t.descricao, t.valor, t.tipo, t.categoria, t.data_vencimento, t.data_pagamento, 
-               t.notas, p.nome as pessoa_nome, c.nome as caixa_nome, l.nome as loja_nome, l.numero as loja_numero
+               t.notas, t.pessoa_id, c.nome as caixa_nome, l.nome as loja_nome, l.numero as loja_numero
         FROM transacoes t
-        LEFT JOIN pessoas p ON t.pessoa_id = p.id
         JOIN caixas c ON t.caixa_id = c.id
         JOIN lojas l ON c.loja_id = l.id
         WHERE t.id = :tid
@@ -1067,8 +1072,19 @@ def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_t
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
     
     # Mapping
-    t_id, desc, valor, tipo, cat, ref, pagto, notas, p_nome, c_nome, l_nome, l_num = row
+    t_id, desc, valor, tipo, cat, ref, pagto, notas, p_id, c_nome, l_nome, l_num = row
     
+    p_nome = "---"
+    if p_id:
+        if p_id < 0:
+            # Busca em usuarios (Mestre Loja virtual)
+            p = db_treasury.execute(text("SELECT nome FROM usuarios WHERE id = :id"), {"id": abs(p_id)}).fetchone()
+        else:
+            # Busca em pessoas
+            p = db_treasury.execute(text("SELECT nome FROM pessoas WHERE id = :id"), {"id": p_id}).fetchone()
+        
+        if p: p_nome = p[0]
+
     data_ref = datetime.strptime(ref, "%Y-%m-%d").strftime("%m/%Y") if ref else "-"
     # Se não houver data de pagamento explícita, usa a data de referência como fallback para exibição no recibo
     data_pag = datetime.strptime(pagto, "%Y-%m-%d").strftime("%d/%m/%Y") if pagto else (datetime.strptime(ref, "%Y-%m-%d").strftime("%d/%m/%Y") if ref else "-")
