@@ -55,10 +55,7 @@ export default function ListaPessoas({
     const [filtroSituacao, setFiltroSituacao] = useState<string>('ativos');
     const [busca, setBusca] = useState<string>('');
 
-    const [editandoId, setEditandoId] = useState<number | null>(null);
-    const [editandoTelefone, setEditandoTelefone] = useState<string>('');
-    const [editandoLogin, setEditandoLogin] = useState<string>('');
-    const [editandoSenha, setEditandoSenha] = useState<string>('');
+    const [senhasVisiveis, setSenhasVisiveis] = useState<Record<number, boolean>>({});
     const [pessoaParaDeletar, setPessoaParaDeletar] = useState<Pessoa | null>(null);
     const [deletando, setDeletando] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
@@ -108,117 +105,11 @@ export default function ListaPessoas({
     });
 
 
-    const handleMudarStatus = async (pessoa: Pessoa, novoStatus: string) => {
-        try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${pessoa.id}`,
-                {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: novoStatus }),
-                }
-            );
-
-            if (response.ok) {
-                const pessoaAtualizada = await response.json();
-                onStatusAtualizado(pessoaAtualizada);
-                setEditandoId(null);
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar status:', error);
-        }
-    };
-
-    const handleMudarTelefone = async (pessoa: Pessoa, novoTelefone: string) => {
-        if (!novoTelefone.trim() || novoTelefone === pessoa.telefone) {
-            setEditandoId(null);
-            return;
-        }
-        
-        try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${pessoa.id}`,
-                {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telefone: novoTelefone }),
-                }
-            );
-
-            if (response.ok) {
-                const pessoaAtualizada = await response.json();
-                onStatusAtualizado(pessoaAtualizada);
-                // Not closing edit mode yet in case user wants to change cargo/status
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar telefone:', error);
-        }
-    };
-
-    const actStartEdit = (pessoa: Pessoa) => {
-        setEditandoId(pessoa.id);
-        setEditandoTelefone(pessoa.telefone);
-        setEditandoLogin(pessoa.login || '');
-        setEditandoSenha(pessoa.senha || '');
-    };
-
-    const handleMudarCargo = async (pessoa: Pessoa, novoCargoId: number) => {
-        try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${pessoa.id}`,
-                {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cargo_id: novoCargoId === 0 ? null : novoCargoId }),
-                }
-            );
-            if (response.ok) {
-                const pessoaAtualizada = await response.json();
-                onStatusAtualizado(pessoaAtualizada);
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar cargo:', error);
-        }
-    };
-
-    const handleMudarLogin = async (pessoa: Pessoa, novoLogin: string) => {
-        try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${pessoa.id}`,
-                {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login: novoLogin }),
-                }
-            );
-
-            if (response.ok) {
-                const pessoaAtualizada = await response.json();
-                onStatusAtualizado(pessoaAtualizada);
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar login:', error);
-        }
-    };
-
-    const handleMudarSenha = async (pessoa: Pessoa, novaSenha: string) => {
-        try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || ""}/api/pessoas/${pessoa.id}`,
-                {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ senha: novaSenha }),
-                }
-            );
-
-            if (response.ok) {
-                const pessoaAtualizada = await response.json();
-                onStatusAtualizado(pessoaAtualizada);
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar senha:', error);
-        }
+    const toggleSenhaVisivel = (id: number) => {
+        setSenhasVisiveis(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
     };
 
     const confirmarDelecao = (pessoa: Pessoa) => {
@@ -469,62 +360,36 @@ export default function ListaPessoas({
                                             <>
                                                 {/* Cargo */}
                                                 <td className="py-3 px-3">
-                                                    {editandoId === pessoa.id && podeFullEdit ? (
-                                                        <select
-                                                            defaultValue={pessoa.cargo_id || 0}
-                                                            onChange={(e) => handleMudarCargo(pessoa, Number(e.target.value))}
-                                                            className="bg-gray-800 border border-yellow-500/50 text-yellow-100 text-xs rounded p-1 max-w-[180px]"
-                                                        >
-                                                            <option value={0}>Sem cargo</option>
-                                                            {cargos.map(c => (
-                                                                <option key={c.id} value={c.id}>{c.nome}</option>
-                                                            ))}
-                                                        </select>
-                                                    ) : (
-                                                        <span
-                                                            className={`text-[10px] font-sans ${pessoa.cargo_nome ? 'text-yellow-400 font-medium' : 'text-gray-500 italic'} ${podeFullEdit ? 'cursor-pointer hover:underline underline-offset-2 decoration-white/20' : ''}`}
-                                                            onClick={() => podeFullEdit && actStartEdit(pessoa)}
-                                                            title={podeFullEdit ? "Clique para alterar cargo" : ""}
-                                                        >
-                                                            {pessoa.cargo_nome || 'Sem cargo'}
-                                                        </span>
-                                                    )}
+                                                    <span
+                                                        className={`text-[10px] font-sans ${pessoa.cargo_nome ? 'text-yellow-400 font-medium' : 'text-gray-500 italic'}`}
+                                                    >
+                                                        {pessoa.cargo_nome || 'Sem cargo'}
+                                                    </span>
                                                 </td>
 
                                                 {/* Login */}
                                                 <td className="py-3 px-3">
-                                                    {editandoId === pessoa.id && podeFullEdit ? (
-                                                        <input
-                                                            type="text"
-                                                            value={editandoLogin}
-                                                            onChange={(e) => setEditandoLogin(e.target.value)}
-                                                            onBlur={() => handleMudarLogin(pessoa, editandoLogin)}
-                                                            className="bg-gray-800 border border-yellow-500/50 text-yellow-100 text-[10px] rounded p-1 w-full focus:outline-none"
-                                                            placeholder="Login"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-[11px] text-gray-400 font-sans">
-                                                            {pessoa.login || '-'}
-                                                        </span>
-                                                    )}
+                                                    <span className="text-[11px] text-gray-400 font-sans">
+                                                        {pessoa.login || '-'}
+                                                    </span>
                                                 </td>
 
                                                 {/* Senha */}
                                                 <td className="py-3 px-3">
-                                                    {editandoId === pessoa.id && podeFullEdit ? (
-                                                        <input
-                                                            type="text"
-                                                            value={editandoSenha}
-                                                            onChange={(e) => setEditandoSenha(e.target.value)}
-                                                            onBlur={() => handleMudarSenha(pessoa, editandoSenha)}
-                                                            className="bg-gray-800 border border-yellow-500/50 text-yellow-100 text-[10px] rounded p-1 w-full focus:outline-none"
-                                                            placeholder="Senha"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-[11px] text-gray-500 font-mono">
-                                                            {pessoa.senha ? '••••••' : '-'}
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[11px] text-gray-500 font-mono min-w-[60px]">
+                                                            {pessoa.senha ? (senhasVisiveis[pessoa.id] ? pessoa.senha : '••••••') : '-'}
                                                         </span>
-                                                    )}
+                                                        {pessoa.senha && (
+                                                            <button
+                                                                onClick={() => toggleSenhaVisivel(pessoa.id)}
+                                                                className="text-gray-500 hover:text-yellow-500 transition-colors"
+                                                                title={senhasVisiveis[pessoa.id] ? "Ocultar Senha" : "Mostrar Senha"}
+                                                            >
+                                                                {senhasVisiveis[pessoa.id] ? '👁️‍🗨️' : '👁️'}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
 
                                                 {/* Loja */}
@@ -551,25 +416,12 @@ export default function ListaPessoas({
                                                         </span>
                                                     ) : (
                                                         <button
-                                                            onClick={() => onEditPessoa ? onEditPessoa(pessoa) : actStartEdit(pessoa)}
+                                                            onClick={() => onEditPessoa ? onEditPessoa(pessoa) : () => {}}
                                                             className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 rounded transition"
                                                             title="Editar"
                                                         >
                                                             ✏️
                                                         </button>
-                                                    )
-                                                )}
-                                                {podeEditar && editandoId === pessoa.id && (
-                                                    <button
-                                                        onClick={() => {
-                                                            handleMudarTelefone(pessoa, editandoTelefone);
-                                                            setEditandoId(null);
-                                                        }}
-                                                        className="p-1.5 text-green-400 hover:text-green-300 hover:bg-green-900/30 rounded transition"
-                                                        title="Concluir"
-                                                    >
-                                                        ✅
-                                                    </button>
                                                 )}
 
                                                 {podeDeletar && (
