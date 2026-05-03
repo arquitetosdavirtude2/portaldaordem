@@ -81,16 +81,20 @@ export default function LojasDashboardPage() {
 
                 // Garantir que o VM logado apareça na lista (se for conta de loja e não estiver na lista)
                 if (acessoAtual?.role === 'loja' && acessoAtual.nome && acessoAtual.nome !== 'Irmão') {
-                    const jaNaLista = data.some((p: any) => 
-                        p.nome.toLowerCase().includes(acessoAtual.nome!.toLowerCase()) ||
-                        acessoAtual.nome!.toLowerCase().includes(p.nome.toLowerCase())
-                    );
+                    const nomeVM = acessoAtual.nome.toLowerCase().trim();
+                    const jaNaLista = data.some((p: any) => {
+                        const pNome = (p.nome || "").toLowerCase();
+                        const pCargo = (p.cargo_nome || "").toLowerCase();
+                        // Se o nome bate ou se ele já é o Venerável na lista
+                        return pNome.includes(nomeVM) || nomeVM.includes(pNome) || pCargo.includes('venerável');
+                    });
+                    
                     if (!jaNaLista) {
                         data.unshift({
                             id: -99, // ID Virtual
                             nome: acessoAtual.nome,
                             telefone: '-',
-                            status: 'Mestre',
+                            status: acessoAtual.cargo?.includes('Mestre Instalado') ? 'Mestre Instalado' : 'Mestre',
                             cargo_nome: 'Venerável Mestre',
                             loja_id: acessoAtual.loja_id,
                             ativo: 1,

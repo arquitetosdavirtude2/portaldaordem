@@ -81,13 +81,12 @@ export default function ListaPessoas({
     const storeId = acesso?.loja_id;
 
     const pessoasFiltradas = pessoasSafe.filter(p => {
-        // Se estivermos na aba de candidatos, mostrar apenas Profanos/Candidatos pelo TIPO DE CADASTRO
+        // Se estivermos na aba de candidatos (MAPA), mostrar apenas Profanos/Candidatos pelo TIPO DE CADASTRO
         const isCandidateType = p.tipo_pessoa === 'candidato';
         if (isCandidato) {
             if (!isCandidateType) return false;
-        } else {
-            if (isCandidateType) return false;
         }
+        // OBS: Se NÃO estivermos no mapa (isCandidato=false), mostramos TODO MUNDO (Obreiros + Candidatos)
 
         // Filtro de Grau selecionado no Dropdown
         const matchStatus = filtroStatus === 'todos' || p.status === filtroStatus;
