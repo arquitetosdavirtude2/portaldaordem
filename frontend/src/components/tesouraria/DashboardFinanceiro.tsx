@@ -188,11 +188,11 @@ export default function DashboardFinanceiro({
                         <select 
                             value={mesAtivo}
                             onChange={(e) => setMesAtivo(Number(e.target.value))}
-                            className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
+                            className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all uppercase cursor-pointer hover:bg-black/60"
                         >
-                            <option value={0}>Tudo (Sem Filtro)</option>
+                            <option value={0} className="bg-[#0a0a0a]">Tudo (Sem Filtro)</option>
                             {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
-                                <option key={m} value={i + 1}>{m}</option>
+                                <option key={m} value={i + 1} className="bg-[#0a0a0a]">{m}</option>
                             ))}
                         </select>
                         
@@ -200,10 +200,10 @@ export default function DashboardFinanceiro({
                             <select 
                                 value={anoAtivo}
                                 onChange={(e) => setAnoAtivo(Number(e.target.value))}
-                                className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all cursor-pointer hover:bg-black/60"
+                                className="bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-all cursor-pointer hover:bg-black/60"
                             >
                                 {[2024, 2025, 2026].map(val => (
-                                    <option key={val} value={val}>{val}</option>
+                                    <option key={val} value={val} className="bg-[#0a0a0a]">{val}</option>
                                 ))}
                             </select>
                         )}

@@ -331,9 +331,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     value={form.caixa_id}
                                     onChange={e => setForm({...form, caixa_id: parseInt(e.target.value)})}
                                     disabled={isEdit}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer disabled:opacity-50 transition-all hover:border-white/20"
+                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer disabled:opacity-50 transition-all hover:border-white/20"
                                 >
-                                    {caixas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                                    {caixas.map(c => <option key={c.id} value={c.id} className="bg-[#0a0a0a]">{c.nome}</option>)}
                                 </select>
                             ) : (
                                 <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/10 animate-in slide-in-from-top-2">
@@ -347,10 +347,10 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     <select
                                         value={novoCaixaForm.finalidade}
                                         onChange={e => setNovoCaixaForm({...novoCaixaForm, finalidade: e.target.value})}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-white outline-none appearance-none cursor-pointer"
+                                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg p-3 text-xs text-white outline-none appearance-none cursor-pointer"
                                     >
-                                        <option value="mensalidade">Finalidade: Geral (Mensalidades/Joias)</option>
-                                        <option value="benevolencia">Finalidade: Benevolência (Caridade)</option>
+                                        <option value="mensalidade" className="bg-[#0a0a0a]">Finalidade: Geral (Mensalidades/Joias)</option>
+                                        <option value="benevolencia" className="bg-[#0a0a0a]">Finalidade: Benevolência (Caridade)</option>
                                     </select>
                                     <input 
                                         type="number"
@@ -402,10 +402,10 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     const categoriasDoGrupo = categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].find(g => g.nome === novoGrupo)?.categorias || [];
                                     setForm({ ...form, grupo: novoGrupo, categoria: categoriasDoGrupo[0]?.id || '' });
                                 }}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
+                                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
                                 {categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].map(grupo => (
-                                    <option key={grupo.nome} value={grupo.nome}>{grupo.nome}</option>
+                                    <option key={grupo.nome} value={grupo.nome} className="bg-[#0a0a0a]">{grupo.nome}</option>
                                 ))}
                             </select>
                         </div>
@@ -414,10 +414,10 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             <select 
                                 value={form.categoria}
                                 onChange={e => setForm({...form, categoria: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
+                                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
                                 {categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].find(g => g.nome === form.grupo)?.categorias.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                    <option key={cat.id} value={cat.id} className="bg-[#0a0a0a]">{cat.label}</option>
                                 ))}
                             </select>
                         </div>

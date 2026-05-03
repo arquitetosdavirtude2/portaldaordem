@@ -271,11 +271,11 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     <select
                         value={categoriaFiltro}
                         onChange={(e) => setCategoriaFiltro(e.target.value as any)}
-                        className="h-7 bg-white/5 border-none rounded-md px-2 text-[9px] font-bold text-yellow-500 focus:outline-none transition-colors uppercase cursor-pointer"
+                        className="h-7 bg-[#0a0a0a] border border-white/10 rounded-md px-2 text-[9px] font-bold text-yellow-500 focus:outline-none transition-colors uppercase cursor-pointer"
                     >
-                        <option value="todas">Todas</option>
-                        <option value="joia">Joia</option>
-                        <option value="mensalidade">Mensalidade</option>
+                        <option value="todas" className="bg-[#0a0a0a]">Todas</option>
+                        <option value="joia" className="bg-[#0a0a0a]">Joia</option>
+                        <option value="mensalidade" className="bg-[#0a0a0a]">Mensalidade</option>
                     </select>
                 </div>
 
@@ -295,19 +295,19 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
                     <select
                         value={mesAtivo}
                         onChange={(e) => setMesAtivo(Number(e.target.value))}
-                        className="h-9 bg-black/40 border border-white/10 rounded-lg px-2 text-[10px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase cursor-pointer"
+                        className="h-9 bg-[#0a0a0a] border border-white/10 rounded-lg px-2 text-[10px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase cursor-pointer"
                     >
                         {['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'].map((m, i) => (
-                            <option key={m} value={i + 1}>{m}</option>
+                            <option key={m} value={i + 1} className="bg-[#0a0a0a]">{m}</option>
                         ))}
                     </select>
                     <select
                         value={anoAtivo}
                         onChange={(e) => setAnoAtivo(Number(e.target.value))}
-                        className="h-9 bg-black/40 border border-white/10 rounded-lg px-2 text-[10px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors cursor-pointer"
+                        className="h-9 bg-[#0a0a0a] border border-white/10 rounded-lg px-2 text-[10px] font-bold text-gray-300 focus:outline-none focus:border-yellow-500/50 transition-colors cursor-pointer"
                     >
                         {[2024, 2025, 2026].map(val => (
-                            <option key={val} value={val}>{val}</option>
+                            <option key={val} value={val} className="bg-[#0a0a0a]">{val}</option>
                         ))}
                     </select>
                 </div>
