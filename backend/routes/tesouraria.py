@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from database import get_db, get_treasury_db, TREASURY_DB_URL
-from models import Transacao, Pessoa, Caixa
+from models import Transacao, Pessoa, Caixa, Usuario
+
 from datetime import datetime, date
 import calendar
 

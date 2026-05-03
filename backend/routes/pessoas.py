@@ -4,7 +4,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 from typing import List, Optional
 from database import get_db
-from models import Pessoa, Estado, Cargo
+from models import Pessoa, Estado, Cargo, Usuario
 from datetime import datetime
 
 router = APIRouter()
