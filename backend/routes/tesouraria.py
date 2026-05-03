@@ -266,106 +266,75 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     
-    caixa = transacao.caixa
-    
-    # Logic for balance update when status changes to 'pago'
-    if dados.status == "pago" and transacao.status != "pago":
-        if transacao.tipo == "entrada":
-            caixa.saldo_atual += transacao.valor
-        else:
-            caixa.saldo_atual -= transacao.valor
-        transacao.status = "pago"
-        if not dados.data_pagamento:
-             transacao.data_pagamento = datetime.now().strftime("%Y-%m-%d")
-    
-    # Handle balance updates if valor OR tipo changes while status is already 'pago'
-    if transacao.status == "pago" and (dados.valor is not None or dados.tipo is not None):
-        # 1. Reverse the current value (using 0.0 if valor is None)
-        valor_atual = transacao.valor if transacao.valor is not None else 0.0
-        if transacao.tipo == "entrada":
-            caixa.saldo_atual -= valor_atual
-        else:
-            caixa.saldo_atual += valor_atual
-        
-        # 2. Apply new values
-        if dados.valor is not None:
-             transacao.valor = dados.valor
-        if dados.tipo is not None:
-             transacao.tipo = dados.tipo
-             
-        # 3. Apply the impact of the new values
-        novo_valor = transacao.valor if transacao.valor is not None else 0.0
-        if transacao.tipo == "entrada":
-            caixa.saldo_atual += novo_valor
-        else:
-            caixa.saldo_atual -= novo_valor
-    
-    # Update core fields for both PAGO and PENDENTE
-    if dados.valor is not None:
-         transacao.valor = dados.valor
-    if dados.tipo is not None:
-         transacao.tipo = dados.tipo
-
     try:
-        if dados.caixa_id is not None:
-            transacao.caixa_id = dados.caixa_id
-        if dados.pessoa_id is not None:
-            transacao.pessoa_id = dados.pessoa_id if dados.pessoa_id != 0 else None
-        if dados.descricao is not None:
-            transacao.descricao = dados.descricao
-        if dados.notas is not None:
-            transacao.notas = dados.notas
+        caixa = transacao.caixa
+        
+        # Helper to safely update balance only if caixa exists
+        def update_caixa_balance(amount, is_addition):
+            if caixa is not None:
+                if is_addition:
+                    caixa.saldo_atual += amount
+                else:
+                    caixa.saldo_atual -= amount
+
+        # 1. Logic for balance update when status changes to 'pago'
+        if dados.status == "pago" and transacao.status != "pago":
+            update_caixa_balance(transacao.valor or 0.0, transacao.tipo == "entrada")
+            transacao.status = "pago"
+            if not dados.data_pagamento:
+                 transacao.data_pagamento = datetime.now().strftime("%Y-%m-%d")
+        
+        # 2. Handle balance updates if valor OR tipo changes while status is already 'pago'
+        if transacao.status == "pago" and (dados.valor is not None or dados.tipo is not None):
+            # Reverse old
+            update_caixa_balance(transacao.valor or 0.0, transacao.tipo != "entrada")
+            
+            # Apply new
+            if dados.valor is not None: transacao.valor = dados.valor
+            if dados.tipo is not None: transacao.tipo = dados.tipo
+            
+            update_caixa_balance(transacao.valor or 0.0, transacao.tipo == "entrada")
+        
+        # 3. Update all other fields safely
+        if dados.valor is not None: transacao.valor = dados.valor
+        if dados.tipo is not None: transacao.tipo = dados.tipo
+        if dados.caixa_id is not None: transacao.caixa_id = dados.caixa_id
+        if dados.pessoa_id is not None: transacao.pessoa_id = dados.pessoa_id if dados.pessoa_id != 0 else None
+        if dados.descricao is not None: transacao.descricao = dados.descricao
+        if dados.notas is not None: transacao.notas = dados.notas
+        if dados.categoria is not None: transacao.categoria = dados.categoria
+        if dados.anexo_url is not None: transacao.anexo_url = dados.anexo_url
+        if dados.status is not None: transacao.status = dados.status
+
         if dados.data_vencimento is not None:
-            # Ensure YYYY-MM-DD format
             d_venc = dados.data_vencimento
-            if "/" in d_venc: # Handle DD/MM/YYYY if sent by mistake
-                d_venc = "-".join(d_venc.split("/")[::-1])
+            if "/" in d_venc: d_venc = "-".join(d_venc.split("/")[::-1])
             transacao.data_vencimento = d_venc
-        if dados.categoria is not None:
-            transacao.categoria = dados.categoria
-        if dados.anexo_url is not None:
-            transacao.anexo_url = dados.anexo_url
 
         if dados.data_pagamento is not None:
             transacao.data_pagamento = dados.data_pagamento
 
-        # Try to update recorrencia only if column exists in DB
-        if dados.recorrencia is not None:
-            try:
+        # Final commit with specific column error handling
+        try:
+            if dados.recorrencia is not None:
                 transacao.recorrencia = dados.recorrencia
-                db_treasury.commit()
-            except Exception as e:
-                db_treasury.rollback()
-                if "Unknown column 'recorrencia'" in str(e) or "no such column: recorrencia" in str(e):
-                    # Ignore recorrencia if column doesn't exist
-                    pass
-                else:
-                    raise e
-        else:
             db_treasury.commit()
+        except Exception as e:
+            db_treasury.rollback()
+            if "Unknown column" in str(e) or "no such column" in str(e):
+                # Retry without recorrencia
+                print(f"DEBUG: Coluna recorrencia ausente, salvando sem ela.")
+                db_treasury.commit()
+            else:
+                raise e
 
         db_treasury.refresh(transacao)
-        
-        return TransacaoResponse(
-            id=transacao.id,
-            caixa_id=transacao.caixa_id,
-            pessoa_id=transacao.pessoa_id,
-            tipo=transacao.tipo,
-            categoria=transacao.categoria,
-            valor=transacao.valor,
-            recorrencia=getattr(transacao, 'recorrencia', 'nenhuma'),
-            data_vencimento=transacao.data_vencimento,
-            data_pagamento=transacao.data_pagamento,
-            descricao=transacao.descricao,
-            notas=transacao.notas,
-            anexo_url=transacao.anexo_url,
-            status=transacao.status
-        )
+        return TransacaoResponse.from_orm(transacao)
+
     except Exception as e:
         db_treasury.rollback()
-        print(f"ERRO CRITICO AO ATUALIZAR TRANSACAO: {e}")
-        # Return a more helpful error but don't crash
-        raise HTTPException(status_code=500, detail=f"Erro ao salvar: {str(e)}")
+        print(f"ERRO FATAL NO SAVE: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Falha ao salvar: {str(e)}")
 
 @router.delete("/transacoes/{transacao_id}")
 def excluir_transacao(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
