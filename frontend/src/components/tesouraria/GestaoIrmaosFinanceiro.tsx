@@ -35,6 +35,7 @@ interface IrmaoFinanceiro {
     meses_atraso: MesAtraso[];
     joia_quitada_externa: boolean;
     isencao_inicio: boolean;
+    tipo_pessoa?: string;
 }
 
 export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
