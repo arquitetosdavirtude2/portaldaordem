@@ -924,6 +924,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 "mensalidade_pendente": float(m_pend),
                 "saude_financeira": saude,
                 "meses_atraso": detalhes_meses,
+                "meses_lista_aberto": [m['label'] for m in detalhes_meses if m.get('status') == 'pendente'],
                 "joia_quitada_externa": joia_quitada_externa,
                 "isencao_inicio": isencao_inicio,
                 "tipo_pessoa": p_tipo,
@@ -999,12 +1000,13 @@ def remover_excecao(
 @router.get("/relatorio/inadimplentes/{loja_id}")
 def relatorio_inadimplentes(
     loja_id: int,
+    incluir_adormecidos: bool = False,
     db_main: Session = Depends(get_db),
     db_treasury: Session = Depends(get_treasury_db)
 ):
     """Gera um relatório CSV consolidado de irmãos inadimplentes."""
-    # Obter dados financeiros (sempre incluindo adormecidos para o relatório ser completo)
-    dados = _calcular_financeiro_irmaos_logic(loja_id, None, None, True, db_main, db_treasury)
+    # Obter dados financeiros respeitando o filtro de adormecidos do usuário
+    dados = _calcular_financeiro_irmaos_logic(loja_id, None, None, incluir_adormecidos, db_main, db_treasury)
     
     # Filtrar apenas inadimplentes (Atrasados ou Pendentes)
     inadimplentes = [d for d in dados if d['saude_financeira'] in ['ATRASADO', 'PENDENTE']]
@@ -1018,14 +1020,8 @@ def relatorio_inadimplentes(
     writer.writerow(['Obreiro', 'WhatsApp', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
     
     for d in inadimplentes:
-        # FILTRO ROBUSTO: Pega qualquer item que não esteja pago/isento/justificado
-        meses_lista = []
-        for m in d.get('meses_atraso', []):
-            st = str(m.get('status', '')).lower()
-            if st == 'pendente':
-                meses_lista.append(m.get('label', ''))
-        
-        meses_aberto = ", ".join(meses_lista)
+        # Pega a lista pré-calculada e limpa de meses pendentes
+        meses_aberto = ", ".join(d.get('meses_lista_aberto', []))
         status_txt = "Ativo" if d['ativo'] == 1 else f"Adormecido ({d['data_adormecimento']})"
         
         writer.writerow([
