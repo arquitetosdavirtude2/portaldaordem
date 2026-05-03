@@ -316,7 +316,11 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         if dados.notas is not None:
             transacao.notas = dados.notas
         if dados.data_vencimento is not None:
-            transacao.data_vencimento = dados.data_vencimento
+            # Ensure YYYY-MM-DD format
+            d_venc = dados.data_vencimento
+            if "/" in d_venc: # Handle DD/MM/YYYY if sent by mistake
+                d_venc = "-".join(d_venc.split("/")[::-1])
+            transacao.data_vencimento = d_venc
         if dados.categoria is not None:
             transacao.categoria = dados.categoria
         if dados.anexo_url is not None:
@@ -325,10 +329,21 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         if dados.data_pagamento is not None:
             transacao.data_pagamento = dados.data_pagamento
 
+        # Try to update recorrencia only if column exists in DB
         if dados.recorrencia is not None:
-            transacao.recorrencia = dados.recorrencia
-            
-        db_treasury.commit()
+            try:
+                transacao.recorrencia = dados.recorrencia
+                db_treasury.commit()
+            except Exception as e:
+                db_treasury.rollback()
+                if "Unknown column 'recorrencia'" in str(e) or "no such column: recorrencia" in str(e):
+                    # Ignore recorrencia if column doesn't exist
+                    pass
+                else:
+                    raise e
+        else:
+            db_treasury.commit()
+
         db_treasury.refresh(transacao)
         
         return TransacaoResponse(
@@ -338,7 +353,7 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
             tipo=transacao.tipo,
             categoria=transacao.categoria,
             valor=transacao.valor,
-            recorrencia=transacao.recorrencia,
+            recorrencia=getattr(transacao, 'recorrencia', 'nenhuma'),
             data_vencimento=transacao.data_vencimento,
             data_pagamento=transacao.data_pagamento,
             descricao=transacao.descricao,
@@ -348,8 +363,9 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         )
     except Exception as e:
         db_treasury.rollback()
-        print(f"ERRO AO ATUALIZAR TRANSACAO: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"ERRO CRITICO AO ATUALIZAR TRANSACAO: {e}")
+        # Return a more helpful error but don't crash
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar: {str(e)}")
 
 @router.delete("/transacoes/{transacao_id}")
 def excluir_transacao(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
@@ -1320,13 +1336,3 @@ def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_t
     """
     
     return Response(content=html, media_type='text/html')
-
-@router.get("/debug/migrate")
-def debug_migrate(db_treasury: Session = Depends(get_treasury_db)):
-    try:
-        from sqlalchemy import text
-        db_treasury.execute(text("ALTER TABLE transacoes ADD COLUMN recorrencia VARCHAR(50) DEFAULT 'nenhuma' AFTER status"))
-        db_treasury.commit()
-        return {"status": "success", "message": "Coluna recorrencia verificada/adicionada"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
