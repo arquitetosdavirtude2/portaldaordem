@@ -628,13 +628,10 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
         # Data alvo para cálculos (se não informado, usa hoje)
         hoje = date.today()
-        # Se for passado mes/ano, usamos o último dia desse mês para cálculo de pendência
-        if mes and ano:
-            import calendar
-            _, last_day = calendar.monthrange(ano, mes)
-            alvo = date(ano, mes, last_day)
-        else:
+        if not mes or not ano:
             alvo = hoje
+        else:
+            alvo = date(int(ano), int(mes), 1)
 
         query_pessoas = text("""
             SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso, p.data_iniciacao,
