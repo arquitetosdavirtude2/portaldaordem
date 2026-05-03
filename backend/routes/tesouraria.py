@@ -638,7 +638,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
 
         query_pessoas = text("""
             SELECT p.id, p.nome, c.nome AS cargo_nome, p.data_admissao, p.ativo, p.data_adormecimento, p.tipo_ingresso, p.data_iniciacao,
-                   p.joia_quitada_externa, p.isencao_inicio, p.login, p.status, p.tipo_pessoa
+                   p.joia_quitada_externa, p.isencao_inicio, p.login, p.status, p.tipo_pessoa, p.telefone
             FROM pessoas p
             LEFT JOIN cargos c ON p.cargo_id = c.id
             WHERE p.loja_id = :lid
@@ -662,6 +662,7 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
             isencao_inicio = bool(p[9])
             p_status = (p[11] or "").strip()
             p_tipo = (p[12] or "obreiro").strip()
+            p_telefone = (p[13] or "").strip()
 
             # Prioriza data_iniciacao (campo do cadastro) como única fonte da verdade
             data_ref_calc = data_iniciacao if data_iniciacao else data_adm_original
@@ -924,7 +925,8 @@ def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db
                 "meses_atraso": detalhes_meses,
                 "joia_quitada_externa": joia_quitada_externa,
                 "isencao_inicio": isencao_inicio,
-                "tipo_pessoa": p_tipo
+                "tipo_pessoa": p_tipo,
+                "telefone": p_telefone
             })
 
         return res
@@ -1012,14 +1014,17 @@ def relatorio_inadimplentes(
     writer = csv.writer(output, delimiter=';')
     
     # Cabeçalho
-    writer.writerow(['Obreiro', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
+    writer.writerow(['Obreiro', 'WhatsApp', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
     
     for d in inadimplentes:
-        meses_aberto = ", ".join([m['label'] for m in d['meses_atraso']])
+        # FILTRO CRÍTICO: No CSV de Meses em Aberto, mostrar APENAS o que está realmente pendente
+        meses_lista = [m['label'] for m in d['meses_atraso'] if m.get('status') == 'pendente']
+        meses_aberto = ", ".join(meses_lista)
         status_txt = "Ativo" if d['ativo'] == 1 else f"Adormecido ({d['data_adormecimento']})"
         
         writer.writerow([
             d['nome'],
+            d['telefone'],
             d['cargo'],
             status_txt,
             d['data_admissao'],
