@@ -17,6 +17,7 @@ interface Pessoa {
     ativo?: number;
     data_adormecimento?: string | null;
     data_admissao?: string | null;
+    tipo_pessoa?: string;
 }
 
 interface Cargo {
@@ -444,18 +445,18 @@ export default function ListaPessoas({
                                             ) : (
                                                 <span
                                                     className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-semibold uppercase tracking-wider border transition-all ${
+                                                        pessoa.tipo_pessoa === 'candidato' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.1)]' :
                                                         pessoa.status === 'Aprendiz' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                                         pessoa.status === 'Companheiro' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
                                                         pessoa.status === 'Mestre' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
                                                         pessoa.status === 'Mestre Instalado' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40 shadow-[0_0_10px_rgba(234,179,8,0.1)]' :
-                                                        pessoa.status === 'Candidato' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                                                        pessoa.status === 'Profano' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                                        pessoa.status === 'Candidato' || pessoa.status === 'Profano' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40' :
                                                         'bg-gray-500/10 text-gray-400 border-gray-500/20'
                                                     } ${podeMudarStatus ? 'cursor-pointer hover:bg-opacity-40' : 'cursor-default opacity-80'}`}
                                                     onClick={() => podeMudarStatus && actStartEdit(pessoa)}
                                                     title={podeEditar ? "Clique para alterar" : "Apenas leitura"}
                                                 >
-                                                    {pessoa.status}
+                                                    {pessoa.tipo_pessoa === 'candidato' ? 'Candidato' : pessoa.status}
                                                 </span>
                                             )}
                                         </td>
