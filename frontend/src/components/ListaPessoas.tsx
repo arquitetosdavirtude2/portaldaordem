@@ -81,13 +81,12 @@ export default function ListaPessoas({
     const storeId = acesso?.loja_id;
 
     const pessoasFiltradas = pessoasSafe.filter(p => {
-        // Se estivermos na aba de candidatos, mostrar apenas Profanos/Candidatos
-        // Se estivermos na aba de obreiros, mostrar tudo que NÃO for Profano/Candidato
-        const isCandidateStatus = ['Profano', 'Candidato'].includes(p.status);
+        // Se estivermos na aba de candidatos, mostrar apenas Profanos/Candidatos pelo TIPO DE CADASTRO
+        const isCandidateType = p.tipo_pessoa === 'candidato';
         if (isCandidato) {
-            if (!isCandidateStatus) return false;
+            if (!isCandidateType) return false;
         } else {
-            if (isCandidateStatus) return false;
+            if (isCandidateType) return false;
         }
 
         // Filtro de Grau selecionado no Dropdown
@@ -314,9 +313,10 @@ export default function ListaPessoas({
                                     </>
                                 ) : (
                                     <>
-                                        <option value="Aprendiz">Aprendiz</option>
-                                        <option value="Companheiro">Companheiro</option>
-                                        <option value="Mestre">Mestre</option>
+                                        <option value="Aprendiz" className="bg-[#0a0a0a]">Aprendiz</option>
+                                        <option value="Companheiro" className="bg-[#0a0a0a]">Companheiro</option>
+                                        <option value="Mestre" className="bg-[#0a0a0a]">Mestre</option>
+                                        <option value="Mestre Instalado" className="bg-[#0a0a0a]">Mestre Instalado</option>
                                     </>
                                 )}
                             </select>
@@ -364,7 +364,7 @@ export default function ListaPessoas({
                                                 ) : (
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-2">
-                                                                <span className={`text-[11px] font-bold ${pessoa.ativo === 0 ? 'text-red-500/50' : 'text-gray-200'}`}>{pessoa.nome}</span>
+                                                                <span className={`text-[11px] font-semibold ${pessoa.ativo === 0 ? 'text-red-500/50' : 'text-gray-300'}`}>{pessoa.nome}</span>
                                                                 {pessoa.tipo_pessoa === 'candidato' && (
                                                                     <span className="text-[8px] text-orange-400 font-black uppercase tracking-tighter ml-1">
                                                                         - CANDIDATO
