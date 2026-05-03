@@ -608,12 +608,13 @@ def listar_financeiro_irmaos(
     mes: Optional[int] = None, 
     ano: Optional[int] = None,
     incluir_adormecidos: bool = False,
+    db_main: Session = Depends(get_db),
     db_treasury: Session = Depends(get_treasury_db)
 ):
     """Listar situação financeira dos irmãos contribuintes da Loja."""
-    return _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db_treasury)
+    return _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db_main, db_treasury)
 
-def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db_treasury):
+def _calcular_financeiro_irmaos_logic(loja_id, mes, ano, incluir_adormecidos, db_main, db_treasury):
     try:
         from sqlalchemy import text
         from datetime import datetime, date
@@ -1018,11 +1019,12 @@ def remover_excecao(
 @router.get("/relatorio/inadimplentes/{loja_id}")
 def relatorio_inadimplentes(
     loja_id: int,
+    db_main: Session = Depends(get_db),
     db_treasury: Session = Depends(get_treasury_db)
 ):
     """Gera um relatório CSV consolidado de irmãos inadimplentes."""
     # Obter dados financeiros (sempre incluindo adormecidos para o relatório ser completo)
-    dados = _calcular_financeiro_irmaos_logic(loja_id, None, None, True, db_treasury)
+    dados = _calcular_financeiro_irmaos_logic(loja_id, None, None, True, db_main, db_treasury)
     
     # Filtrar apenas inadimplentes (Atrasados ou Pendentes)
     inadimplentes = [d for d in dados if d['saude_financeira'] in ['ATRASADO', 'PENDENTE']]
