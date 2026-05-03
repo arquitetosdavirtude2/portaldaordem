@@ -422,6 +422,7 @@ export default function ListaPessoas({
                                                         >
                                                             ✏️
                                                         </button>
+                                                    )
                                                 )}
 
                                                 {podeDeletar && (
