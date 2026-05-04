@@ -11,6 +11,8 @@ export default function MapaPage() {
     const [loadingMessage, setLoadingMessage] = useState("Otimizando experiência...");
 
     useEffect(() => {
+        console.log("%c--- SISTEMA DE MAPA HIBRIDO ATIVADO V5 ---", "color: #eab308; font-weight: bold; font-size: 14px;");
+        
         const checkHardware = () => {
             // 1. Try to get from cache first for instant load
             const cachedResult = localStorage.getItem('gomb_map_hardware_3d');
