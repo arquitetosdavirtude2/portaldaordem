@@ -22,10 +22,22 @@ export default function MapaBrasil() {
     const [estadoHover, setEstadoHover] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'master' | 'mestre' | 'estadual' | 'admin' | 'grao_mestre' | 'federal' | 'mestre_federal' | null>(null);
     const [userEstados, setUserEstados] = useState<string[]>([]);
-    const [showPermissionWarning, setShowPermissionWarning] = useState(false);
+    const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
 
-    // Load user role on mount
+    // Load user role on mount and check WebGL
     useEffect(() => {
+        // WebGL Check
+        const checkWebGL = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const isAvailable = !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+                setWebglAvailable(isAvailable);
+            } catch (e) {
+                setWebglAvailable(false);
+            }
+        };
+        checkWebGL();
+
         if (typeof window !== 'undefined') {
             const access = localStorage.getItem('acesso');
             if (access) {
@@ -83,11 +95,28 @@ export default function MapaBrasil() {
 
             {/* Globe Container - Full Screen Background */}
             <div className={`absolute inset-0 z-0 transition-all duration-700 ${estadoSelecionado ? 'translate-x-[-20%] scale-75 blur-sm opacity-50' : 'opacity-100'}`}>
-                <Globo3D
-                    onEstadoClick={handleClickEstado}
-                    hoveredState={estadoHover}
-                    onHoverState={setEstadoHover}
-                />
+                {webglAvailable === false ? (
+                    <div className="flex flex-col items-center justify-center w-full h-full bg-black/80 backdrop-blur-md p-10 text-center">
+                        <div className="w-20 h-20 mb-6 text-yellow-500/20">
+                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                        </div>
+                        <h2 className="text-xl font-bold text-yellow-500 uppercase tracking-widest mb-4 font-serif">Hardware não suportado</h2>
+                        <p className="text-gray-400 text-xs uppercase tracking-widest leading-loose max-w-md">
+                            Este computador possui uma placa de vídeo legada que não suporta aceleração 3D (WebGL).
+                            <br/><br/>
+                            <span className="text-white/40 italic">Para visualizar o Mapa dos Orientes, utilize um dispositivo mais moderno.</span>
+                        </p>
+                        <button onClick={() => router.replace('/dashboard')} className="mt-10 px-8 py-3 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-500 border border-yellow-500/30 rounded-full text-[10px] font-bold uppercase tracking-[0.3em] transition-all">
+                            Voltar ao Painel
+                        </button>
+                    </div>
+                ) : (
+                    <Globo3D
+                        onEstadoClick={handleClickEstado}
+                        hoveredState={estadoHover}
+                        onHoverState={setEstadoHover}
+                    />
+                )}
             </div>
 
             {/* State Details Overlay */}
