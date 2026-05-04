@@ -87,7 +87,7 @@ export default function FormCadastro({
   const [indicadores, setIndicadores] = useState<Indicador[]>([]);
 
   // Novos campos de Categorização
-  const [tipoPessoa, setTipoPessoa] = useState<string>('obreiro');
+  const [tipoPessoa, setTipoPessoa] = useState<string>(isCandidato ? 'candidato' : 'obreiro');
   const [motivoAdormecimento, setMotivoAdormecimento] = useState<string>('');
   const [dataIniciacao, setDataIniciacao] = useState<string>('');
 
@@ -155,7 +155,7 @@ export default function FormCadastro({
         setDataAdormecimento('');
         setTipoIngresso('iniciacao');
         setIndicadorId('');
-        setTipoPessoa('obreiro');
+        setTipoPessoa(isCandidato ? 'candidato' : 'obreiro');
         setMotivoAdormecimento('');
         setDataIniciacao('');
     }

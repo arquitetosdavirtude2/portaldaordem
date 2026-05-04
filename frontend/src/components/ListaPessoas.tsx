@@ -78,8 +78,11 @@ export default function ListaPessoas({
     const storeId = acesso?.loja_id;
 
     const pessoasFiltradas = pessoasSafe.filter(p => {
-        // Se estivermos na aba de candidatos (MAPA), mostrar apenas Profanos/Candidatos pelo TIPO DE CADASTRO
-        const isCandidateType = p.tipo_pessoa === 'candidato';
+        // Se estivermos na aba de candidatos (MAPA), mostrar apenas Profanos/Candidatos
+        const isCandidateType = p.tipo_pessoa === 'candidato' || 
+                               p.status === 'Profano' || 
+                               p.status === 'Candidato';
+                               
         if (isCandidato) {
             if (!isCandidateType) return false;
         }
