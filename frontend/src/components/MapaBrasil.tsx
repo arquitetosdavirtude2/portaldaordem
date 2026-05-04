@@ -7,15 +7,9 @@ import { mapData } from './mapData';
 import EstadoDetailsOverlay from './EstadoDetailsOverlay';
 import Mapa2D from './Mapa2D';
 
-// Dynamically import Globo3D to avoid SSR issues with window/webgl
-const Globo3D = dynamic(() => import('./Globo3D'), {
-    ssr: false,
-    loading: () => (
-        <div className="flex items-center justify-center w-full h-full text-white/50 animate-pulse uppercase tracking-[0.3em] text-[10px]">
-            Iniciando Satélite 3D...
-        </div>
-    )
-});
+// We will use a local state to hold the dynamic component to ensure NO 3D code 
+// is even hinted to the browser until we are sure it can handle it.
+let Globo3D: any = null;
 
 export default function MapaBrasil() {
     const router = useRouter();
@@ -25,18 +19,32 @@ export default function MapaBrasil() {
     const [userEstados, setUserEstados] = useState<string[]>([]);
     const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
     const [showPermissionWarning, setShowPermissionWarning] = useState(false);
+    const [is3DLoaded, setIs3DLoaded] = useState(false);
 
     // Load user role on mount and check WebGL
     useEffect(() => {
-        // WebGL Check - Execute immediately to prevent heavy 3D load if unnecessary
         const checkWebGL = () => {
             try {
                 const canvas = document.createElement('canvas');
                 const isAvailable = !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-                console.log(`[MAP] WebGL Status: ${isAvailable ? 'AVAILABLE' : 'NOT SUPPORTED'}`);
-                setWebglAvailable(isAvailable);
+                console.log(`[MAP] WebGL Detection: ${isAvailable ? 'SUCCESS' : 'FAILED'}`);
+                
+                if (isAvailable) {
+                    // Only if WebGL is available, we dynamically import the heavy component
+                    // using the standard dynamic import but triggered manually
+                    import('./Globo3D').then(m => {
+                        Globo3D = m.default;
+                        setIs3DLoaded(true);
+                        setWebglAvailable(true);
+                    }).catch(err => {
+                        console.error("[MAP] Failed to load 3D module", err);
+                        setWebglAvailable(false);
+                    });
+                } else {
+                    setWebglAvailable(false);
+                }
             } catch (e) {
-                console.error("[MAP] Error checking WebGL", e);
+                console.error("[MAP] Error in WebGL check", e);
                 setWebglAvailable(false);
             }
         };
@@ -99,7 +107,7 @@ export default function MapaBrasil() {
 
             {/* Content Container - Switch between 3D and 2D based on hardware capability */}
             <div className={`absolute inset-0 z-0 transition-all duration-700 ${estadoSelecionado ? 'translate-x-[-20%] scale-75 blur-sm opacity-50' : 'opacity-100'}`}>
-                {webglAvailable === true ? (
+                {webglAvailable === true && is3DLoaded && Globo3D ? (
                     <Globo3D
                         onEstadoClick={handleClickEstado}
                         hoveredState={estadoHover}
@@ -113,7 +121,7 @@ export default function MapaBrasil() {
                     />
                 ) : (
                     <div className="flex items-center justify-center w-full h-full text-white/20 animate-pulse text-[10px] uppercase tracking-widest">
-                        Analisando Hardware...
+                        {webglAvailable === true ? "Iniciando Satélite..." : "Analisando Hardware..."}
                     </div>
                 )}
             </div>
