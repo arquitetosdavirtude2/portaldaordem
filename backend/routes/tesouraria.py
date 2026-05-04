@@ -404,13 +404,15 @@ def listar_transacoes(
     try:
         from sqlalchemy import text
         
-        # Base query with JOIN to caixas to filter by loja_id
+        # Base query with LEFT JOIN to avoid missing data if caixa_id is null
+        # We also need to be careful with loja_id filtering if caixa is missing
         query = """
             SELECT t.id, t.caixa_id, t.pessoa_id, t.usuario_id, t.tipo, t.categoria, t.valor, 
-                   t.data_vencimento, t.data_pagamento, t.descricao, t.status, t.anexo_url
+                   t.data_vencimento, t.data_pagamento, t.descricao, t.status, t.anexo_url,
+                   c.loja_id
             FROM transacoes t
-            JOIN caixas c ON t.caixa_id = c.id
-            WHERE c.loja_id = :loja_id
+            LEFT JOIN caixas c ON t.caixa_id = c.id
+            WHERE (c.loja_id = :loja_id OR t.caixa_id IS NULL)
         """
         params = {"loja_id": loja_id}
 
@@ -431,7 +433,6 @@ def listar_transacoes(
                 query += " AND t.data_vencimento <= :data_limite"
                 params["data_limite"] = data_limite
             else:
-                # Use CASE to choose the correct date field for filtering
                 query += """ AND (
                     CASE 
                         WHEN t.status = 'pago' AND (t.data_pagamento IS NOT NULL AND t.data_pagamento != '') 
