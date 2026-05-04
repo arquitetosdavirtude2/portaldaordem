@@ -2,47 +2,20 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic';
 import { mapData } from './mapData';
 import EstadoDetailsOverlay from './EstadoDetailsOverlay';
 import Mapa2D from './Mapa2D';
 
-// Local state for the heavy globe component
-let Globo3D: any = null;
-
-export default function MapaBrasil() {
+export default function MapaBrasil2D() {
     const router = useRouter();
     const [estadoSelecionado, setEstadoSelecionado] = useState<string | null>(null);
     const [estadoHover, setEstadoHover] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'master' | 'mestre' | 'estadual' | 'admin' | 'grao_mestre' | 'federal' | 'mestre_federal' | null>(null);
     const [userEstados, setUserEstados] = useState<string[]>([]);
     const [showPermissionWarning, setShowPermissionWarning] = useState(false);
-    const [is3DLoaded, setIs3DLoaded] = useState(false);
 
-    // Load user role on mount and initiate 3D load
+    // Load user role on mount
     useEffect(() => {
-        // Trigger the heavy load immediately since this component is ONLY rendered if WebGL is OK
-        import('./Globo3D').then(m => {
-            Globo3D = m.default;
-            setIs3DLoaded(true);
-        }).catch(err => {
-            console.error("[MAP] Failed to load 3D module", err);
-        });
-
-        if (typeof window !== 'undefined') {
-            const access = localStorage.getItem('acesso');
-            if (access) {
-                const user = JSON.parse(access);
-                const realRole = (user.role || user.tipo || 'master').toLowerCase() as any;
-                setUserRole(realRole);
-                const statesAllowed = user.allowed_states || user.estados || (user.estado ? [user.estado] : []);
-                setUserEstados(statesAllowed);
-            } else {
-                router.replace('/login');
-            }
-        }
-    }, [router]);
-
         if (typeof window !== 'undefined') {
             const access = localStorage.getItem('acesso');
             if (access) {
@@ -63,12 +36,6 @@ export default function MapaBrasil() {
         const s = sigla.trim().toUpperCase();
         const roleStr = String(userRole).toLowerCase();
         
-        console.log(`[MAP] Clique em: ${s} | Role detectada: ${roleStr}`);
-
-        // Granular Permissions:
-        // 1. Federal/Admin/Master/Grao Federal roles have UNIVERSAL access (all states).
-        // 2. Estadual/Mestre roles are RESTRICTED to their assigned states only.
-        
         const isFederal = roleStr.includes('admin') || 
                           roleStr.includes('federal') || 
                           roleStr.includes('master') ||
@@ -80,7 +47,6 @@ export default function MapaBrasil() {
             setEstadoSelecionado(s);
             setShowPermissionWarning(false);
         } else {
-            console.warn(`[MAP] Acesso negado para ${s}. Role: ${userRole} | Estados:`, userEstados);
             setShowPermissionWarning(true);
             setTimeout(() => setShowPermissionWarning(false), 3000);
         }
@@ -98,19 +64,13 @@ export default function MapaBrasil() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen overflow-hidden relative bg-masonic-blue">
 
-            {/* 3D Globe Container */}
+            {/* Flat Map Container */}
             <div className={`absolute inset-0 z-0 transition-all duration-700 ${estadoSelecionado ? 'translate-x-[-20%] scale-75 blur-sm opacity-50' : 'opacity-100'}`}>
-                {is3DLoaded && Globo3D ? (
-                    <Globo3D
-                        onEstadoClick={handleClickEstado}
-                        hoveredState={estadoHover}
-                        onHoverState={setEstadoHover}
-                    />
-                ) : (
-                    <div className="flex items-center justify-center w-full h-full text-white/20 animate-pulse text-[10px] uppercase tracking-widest">
-                        Iniciando Satélite...
-                    </div>
-                )}
+                <Mapa2D
+                    onEstadoClick={handleClickEstado}
+                    hoveredState={estadoHover}
+                    onHoverState={setEstadoHover}
+                />
             </div>
 
             {/* State Details Overlay */}
@@ -123,7 +83,7 @@ export default function MapaBrasil() {
                 />
             )}
 
-            {/* UI Header - Z-Index 10 */}
+            {/* UI Header */}
             {!estadoSelecionado && (
                 <div className="z-10 w-full max-w-4xl flex flex-col items-center pointer-events-none fixed top-10 animate-in fade-in slide-in-from-top-10 duration-700">
                     <div className="flex flex-col items-center">
@@ -155,7 +115,6 @@ export default function MapaBrasil() {
             {/* Footer / Instructions */}
             <div className="z-10 fixed bottom-10 w-full text-center pointer-events-none flex flex-col items-center gap-4">
 
-                {/* Instruction Text - Moved Up */}
                 {!estadoSelecionado && (
                     <div className="flex flex-col items-center">
                         <p className="text-[10px] text-gray-400 font-light uppercase tracking-[0.3em] animate-pulse">
@@ -170,11 +129,7 @@ export default function MapaBrasil() {
                 )}
 
                 <div className="inline-flex items-center gap-4 px-6 py-2 bg-black/40 backdrop-blur-sm rounded-full border border-white/10 shadow-lg pointer-events-auto">
-                    <button onClick={() => {
-                        // All logged users can go to Dashboard since it handles permissions
-                        // Use replace to avoid pushing duplicate entries to browser history (fixing back button loops)
-                        router.replace('/dashboard');
-                    }} className="text-xs text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2 group">
+                    <button onClick={() => router.replace('/dashboard')} className="text-xs text-gray-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2 group">
                         <span className="group-hover:-translate-x-1 transition-transform">←</span>
                         Voltar ao Painel
                     </button>
@@ -182,7 +137,7 @@ export default function MapaBrasil() {
                         <>
                             <span className="text-white/10">|</span>
                             <p className="text-[10px] text-gray-500 font-light uppercase tracking-[0.2em]">
-                                Mapa Interativo
+                                Mapa Interativo (Modo Leve)
                             </p>
                         </>
                     )}
