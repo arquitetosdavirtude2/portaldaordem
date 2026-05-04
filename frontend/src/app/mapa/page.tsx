@@ -1,57 +1,79 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 const MapaBrasil3D = dynamic(() => import('@/components/MapaBrasil'), { ssr: false });
 const MapaBrasil2D = dynamic(() => import('@/components/MapaBrasil2D'), { ssr: false });
 
+// Error Boundary Component to catch 3D crashes
+class MapErrorBoundary extends React.Component<{ children: React.ReactNode, onError: () => void }, { hasError: boolean }> {
+    constructor(props: any) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError(error: any) {
+        return { hasError: true };
+    }
+    componentDidCatch(error: any, errorInfo: any) {
+        console.error("[MAP_ERROR_BOUNDARY] 3D Map crashed:", error, errorInfo);
+        this.props.onError();
+    }
+    render() {
+        if (this.state.hasError) return null;
+        return this.props.children;
+    }
+}
+
 export default function MapaPage() {
     const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
     const [loadingMessage, setLoadingMessage] = useState("Otimizando experiência...");
+    const [force2D, setForce2D] = useState(false);
 
     useEffect(() => {
-        console.log("%c--- SISTEMA DE MAPA HIBRIDO ATIVADO V5 ---", "color: #eab308; font-weight: bold; font-size: 14px;");
-        
         const checkHardware = () => {
-            // 1. Try to get from cache first for instant load
-            const cachedResult = localStorage.getItem('gomb_map_hardware_3d');
+            // 1. Try to get from cache first - VERSION 6 to reset everyone
+            const cachedResult = localStorage.getItem('gomb_map_hardware_v6');
             if (cachedResult !== null) {
-                console.log(`[MAP_SWITCHER] Using cached hardware profile: ${cachedResult === 'true' ? '3D' : '2D'}`);
-                setWebglAvailable(cachedResult === 'true');
+                console.log(`[MAP_SWITCHER] Using hardware profile V6: ${cachedResult === '3D' ? 'PREMIUM (3D)' : 'LIGHT (2D)'}`);
+                setWebglAvailable(cachedResult === '3D');
                 return;
             }
 
             // 2. Perform the actual test if no cache
             setLoadingMessage("Analisando hardware...");
             
-            // Artificial small delay for UX so the user sees we are optimizing
             setTimeout(() => {
                 try {
                     const canvas = document.createElement('canvas');
-                    const isAvailable = !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+                    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                    const isAvailable = !!gl;
                     
-                    console.log(`[MAP_SWITCHER] Hardware test complete: ${isAvailable ? '3D SUPPORTED' : '2D MODE'}`);
+                    console.log(`[MAP_SWITCHER] Analysis complete: ${isAvailable ? '3D OK' : 'FORCING 2D'}`);
                     
-                    // Save to cache
-                    localStorage.setItem('gomb_map_hardware_3d', String(isAvailable));
+                    // Save to cache V6
+                    localStorage.setItem('gomb_map_hardware_v6', isAvailable ? '3D' : '2D');
                     setWebglAvailable(isAvailable);
                 } catch (e) {
-                    localStorage.setItem('gomb_map_hardware_3d', 'false');
+                    localStorage.setItem('gomb_map_hardware_v6', '2D');
                     setWebglAvailable(false);
                 }
-            }, 800);
+            }, 1000);
         };
 
         checkHardware();
     }, []);
 
-    // Safety function to allow the 3D component to report a failure and force 2D next time
     const handle3DFailure = () => {
-        console.warn("[MAP_SWITCHER] 3D failure reported, reverting to 2D for next visit.");
-        localStorage.setItem('gomb_map_hardware_3d', 'false');
+        console.warn("[MAP_SWITCHER] 3D failed at runtime. Switching to 2D and updating cache.");
+        localStorage.setItem('gomb_map_hardware_v6', '2D');
+        setForce2D(true);
         setWebglAvailable(false);
     };
+
+    useEffect(() => {
+        console.log("%c--- SISTEMA DE MAPA HIBRIDO ATIVADO V6 ---", "color: #eab308; font-weight: bold; font-size: 14px;");
+    }, []);
 
     if (webglAvailable === null) {
         return (
@@ -74,8 +96,10 @@ export default function MapaPage() {
 
     return (
         <main className="min-h-screen bg-black">
-            {webglAvailable ? (
-                <MapaBrasil3D /> 
+            {webglAvailable && !force2D ? (
+                <MapErrorBoundary onError={handle3DFailure}>
+                    <MapaBrasil3D /> 
+                </MapErrorBoundary>
             ) : (
                 <MapaBrasil2D />
             )}
