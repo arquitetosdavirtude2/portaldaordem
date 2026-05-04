@@ -5,13 +5,14 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { mapData } from './mapData';
 import EstadoDetailsOverlay from './EstadoDetailsOverlay';
+import Mapa2D from './Mapa2D';
 
 // Dynamically import Globo3D to avoid SSR issues with window/webgl
 const Globo3D = dynamic(() => import('./Globo3D'), {
     ssr: false,
     loading: () => (
-        <div className="flex items-center justify-center w-full h-full text-white/50 animate-pulse">
-            Carregando Satélite...
+        <div className="flex items-center justify-center w-full h-full text-white/50 animate-pulse uppercase tracking-[0.3em] text-[10px]">
+            Iniciando Satélite 3D...
         </div>
     )
 });
@@ -23,16 +24,19 @@ export default function MapaBrasil() {
     const [userRole, setUserRole] = useState<'master' | 'mestre' | 'estadual' | 'admin' | 'grao_mestre' | 'federal' | 'mestre_federal' | null>(null);
     const [userEstados, setUserEstados] = useState<string[]>([]);
     const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
+    const [showPermissionWarning, setShowPermissionWarning] = useState(false);
 
     // Load user role on mount and check WebGL
     useEffect(() => {
-        // WebGL Check
+        // WebGL Check - Execute immediately to prevent heavy 3D load if unnecessary
         const checkWebGL = () => {
             try {
                 const canvas = document.createElement('canvas');
                 const isAvailable = !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+                console.log(`[MAP] WebGL Status: ${isAvailable ? 'AVAILABLE' : 'NOT SUPPORTED'}`);
                 setWebglAvailable(isAvailable);
             } catch (e) {
+                console.error("[MAP] Error checking WebGL", e);
                 setWebglAvailable(false);
             }
         };
@@ -93,29 +97,24 @@ export default function MapaBrasil() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen overflow-hidden relative bg-masonic-blue">
 
-            {/* Globe Container - Full Screen Background */}
+            {/* Content Container - Switch between 3D and 2D based on hardware capability */}
             <div className={`absolute inset-0 z-0 transition-all duration-700 ${estadoSelecionado ? 'translate-x-[-20%] scale-75 blur-sm opacity-50' : 'opacity-100'}`}>
-                {webglAvailable === false ? (
-                    <div className="flex flex-col items-center justify-center w-full h-full bg-black/80 backdrop-blur-md p-10 text-center">
-                        <div className="w-20 h-20 mb-6 text-yellow-500/20">
-                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        </div>
-                        <h2 className="text-xl font-bold text-yellow-500 uppercase tracking-widest mb-4 font-serif">Hardware não suportado</h2>
-                        <p className="text-gray-400 text-xs uppercase tracking-widest leading-loose max-w-md">
-                            Este computador possui uma placa de vídeo legada que não suporta aceleração 3D (WebGL).
-                            <br/><br/>
-                            <span className="text-white/40 italic">Para visualizar o Mapa dos Orientes, utilize um dispositivo mais moderno.</span>
-                        </p>
-                        <button onClick={() => router.replace('/dashboard')} className="mt-10 px-8 py-3 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-500 border border-yellow-500/30 rounded-full text-[10px] font-bold uppercase tracking-[0.3em] transition-all">
-                            Voltar ao Painel
-                        </button>
-                    </div>
-                ) : (
+                {webglAvailable === true ? (
                     <Globo3D
                         onEstadoClick={handleClickEstado}
                         hoveredState={estadoHover}
                         onHoverState={setEstadoHover}
                     />
+                ) : webglAvailable === false ? (
+                    <Mapa2D
+                        onEstadoClick={handleClickEstado}
+                        hoveredState={estadoHover}
+                        onHoverState={setEstadoHover}
+                    />
+                ) : (
+                    <div className="flex items-center justify-center w-full h-full text-white/20 animate-pulse text-[10px] uppercase tracking-widest">
+                        Analisando Hardware...
+                    </div>
                 )}
             </div>
 
@@ -165,7 +164,7 @@ export default function MapaBrasil() {
                 {!estadoSelecionado && (
                     <div className="flex flex-col items-center">
                         <p className="text-[10px] text-gray-400 font-light uppercase tracking-[0.3em] animate-pulse">
-                            Selecione um Oriente no Globo
+                            Selecione um Oriente no Mapa
                         </p>
                         {showPermissionWarning && (
                             <p className="text-[10px] text-red-500 font-bold uppercase tracking-[0.2em] mt-2 animate-bounce">
