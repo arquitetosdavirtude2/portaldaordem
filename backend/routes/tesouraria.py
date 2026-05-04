@@ -342,6 +342,37 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         print(f"ERRO CRITICO (RAW SQL): {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao salvar (SQL): {str(e)}")
 
+@router.get("/transacao/{transacao_id}", response_model=TransacaoResponse)
+def obter_detalhes_transacao(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
+    from sqlalchemy import text
+    try:
+        sql = """
+            SELECT t.id, t.caixa_id, t.pessoa_id, t.usuario_id, t.tipo, t.categoria, t.valor, 
+                   t.data_vencimento, t.data_pagamento, t.descricao, t.status, t.anexo_url
+            FROM transacoes t
+            WHERE t.id = :id
+        """
+        row = db_treasury.execute(text(sql), {"id": transacao_id}).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Transação não encontrada")
+        
+        return TransacaoResponse(
+            id=row[0],
+            caixa_id=row[1],
+            pessoa_id=row[2],
+            usuario_id=row[3],
+            tipo=row[4],
+            categoria=row[5],
+            valor=row[6],
+            data_vencimento=row[7],
+            data_pagamento=row[8],
+            descricao=row[9],
+            status=row[10],
+            anexo_url=row[11]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/transacoes/{transacao_id}")
 def excluir_transacao(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
     transacao = db_treasury.query(Transacao).filter(Transacao.id == transacao_id).first()
@@ -371,7 +402,6 @@ def listar_transacoes(
     db_treasury: Session = Depends(get_treasury_db)
 ):
     try:
-        db_treasury.expire_all()
         from sqlalchemy import text
         
         # Base query with JOIN to caixas to filter by loja_id
@@ -389,12 +419,11 @@ def listar_transacoes(
             params["caixa_id"] = caixa_id
         
         if status and status != 'todos':
-            query += " AND status = :status"
+            query += " AND t.status = :status"
             params["status"] = status
             
         if mes and ano:
             if status == 'pendente':
-                # Lógica de atrasados: mostra tudo o que venceu até o fim do mês selecionado
                 import calendar
                 from datetime import date
                 _, last_day = calendar.monthrange(ano, mes)
@@ -402,21 +431,51 @@ def listar_transacoes(
                 query += " AND t.data_vencimento <= :data_limite"
                 params["data_limite"] = data_limite
             else:
-                # Filtro estrito por mês para pagos ou geral
-                # Se for PAGO, priorizamos data_pagamento. Se não tiver (pendente), usamos data_vencimento.
+                # Use CASE to choose the correct date field for filtering
                 query += """ AND (
                     CASE 
-                        WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') 
-                        THEN data_pagamento 
-                        ELSE data_vencimento 
+                        WHEN t.status = 'pago' AND (t.data_pagamento IS NOT NULL AND t.data_pagamento != '') 
+                        THEN t.data_pagamento 
+                        ELSE t.data_vencimento 
                     END
                 ) LIKE :ano_mes """
                 params["ano_mes"] = f"{ano}-{mes:02d}%"
         elif mes:
-            mes_str = f"-{mes:02d}-"
-            query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :mes"
-            params["mes"] = f"%{mes_str}%"
+            query += " AND t.data_vencimento LIKE :mes_match"
+            params["mes_match"] = f"%-{mes:02d}-%"
         elif ano:
+            query += " AND t.data_vencimento LIKE :ano_match"
+            params["ano_match"] = f"{ano}-%"
+
+        if busca:
+            query += " AND (t.descricao LIKE :busca OR t.categoria LIKE :busca)"
+            params["busca"] = f"%{busca}%"
+
+        query += " ORDER BY t.data_vencimento DESC"
+        
+        rows = db_treasury.execute(text(query), params).fetchall()
+        
+        res = []
+        for r in rows:
+            res.append(TransacaoResponse(
+                id=r[0],
+                caixa_id=r[1],
+                pessoa_id=r[2],
+                usuario_id=r[3],
+                tipo=r[4],
+                categoria=r[5],
+                valor=r[6],
+                data_vencimento=r[7],
+                data_pagamento=r[8],
+                descricao=r[9],
+                status=r[10],
+                anexo_url=r[11]
+            ))
+        return res
+
+    except Exception as e:
+        print(f"ERRO AO LISTAR TRANSACOES (SQL): {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
             ano_str = f"{ano}-"
             query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
             params["ano"] = f"{ano_str}%"
