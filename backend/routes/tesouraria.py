@@ -477,54 +477,6 @@ def listar_transacoes(
     except Exception as e:
         print(f"ERRO AO LISTAR TRANSACOES (SQL): {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-            ano_str = f"{ano}-"
-            query += " AND (CASE WHEN status = 'pago' AND (data_pagamento IS NOT NULL AND data_pagamento != '') THEN data_pagamento ELSE data_vencimento END) LIKE :ano"
-            params["ano"] = f"{ano_str}%"
-
-        if busca:
-            query += """ AND (
-                t.descricao LIKE :busca 
-                OR t.categoria LIKE :busca 
-                OR t.pessoa_id IN (SELECT id FROM pessoas WHERE nome LIKE :busca)
-                OR t.pessoa_id IN (SELECT -id FROM usuarios WHERE nome LIKE :busca)
-            )"""
-            params["busca"] = f"%{busca}%"
-
-        rows = db_treasury.execute(text(query), params).fetchall()
-        
-        res = []
-        for r in rows:
-            p_nome = "N/A"
-            if r[2]: # pessoa_id
-                if r[2] < 0:
-                    # Busca em usuarios (Mestre Loja virtual)
-                    p = db_treasury.execute(text("SELECT nome FROM usuarios WHERE id = :id"), {"id": abs(r[2])}).fetchone()
-                else:
-                    # Busca em pessoas
-                    p = db_treasury.execute(text("SELECT nome FROM pessoas WHERE id = :id"), {"id": r[2]}).fetchone()
-                
-                if p: p_nome = p[0]
-            res.append({
-                "id": r[0],
-                "caixa_id": r[1],
-                "pessoa_id": r[2],
-                "usuario_id": r[3],
-                "tipo": r[4],
-                "categoria": r[5],
-                "valor": r[6],
-                "data_vencimento": r[7],
-                "data_pagamento": r[8],
-                "descricao": r[9],
-                "status": r[10],
-                "anexo_url": r[11],
-                "pessoa_nome": p_nome,
-                "caixa_nome": "Geral"
-            })
-                
-        return res
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "traceback": traceback.format_exc()}
 
 # ─── ENDPOINTS DE EXTRATOS MENSAIS ──────────────────────────────────────────
 
@@ -540,20 +492,12 @@ async def subir_extrato(
     from models import ExtratoMensal
     from datetime import datetime
     
-    @router.get("/debug/migrate")
-    def debug_migrate(db: Session = Depends(get_db)):
-        try:
-            from sqlalchemy import text
-            db.execute(text("ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS recorrencia VARCHAR(50) DEFAULT 'nenhuma' AFTER status"))
-            db.commit()
-            return {"status": "success", "message": "Coluna recorrencia verificada/adicionada"}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-
     # Salvar arquivo
     ext = os.path.splitext(arquivo.filename)[1]
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     filename = f"extrato_{caixa_id}_{ano}_{mes}_{timestamp}{ext}"
+    filepath = os.path.join(UPLOAD_EXTRATOS_DIR, filename)
+    
     # Garantir que a pasta existe
     os.makedirs(UPLOAD_EXTRATOS_DIR, exist_ok=True)
     
