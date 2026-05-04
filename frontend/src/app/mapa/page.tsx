@@ -32,10 +32,10 @@ export default function MapaPage() {
 
     useEffect(() => {
         const checkHardware = () => {
-            // 1. Try to get from cache first - VERSION 6 to reset everyone
-            const cachedResult = localStorage.getItem('gomb_map_hardware_v6');
+            // 1. Try to get from cache first - VERSION 7
+            const cachedResult = localStorage.getItem('gomb_map_hardware_v7');
             if (cachedResult !== null) {
-                console.log(`[MAP_SWITCHER] Using hardware profile V6: ${cachedResult === '3D' ? 'PREMIUM (3D)' : 'LIGHT (2D)'}`);
+                console.log(`[MAP_SWITCHER] Using hardware profile V7: ${cachedResult === '3D' ? 'PREMIUM (3D)' : 'LIGHT (2D)'}`);
                 setWebglAvailable(cachedResult === '3D');
                 return;
             }
@@ -46,19 +46,38 @@ export default function MapaPage() {
             setTimeout(() => {
                 try {
                     const canvas = document.createElement('canvas');
-                    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                    const isAvailable = !!gl;
+                    const gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext;
                     
-                    console.log(`[MAP_SWITCHER] Analysis complete: ${isAvailable ? '3D OK' : 'FORCING 2D'}`);
+                    if (!gl) {
+                        localStorage.setItem('gomb_map_hardware_v7', '2D');
+                        setWebglAvailable(false);
+                        return;
+                    }
+
+                    // Strict Check: Check for old Intel chipsets that are known to crash
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || "";
+                        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || "";
+                        console.log(`[MAP_SWITCHER] GPU: ${vendor} | ${renderer}`);
+                        
+                        // Blacklist known problematic chips
+                        if (renderer.includes('Q45') || renderer.includes('Q43') || renderer.includes('G41') || renderer.includes('Express Chipset')) {
+                            console.warn("[MAP_SWITCHER] Legacy GPU detected. Forcing 2D for stability.");
+                            localStorage.setItem('gomb_map_hardware_v7', '2D');
+                            setWebglAvailable(false);
+                            return;
+                        }
+                    }
                     
-                    // Save to cache V6
-                    localStorage.setItem('gomb_map_hardware_v6', isAvailable ? '3D' : '2D');
-                    setWebglAvailable(isAvailable);
+                    console.log(`[MAP_SWITCHER] Analysis complete: 3D OK`);
+                    localStorage.setItem('gomb_map_hardware_v7', '3D');
+                    setWebglAvailable(true);
                 } catch (e) {
-                    localStorage.setItem('gomb_map_hardware_v6', '2D');
+                    localStorage.setItem('gomb_map_hardware_v7', '2D');
                     setWebglAvailable(false);
                 }
-            }, 1000);
+            }, 1200);
         };
 
         checkHardware();
@@ -66,13 +85,13 @@ export default function MapaPage() {
 
     const handle3DFailure = () => {
         console.warn("[MAP_SWITCHER] 3D failed at runtime. Switching to 2D and updating cache.");
-        localStorage.setItem('gomb_map_hardware_v6', '2D');
+        localStorage.setItem('gomb_map_hardware_v7', '2D');
         setForce2D(true);
         setWebglAvailable(false);
     };
 
     useEffect(() => {
-        console.log("%c--- SISTEMA DE MAPA HIBRIDO ATIVADO V6 ---", "color: #eab308; font-weight: bold; font-size: 14px;");
+        console.log("%c--- SISTEMA DE MAPA HIBRIDO ATIVADO V7 ---", "color: #eab308; font-weight: bold; font-size: 14px;");
     }, []);
 
     if (webglAvailable === null) {
