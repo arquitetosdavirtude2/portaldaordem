@@ -43,20 +43,6 @@ export default function MapaBrasil() {
         }
     }, [router]);
 
-        if (typeof window !== 'undefined') {
-            const access = localStorage.getItem('acesso');
-            if (access) {
-                const user = JSON.parse(access);
-                const realRole = (user.role || user.tipo || 'master').toLowerCase() as any;
-                setUserRole(realRole);
-                const statesAllowed = user.allowed_states || user.estados || (user.estado ? [user.estado] : []);
-                setUserEstados(statesAllowed);
-            } else {
-                router.replace('/login');
-            }
-        }
-    }, [router]);
-
     const handleClickEstado = useCallback((sigla: string) => {
         if (!sigla) return;
         
