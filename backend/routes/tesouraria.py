@@ -208,6 +208,7 @@ async def criar_transacao(
         ext = os.path.splitext(comprovante.filename)[1]
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         filename = f"recibo_{timestamp}{ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
         # Garantir que a pasta existe
         os.makedirs(UPLOAD_DIR, exist_ok=True)
         with open(filepath, "wb") as buffer:
