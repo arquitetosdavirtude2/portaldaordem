@@ -318,10 +318,20 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
             
         if "pessoa_id" in update_data and update_data["pessoa_id"] == 0:
             update_data["pessoa_id"] = None
+
+        # Dynamically check valid columns to prevent "Unknown column" crashes in production
+        valid_columns = []
+        try:
+            col_rows = db_treasury.execute(text("SHOW COLUMNS FROM transacoes")).fetchall()
+            valid_columns = [row[0] for row in col_rows]
+        except:
+            col_rows = db_treasury.execute(text("PRAGMA table_info(transacoes)")).fetchall()
+            valid_columns = [row[1] for row in col_rows]
             
         for k, v in update_data.items():
-            update_fields.append(f"{k} = :{k}")
-            params[k] = v
+            if k in valid_columns:
+                update_fields.append(f"{k} = :{k}")
+                params[k] = v
 
         if update_fields:
             sql = f"UPDATE transacoes SET {', '.join(update_fields)} WHERE id = :id"
@@ -351,7 +361,8 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         print(f"ERRO CRITICO (RAW SQL): {str(e)}")
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Erro ao salvar (SQL): {str(e)}")
+        # Changed to 400 so cPanel Nginx does not intercept and mask the error
+        raise HTTPException(status_code=400, detail=f"Erro banco de dados: {str(e)}")
 
 @router.get("/transacao/{transacao_id}", response_model=TransacaoResponse)
 def obter_detalhes_transacao(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
