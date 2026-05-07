@@ -197,7 +197,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
     useEffect(() => {
         const handleOutsideClick = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
-            if (!target.closest('.relative')) {
+            if (!target.closest('.dropdown-obreiro')) {
                 setIsDropdownAberto(false);
             }
         };
@@ -463,7 +463,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     <span className="text-[9px] font-medium text-gray-500 group-hover:text-gray-400 uppercase tracking-wider transition-colors">Ver Adormecidos</span>
                                 </label>
                             </div>
-                            <div className="relative">
+                            <div className="relative dropdown-obreiro">
                                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
                                     <span className="text-gray-500 text-xs">🔍</span>
                                 </div>
@@ -530,7 +530,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                 required
                                 value={form.valor}
                                 onChange={e => setForm({...form, valor: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
                                 placeholder="0,00"
                             />
                         </div>

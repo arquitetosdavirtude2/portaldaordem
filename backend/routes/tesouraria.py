@@ -431,9 +431,10 @@ def listar_transacoes(
         query = """
             SELECT t.id, t.caixa_id, t.pessoa_id, t.usuario_id, t.tipo, t.categoria, t.valor, 
                    t.data_vencimento, t.data_pagamento, t.descricao, t.status, t.anexo_url,
-                   c.loja_id
+                   c.loja_id, p.nome
             FROM transacoes t
             LEFT JOIN caixas c ON t.caixa_id = c.id
+            LEFT JOIN pessoas p ON t.pessoa_id = p.id
             WHERE (c.loja_id = :loja_id OR t.caixa_id IS NULL)
         """
         params = {"loja_id": loja_id}
@@ -492,7 +493,8 @@ def listar_transacoes(
                 data_pagamento=r[8],
                 descricao=r[9],
                 status=r[10],
-                anexo_url=r[11]
+                anexo_url=r[11],
+                pessoa_nome=r[13] if r[13] else "N/A"
             ))
         return res
 
