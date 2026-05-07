@@ -121,7 +121,8 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     nome: 'Despesas Fixas',
                     categorias: [
                         { id: 'aluguel', label: 'Aluguel / Condomínio' },
-                        { id: 'taxas_gomb', label: 'Per Capita / Taxas GOMB' }
+                        { id: 'per_capita', label: 'Per Capita (Mensal)' },
+                        { id: 'taxas_gomb', label: 'Taxas GOMB (Eventuais)' }
                     ]
                 },
                 {
@@ -130,7 +131,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         { id: 'agape', label: 'Ágape / Refeições' },
                         { id: 'manutencao', label: 'Manutenção de Templo' },
                         { id: 'insumos', label: 'Velas / Incenso / Materiais' },
-                        { id: 'social', label: 'Social / Outros' }
+                        { id: 'caridade', label: 'Caridade / Donativos' },
+                        { id: 'social', label: 'Social / Outros' },
+                        { id: 'outro_saida', label: 'Outras Despesas' }
                     ]
                 }
             ]
