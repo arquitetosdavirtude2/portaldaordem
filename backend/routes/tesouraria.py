@@ -73,6 +73,9 @@ class TransacaoResponse(BaseModel):
     anexo_url: Optional[str] = None
     status: Optional[str] = 'pendente'
     recorrencia: Optional[str] = "nenhuma"
+    grupo_recorrencia: Optional[str] = None
+    parcela_atual: Optional[int] = None
+    total_parcelas: Optional[int] = None
     pessoa_nome: Optional[str] = "N/A"
     caixa_nome: Optional[str] = "Geral"
     
@@ -92,6 +95,7 @@ class TransacaoUpdate(BaseModel):
     categoria: Optional[str] = None
     data_vencimento: Optional[str] = None
     recorrencia: Optional[str] = None
+    modo_atualizacao: Optional[str] = "unica"
 
 class IrmaoFlagsUpdate(BaseModel):
     joia_quitada_externa: Optional[bool] = None
@@ -182,18 +186,22 @@ async def criar_transacao(
     descricao: str = Form(...),
     notas: Optional[str] = Form(None),
     status: Optional[str] = Form("pendente"),
+    recorrencia: Optional[str] = Form("nenhuma"),
+    total_parcelas: Optional[int] = Form(None),
     comprovante: Optional[UploadFile] = File(None),
     db_main: Session = Depends(get_db),
     db_treasury: Session = Depends(get_treasury_db)
 ):
     from sqlalchemy import text
     from models import Usuario
+    import uuid
+    from datetime import datetime
+    import math
 
     caixa = db_treasury.query(Caixa).filter(Caixa.id == caixa_id).first()
     if not caixa:
         raise HTTPException(status_code=404, detail="Caixa não encontrado")
 
-    # Garantir que usuario_id seja válido — fallback para o primeiro usuário existente
     uid_final = usuario_id
     if uid_final:
         exists = db_treasury.execute(text("SELECT id FROM usuarios WHERE id = :uid"), {"uid": uid_final}).fetchone()
@@ -209,56 +217,163 @@ async def criar_transacao(
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         filename = f"recibo_{timestamp}{ext}"
         filepath = os.path.join(UPLOAD_DIR, filename)
-        # Garantir que a pasta existe
         os.makedirs(UPLOAD_DIR, exist_ok=True)
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(comprovante.file, buffer)
         anexo_url = f"/api/static/uploads/comprovantes/{filename}"
 
-    nova_transacao = Transacao(
-        caixa_id=caixa_id,
-        pessoa_id=pessoa_id,
-        usuario_id=uid_final,
-        tipo=tipo,
-        categoria=categoria,
-        valor=valor,
-        data_vencimento=data_vencimento,
-        data_pagamento=data_pagamento,
-        descricao=descricao,
-        notas=notas,
-        anexo_url=anexo_url,
-        status=status
-    )
+    grupo_uuid = str(uuid.uuid4()) if recorrencia in ['mensal', 'anual', 'parcelado'] else None
     
-    if nova_transacao.status == "pago":
-        if nova_transacao.tipo == "entrada":
-            caixa.saldo_atual += nova_transacao.valor
-        else:
-            caixa.saldo_atual -= nova_transacao.valor
+    transacoes_criadas = []
+    
+    if recorrencia == 'parcelado' and total_parcelas and total_parcelas > 1:
+        valor_parcela = math.floor((valor / total_parcelas) * 100) / 100
+        resto = round(valor - (valor_parcela * total_parcelas), 2)
+        
+        try:
+            base_date = datetime.strptime(data_vencimento, "%Y-%m-%d")
+        except:
+            base_date = datetime.now()
+
+        for i in range(1, total_parcelas + 1):
+            valor_atual = valor_parcela
+            if i == total_parcelas:
+                valor_atual = round(valor_parcela + resto, 2)
+                
+            mes = base_date.month + (i - 1)
+            ano = base_date.year + (mes - 1) // 12
+            mes = (mes - 1) % 12 + 1
+            # Adjust day to avoid out of range
+            try:
+                data_venc_atual = base_date.replace(year=ano, month=mes).strftime("%Y-%m-%d")
+            except ValueError:
+                import calendar
+                _, last_day = calendar.monthrange(ano, mes)
+                data_venc_atual = base_date.replace(year=ano, month=mes, day=min(base_date.day, last_day)).strftime("%Y-%m-%d")
             
-    db_treasury.add(nova_transacao)
+            desc_atual = f"{descricao} (Parcela {i}/{total_parcelas})"
+            
+            nova_transacao = Transacao(
+                caixa_id=caixa_id,
+                pessoa_id=pessoa_id,
+                usuario_id=uid_final,
+                tipo=tipo,
+                categoria=categoria,
+                valor=valor_atual,
+                data_vencimento=data_venc_atual,
+                data_pagamento=data_pagamento if i == 1 else None,
+                descricao=desc_atual,
+                notas=notas,
+                anexo_url=anexo_url if i == 1 else None,
+                status=status if i == 1 else "pendente",
+                recorrencia=recorrencia,
+                grupo_recorrencia=grupo_uuid,
+                parcela_atual=i,
+                total_parcelas=total_parcelas
+            )
+            transacoes_criadas.append(nova_transacao)
+            db_treasury.add(nova_transacao)
+
+    elif recorrencia in ['mensal', 'anual']:
+        repeticoes = 12 if recorrencia == 'mensal' else 5 # 12 meses ou 5 anos
+        
+        try:
+            base_date = datetime.strptime(data_vencimento, "%Y-%m-%d")
+        except:
+            base_date = datetime.now()
+
+        for i in range(1, repeticoes + 1):
+            if recorrencia == 'mensal':
+                mes = base_date.month + (i - 1)
+                ano = base_date.year + (mes - 1) // 12
+                mes = (mes - 1) % 12 + 1
+            else:
+                mes = base_date.month
+                ano = base_date.year + (i - 1)
+
+            try:
+                data_venc_atual = base_date.replace(year=ano, month=mes).strftime("%Y-%m-%d")
+            except ValueError:
+                import calendar
+                _, last_day = calendar.monthrange(ano, mes)
+                data_venc_atual = base_date.replace(year=ano, month=mes, day=min(base_date.day, last_day)).strftime("%Y-%m-%d")
+            
+            nova_transacao = Transacao(
+                caixa_id=caixa_id,
+                pessoa_id=pessoa_id,
+                usuario_id=uid_final,
+                tipo=tipo,
+                categoria=categoria,
+                valor=valor,
+                data_vencimento=data_venc_atual,
+                data_pagamento=data_pagamento if i == 1 else None,
+                descricao=descricao,
+                notas=notas,
+                anexo_url=anexo_url if i == 1 else None,
+                status=status if i == 1 else "pendente",
+                recorrencia=recorrencia,
+                grupo_recorrencia=grupo_uuid,
+                parcela_atual=i,
+                total_parcelas=repeticoes
+            )
+            transacoes_criadas.append(nova_transacao)
+            db_treasury.add(nova_transacao)
+            
+    else:
+        nova_transacao = Transacao(
+            caixa_id=caixa_id,
+            pessoa_id=pessoa_id,
+            usuario_id=uid_final,
+            tipo=tipo,
+            categoria=categoria,
+            valor=valor,
+            data_vencimento=data_vencimento,
+            data_pagamento=data_pagamento,
+            descricao=descricao,
+            notas=notas,
+            anexo_url=anexo_url,
+            status=status,
+            recorrencia="nenhuma"
+        )
+        transacoes_criadas.append(nova_transacao)
+        db_treasury.add(nova_transacao)
+
     db_treasury.commit()
-    db_treasury.refresh(nova_transacao)
     
+    # Refresh a primeira transacao para retornar
+    primeira_transacao = transacoes_criadas[0]
+    db_treasury.refresh(primeira_transacao)
+    
+    if primeira_transacao.status == "pago":
+        if primeira_transacao.tipo == "entrada":
+            caixa.saldo_atual += primeira_transacao.valor
+        else:
+            caixa.saldo_atual -= primeira_transacao.valor
+        db_treasury.commit()
+
     p_nome = None
-    if nova_transacao.pessoa_id:
-        p = db_main.query(Pessoa).filter(Pessoa.id == nova_transacao.pessoa_id).first()
+    if primeira_transacao.pessoa_id:
+        p = db_main.query(Pessoa).filter(Pessoa.id == primeira_transacao.pessoa_id).first()
         p_nome = p.nome if p else None
 
     return TransacaoResponse(
-        id=nova_transacao.id,
-        caixa_id=nova_transacao.caixa_id,
-        pessoa_id=nova_transacao.pessoa_id,
+        id=primeira_transacao.id,
+        caixa_id=primeira_transacao.caixa_id,
+        pessoa_id=primeira_transacao.pessoa_id,
         pessoa_nome=p_nome,
-        tipo=nova_transacao.tipo,
-        categoria=nova_transacao.categoria,
-        valor=nova_transacao.valor,
-        data_vencimento=nova_transacao.data_vencimento,
-        data_pagamento=nova_transacao.data_pagamento,
-        descricao=nova_transacao.descricao,
-        notas=nova_transacao.notas,
-        anexo_url=nova_transacao.anexo_url,
-        status=nova_transacao.status
+        tipo=primeira_transacao.tipo,
+        categoria=primeira_transacao.categoria,
+        valor=primeira_transacao.valor,
+        data_vencimento=primeira_transacao.data_vencimento,
+        data_pagamento=primeira_transacao.data_pagamento,
+        descricao=primeira_transacao.descricao,
+        notas=primeira_transacao.notas,
+        anexo_url=primeira_transacao.anexo_url,
+        status=primeira_transacao.status,
+        recorrencia=primeira_transacao.recorrencia,
+        grupo_recorrencia=primeira_transacao.grupo_recorrencia,
+        parcela_atual=primeira_transacao.parcela_atual,
+        total_parcelas=primeira_transacao.total_parcelas
     )
 
 @router.patch("/transacoes/{transacao_id}", response_model=TransacaoResponse)
@@ -269,43 +384,16 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
     
     try:
         from sqlalchemy import text
-        
-        # 1. Fetch current data for balance logic (Raw SQL to be safe)
-        curr = db_treasury.execute(text("SELECT caixa_id, valor, tipo, status, pessoa_id FROM transacoes WHERE id = :id"), {"id": transacao_id}).fetchone()
-        if not curr:
-            raise HTTPException(status_code=404, detail="Transação não encontrada")
-        
-        c_id, c_valor, c_tipo, c_status, c_pessoa_id = curr
-        
-        # Extrair apenas os campos enviados no request
+        from datetime import datetime
+
         if hasattr(dados, "model_dump"):
             update_data = dados.model_dump(exclude_unset=True)
         else:
             update_data = dados.dict(exclude_unset=True)
 
-        new_status = update_data.get("status", c_status)
-        new_valor = update_data.get("valor", c_valor)
-        new_tipo = update_data.get("tipo", c_tipo)
-        
-        # 2. Balance Update Logic (Manual SQL)
-        def update_balance(box_id, amount, is_add):
-            if box_id:
-                sign = "+" if is_add else "-"
-                db_treasury.execute(text(f"UPDATE caixas SET saldo_atual = saldo_atual {sign} :amt WHERE id = :bid"), {"amt": amount, "bid": box_id})
+        modo_atualizacao = update_data.pop("modo_atualizacao", "unica")
 
-        if new_status == "pago" and c_status != "pago":
-            update_balance(c_id, new_valor, new_tipo == "entrada")
-        elif c_status == "pago":
-            # Reverse old
-            update_balance(c_id, c_valor, c_tipo != "entrada")
-            # Apply new only if it is still pago
-            if new_status == "pago":
-                update_balance(c_id, new_valor, new_tipo == "entrada")
-
-        # 3. Build Raw UPDATE for transacoes
-        update_fields = []
-        params = {"id": transacao_id}
-        
+        # Formata datas
         if "data_vencimento" in update_data and update_data["data_vencimento"]:
             dv = update_data["data_vencimento"]
             if "/" in dv: dv = "-".join(dv.split("/")[::-1])
@@ -319,38 +407,89 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         if "pessoa_id" in update_data and update_data["pessoa_id"] == 0:
             update_data["pessoa_id"] = None
 
-        # Dynamically check valid columns to prevent "Unknown column" crashes in production
-        valid_columns = []
-        try:
-            col_rows = db_treasury.execute(text("SHOW COLUMNS FROM transacoes")).fetchall()
-            valid_columns = [row[0] for row in col_rows]
-        except:
-            col_rows = db_treasury.execute(text("PRAGMA table_info(transacoes)")).fetchall()
-            valid_columns = [row[1] for row in col_rows]
-            
-        for k, v in update_data.items():
-            if k in valid_columns:
-                update_fields.append(f"{k} = :{k}")
-                params[k] = v
+        # Helper para saldo
+        def update_balance(box_id, amount, is_add):
+            if box_id:
+                sign = "+" if is_add else "-"
+                db_treasury.execute(text(f"UPDATE caixas SET saldo_atual = saldo_atual {sign} :amt WHERE id = :bid"), {"amt": amount, "bid": box_id})
 
-        if update_fields:
-            sql = f"UPDATE transacoes SET {', '.join(update_fields)} WHERE id = :id"
-            db_treasury.execute(text(sql), params)
+        # Processar as transações a serem atualizadas
+        transacoes_alvo = [transacao]
+        
+        if modo_atualizacao in ['futuras', 'todas'] and transacao.grupo_recorrencia:
+            if modo_atualizacao == 'futuras':
+                transacoes_alvo = db_treasury.query(Transacao).filter(
+                    Transacao.grupo_recorrencia == transacao.grupo_recorrencia,
+                    Transacao.data_vencimento >= transacao.data_vencimento
+                ).all()
+            else: # todas
+                transacoes_alvo = db_treasury.query(Transacao).filter(
+                    Transacao.grupo_recorrencia == transacao.grupo_recorrencia
+                ).all()
+
+        for t in transacoes_alvo:
+            c_id = t.caixa_id
+            c_valor = t.valor
+            c_tipo = t.tipo
+            c_status = t.status
+
+            new_status = update_data.get("status", c_status) if t.id == transacao_id else c_status
+            new_valor = update_data.get("valor", c_valor)
+            new_tipo = update_data.get("tipo", c_tipo)
+
+            # Atualizar Saldo Bancário apenas se status/valor mudou
+            if new_status == "pago" and c_status != "pago":
+                update_balance(c_id, new_valor, new_tipo == "entrada")
+            elif c_status == "pago":
+                # Reverse old
+                update_balance(c_id, c_valor, c_tipo != "entrada")
+                # Apply new only if it is still pago
+                if new_status == "pago":
+                    update_balance(c_id, new_valor, new_tipo == "entrada")
+
+            # Atualizar os campos no banco
+            for k, v in update_data.items():
+                if k == 'status' and t.id != transacao_id:
+                    continue # Não atualiza o status em lote (pode estar pago ou pendente independente)
+                if k == 'data_pagamento' and t.id != transacao_id:
+                    continue # Não atualiza data pagamento em lote
+                
+                if k == 'data_vencimento' and t.id != transacao_id:
+                    # Para outras do grupo, mudar apenas o dia
+                    try:
+                        new_day = v.split('-')[2]
+                        old_ym = t.data_vencimento[:8] # YYYY-MM-
+                        
+                        # Handle month ends (e.g. 31st on Feb)
+                        try:
+                            datetime.strptime(f"{old_ym}{new_day}", "%Y-%m-%d")
+                            setattr(t, k, f"{old_ym}{new_day}")
+                        except ValueError:
+                            import calendar
+                            y, m = map(int, old_ym.split('-')[:2])
+                            _, last_day = calendar.monthrange(y, m)
+                            safe_day = min(int(new_day), last_day)
+                            setattr(t, k, f"{old_ym}{safe_day:02d}")
+                    except Exception:
+                        pass
+                    continue
+                
+                # Se for a mesma transação (ou campos genericos do lote)
+                if hasattr(t, k):
+                    setattr(t, k, v)
 
         db_treasury.commit()
-        
-        # Fetch actual updated data to return correctly
-        final_trans = db_treasury.execute(text("SELECT id, caixa_id, pessoa_id, tipo, categoria, valor, status, descricao FROM transacoes WHERE id = :id"), {"id": transacao_id}).fetchone()
-        
+        db_treasury.refresh(transacao)
+
         return TransacaoResponse(
-            id=final_trans[0],
-            caixa_id=final_trans[1],
-            pessoa_id=final_trans[2],
-            tipo=final_trans[3],
-            categoria=final_trans[4],
-            valor=final_trans[5],
-            status=final_trans[6],
-            descricao=final_trans[7] or ""
+            id=transacao.id,
+            caixa_id=transacao.caixa_id,
+            pessoa_id=transacao.pessoa_id,
+            tipo=transacao.tipo,
+            categoria=transacao.categoria,
+            valor=transacao.valor,
+            status=transacao.status,
+            descricao=transacao.descricao or ""
         )
 
     except HTTPException:
@@ -358,10 +497,9 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         raise
     except Exception as e:
         db_treasury.rollback()
-        print(f"ERRO CRITICO (RAW SQL): {str(e)}")
+        print(f"ERRO CRITICO (BATCH SQL): {str(e)}")
         import traceback
         traceback.print_exc()
-        # Changed to 400 so cPanel Nginx does not intercept and mask the error
         raise HTTPException(status_code=400, detail=f"Erro banco de dados: {str(e)}")
 
 @router.get("/transacao/{transacao_id}", response_model=TransacaoResponse)

@@ -149,7 +149,10 @@ class Transacao(Base):
     notas = Column(String(1000), nullable=True) # Observações detalhadas
     anexo_url = Column(String(255), nullable=True) # Link/Caminho do comprovante
     status = Column(String(20), default="pendente") # 'pago', 'pendente', 'atrasado'
-    recorrencia = Column(String(50), nullable=True, default="nenhuma") # 'nenhuma', 'mensal'
+    recorrencia = Column(String(50), nullable=True, default="nenhuma") # 'nenhuma', 'mensal', 'anual', 'parcelado'
+    grupo_recorrencia = Column(String(50), nullable=True) # UUID para agrupar recorrências/parcelas
+    parcela_atual = Column(Integer, nullable=True)
+    total_parcelas = Column(Integer, nullable=True)
 
     caixa = relationship("Caixa", back_populates="transacoes")
     pessoa = relationship("Pessoa")
