@@ -217,7 +217,7 @@ export default function ListaTransacoes({
                             <td className="px-5 py-4 text-[10px] uppercase tracking-widest text-gray-500 font-medium font-sans">
                                 {t.categoria}
                             </td>
-                            <td className={`px-5 py-4 text-xs font-medium tabular-nums ${t.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'}`}>
+                            <td className={`px-5 py-4 text-xs font-medium tabular-nums whitespace-nowrap ${t.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'}`}>
                                 {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             {podeEditar && (

@@ -230,7 +230,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                                             {t.categoria.replace('_', ' ')}
                                         </div>
                                     </td>
-                                    <td className="px-5 py-3 text-right font-sans tabular-nums tracking-widest w-[130px]">
+                                    <td className="px-5 py-3 text-right font-sans tabular-nums tracking-widest w-[130px] whitespace-nowrap">
                                         <div className={`text-[12px] font-medium font-sans tabular-nums tracking-widest ${statusAtivo === 'pendente' ? 'text-red-400/80' : 'text-green-400/80'}`}>
                                             R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </div>
