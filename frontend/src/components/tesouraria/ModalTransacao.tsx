@@ -451,9 +451,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     {/* Linha 3: Irmão e Valor */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
-                            <div className="flex justify-between items-center ml-1">
+                            <div className="flex justify-between items-center ml-1 min-h-[24px]">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Obreiro Relacionado</label>
-                                <label className="flex items-center gap-1.5 cursor-pointer group">
+                                <label className="flex items-center gap-1.5 cursor-pointer group h-full">
                                     <input 
                                         type="checkbox" 
                                         checked={mostrarAdormecidos}
@@ -523,7 +523,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Valor Total (R$)</label>
+                            <div className="flex items-center ml-1 min-h-[24px]">
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Valor Total (R$)</label>
+                            </div>
                             <input 
                                 type="number" 
                                 step="0.01"
