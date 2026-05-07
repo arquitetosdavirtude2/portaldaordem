@@ -56,10 +56,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         data_pagamento: initialPagamento,
         descricao: transacaoInicial?.descricao || '',
         notas: transacaoInicial?.notas || '',
-        status: transacaoInicial?.status || 'pago',
-        recorrencia: transacaoInicial?.recorrencia || 'nenhuma',
-        total_parcelas: transacaoInicial?.total_parcelas || 1,
-        modo_atualizacao: 'unica'
+        status: transacaoInicial?.status || 'pago'
     });
 
     const [arquivo, setArquivo] = useState<File | null>(null);
@@ -265,8 +262,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     descricao: form.descricao,
                     notas: form.notas,
                     status: 'pago',
-                    pessoa_id: form.pessoa_id ? parseInt(form.pessoa_id) : null,
-                    modo_atualizacao: form.modo_atualizacao
+                    pessoa_id: form.pessoa_id ? parseInt(form.pessoa_id) : null
                 };
                 const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/${transacaoInicial.id}`, {
                     method: 'PATCH',
@@ -291,10 +287,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 formData.append('notas', form.notas || '');
                 formData.append('status', 'pago');
                 formData.append('usuario_id', String(usuarioId));
-                formData.append('recorrencia', form.recorrencia);
-                if (form.recorrencia === 'parcelado') {
-                    formData.append('total_parcelas', form.total_parcelas.toString());
-                }
                 if (form.pessoa_id) formData.append('pessoa_id', form.pessoa_id);
                 if (arquivo) formData.append('comprovante', arquivo);
 
@@ -526,56 +518,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                                 </div>
                                             </div>
                                         ))}
-                                    </div>
-                                )}
-                                
-                                {!isEdit && (
-                                    <div className="pt-2">
-                                        <label className="block text-[10px] font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Recorrência / Parcelamento</label>
-                                        <div className="flex gap-2">
-                                            <select
-                                                value={form.recorrencia}
-                                                onChange={e => setForm({ ...form, recorrencia: e.target.value })}
-                                                className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase text-[10px] tracking-wider"
-                                            >
-                                                <option value="nenhuma" className="bg-[#0f172a]">Única (S/ Recorrência)</option>
-                                                <option value="mensal" className="bg-[#0f172a]">Recorrente (Mensal)</option>
-                                                <option value="anual" className="bg-[#0f172a]">Recorrente (Anual)</option>
-                                                <option value="parcelado" className="bg-[#0f172a]">Parcelado (Múltiplas vezes)</option>
-                                            </select>
-                                            
-                                            {form.recorrencia === 'parcelado' && (
-                                                <div className="w-1/3">
-                                                    <input
-                                                        type="number"
-                                                        min="2"
-                                                        max="120"
-                                                        value={form.total_parcelas}
-                                                        onChange={e => setForm({ ...form, total_parcelas: parseInt(e.target.value) || 2 })}
-                                                        placeholder="Vezes"
-                                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase text-[10px] tracking-wider"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                        {form.recorrencia === 'mensal' && <p className="text-[9px] text-gray-500 mt-1 uppercase">O sistema irá gerar 12 meses futuros automaticamente.</p>}
-                                        {form.recorrencia === 'parcelado' && <p className="text-[9px] text-gray-500 mt-1 uppercase">O valor preenchido será dividido pelo número de vezes selecionado.</p>}
-                                    </div>
-                                )}
-
-                                {isEdit && transacaoInicial?.grupo_recorrencia && (
-                                    <div className="pt-2">
-                                        <label className="block text-[10px] font-medium text-yellow-500/80 mb-1.5 uppercase tracking-wider">Modo de Edição em Lote</label>
-                                        <select
-                                            value={form.modo_atualizacao}
-                                            onChange={e => setForm({ ...form, modo_atualizacao: e.target.value })}
-                                            className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-sm text-yellow-500 focus:outline-none focus:border-yellow-500 transition-colors uppercase text-[10px] tracking-wider"
-                                        >
-                                            <option value="unica" className="bg-[#0f172a]">Alterar apenas esta</option>
-                                            <option value="futuras" className="bg-[#0f172a]">Alterar esta e as próximas</option>
-                                            <option value="todas" className="bg-[#0f172a]">Alterar todas do grupo (passadas e futuras)</option>
-                                        </select>
-                                        <p className="text-[9px] text-yellow-500/60 mt-1 uppercase">Esta transação faz parte de um grupo recorrente/parcelado.</p>
                                     </div>
                                 )}
                             </div>
