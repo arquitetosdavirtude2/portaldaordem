@@ -186,57 +186,6 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 onChange={e => setForm({...form, mes_ref: e.target.value})}
                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-red-500/50 cursor-pointer color-scheme-dark"
                             />
-
-                            {!isEdit && (
-                                <div className="pt-2">
-                                    <label className="block text-[10px] font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Recorrência / Parcelamento</label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            value={form.recorrencia}
-                                            onChange={e => setForm({ ...form, recorrencia: e.target.value })}
-                                            className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[10px] uppercase tracking-wider text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-colors"
-                                        >
-                                            <option value="nenhuma" className="bg-[#0f172a]">Única (S/ Recorrência)</option>
-                                            <option value="mensal" className="bg-[#0f172a]">Recorrente (Mensal)</option>
-                                            <option value="anual" className="bg-[#0f172a]">Recorrente (Anual)</option>
-                                            <option value="parcelado" className="bg-[#0f172a]">Parcelado (Múltiplas vezes)</option>
-                                        </select>
-
-                                        {form.recorrencia === 'parcelado' && (
-                                            <div className="w-1/3">
-                                                <input
-                                                    type="number"
-                                                    min="2"
-                                                    max="120"
-                                                    value={form.total_parcelas}
-                                                    onChange={e => setForm({ ...form, total_parcelas: parseInt(e.target.value) || 2 })}
-                                                    placeholder="Vezes"
-                                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-colors uppercase text-[10px] tracking-wider"
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                    {form.recorrencia === 'mensal' && <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-wider">O sistema irá gerar 12 meses futuros.</p>}
-                                    {form.recorrencia === 'parcelado' && <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-wider">O valor preenchido será dividido pelo número de parcelas.</p>}
-                                </div>
-                            )}
-
-                            {isEdit && transacaoInicial?.grupo_recorrencia && (
-                                <div className="pt-2">
-                                    <label className="block text-[10px] font-medium text-yellow-500/80 mb-1.5 uppercase tracking-wider">Modo de Edição em Lote</label>
-                                    <select
-                                        value={form.modo_atualizacao}
-                                        onChange={e => setForm({ ...form, modo_atualizacao: e.target.value })}
-                                        className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-sm text-yellow-500 focus:outline-none focus:border-yellow-500 transition-colors uppercase text-[10px] tracking-wider"
-                                    >
-                                        <option value="unica" className="bg-[#0f172a]">Alterar apenas esta</option>
-                                        <option value="futuras" className="bg-[#0f172a]">Alterar esta e as próximas</option>
-                                        <option value="todas" className="bg-[#0f172a]">Alterar todas do grupo (passadas e futuras)</option>
-                                    </select>
-                                    <p className="text-[9px] text-yellow-500/60 mt-1 uppercase tracking-wider">Esta conta faz parte de um grupo recorrente/parcelado.</p>
-                                </div>
-                            )}
-
                         </div>
 
                         <div className="space-y-1.5">
@@ -286,6 +235,66 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-red-500/50 cursor-pointer color-scheme-dark"
                             />
                         </div>
+
+                        {!isEdit && (
+                            <div className="space-y-1.5 md:col-span-2 pt-2 border-t border-white/5">
+                                <label className="text-[10px] uppercase font-medium text-gray-400 tracking-wider">Recorrência / Parcelamento</label>
+                                <div className="flex gap-4">
+                                    <select
+                                        value={form.recorrencia}
+                                        onChange={e => setForm({ ...form, recorrencia: e.target.value })}
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-red-500/50 appearance-none cursor-pointer"
+                                    >
+                                        <option value="nenhuma" className="bg-[#0f172a]">Única (S/ Recorrência)</option>
+                                        <option value="mensal" className="bg-[#0f172a]">Recorrente (Mensal)</option>
+                                        <option value="anual" className="bg-[#0f172a]">Recorrente (Anual)</option>
+                                        <option value="parcelado" className="bg-[#0f172a]">Parcelado (Múltiplas vezes)</option>
+                                    </select>
+
+                                    {form.recorrencia === 'parcelado' && (
+                                        <div className="w-1/3">
+                                            <input
+                                                type="number"
+                                                min="2"
+                                                max="120"
+                                                value={form.total_parcelas}
+                                                onChange={e => setForm({ ...form, total_parcelas: parseInt(e.target.value) || 2 })}
+                                                placeholder="Nº Parcelas"
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-red-500/50 text-center"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                                {form.recorrencia === 'mensal' && <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-wider">O sistema irá gerar 12 meses futuros.</p>}
+                                {form.recorrencia === 'parcelado' && (
+                                    <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-wider">
+                                        {form.valor && !isNaN(parseFloat(form.valor)) ? (
+                                            <span className="text-yellow-500/90 font-medium">
+                                                Prévia: {form.total_parcelas}x de aproximadamente R$ {(parseFloat(form.valor) / form.total_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        ) : (
+                                            "Preencha o Valor Previsto para ver a prévia das parcelas."
+                                        )}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {isEdit && transacaoInicial?.grupo_recorrencia && (
+                            <div className="space-y-1.5 md:col-span-2 pt-2 border-t border-white/5">
+                                <label className="text-[10px] font-medium text-yellow-500/80 uppercase tracking-wider">Modo de Edição em Lote</label>
+                                <select
+                                    value={form.modo_atualizacao}
+                                    onChange={e => setForm({ ...form, modo_atualizacao: e.target.value })}
+                                    className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-xs text-yellow-500 outline-none focus:border-yellow-500 appearance-none cursor-pointer"
+                                >
+                                    <option value="unica" className="bg-[#0f172a]">Alterar apenas esta</option>
+                                    <option value="futuras" className="bg-[#0f172a]">Alterar esta e as próximas</option>
+                                    <option value="todas" className="bg-[#0f172a]">Alterar todas do grupo (passadas e futuras)</option>
+                                </select>
+                                <p className="text-[9px] text-yellow-500/60 mt-1 uppercase tracking-wider">Esta conta faz parte de um grupo recorrente/parcelado.</p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="pt-6">
