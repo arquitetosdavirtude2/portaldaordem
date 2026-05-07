@@ -547,6 +547,13 @@ def excluir_transacao(transacao_id: int, db_treasury: Session = Depends(get_trea
         else:
             caixa.saldo_atual += transacao.valor
             
+        # Se for uma saída (despesa), ao invés de deletar, volta para o Contas a Pagar
+        if transacao.tipo == "saida":
+            transacao.status = "pendente"
+            transacao.data_pagamento = None
+            db_treasury.commit()
+            return {"status": "success", "message": "Transação estornada para Contas a Pagar"}
+            
     db_treasury.delete(transacao)
     db_treasury.commit()
     return {"status": "success", "message": "Transação excluída"}
