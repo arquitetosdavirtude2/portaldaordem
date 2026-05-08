@@ -251,7 +251,16 @@ async def criar_transacao(
                 _, last_day = calendar.monthrange(ano, mes)
                 data_venc_atual = base_date.replace(year=ano, month=mes, day=min(base_date.day, last_day)).strftime("%Y-%m-%d")
             
-            desc_atual = f"{descricao} (Parcela {i}/{total_parcelas})"
+            # Adjust reference month if present
+            desc_atual = descricao
+            if " - Ref: " in desc_atual:
+                base_desc = desc_atual.split(" - Ref: ")[0]
+                desc_atual = f"{base_desc} - Ref: {ano}-{mes:02d}"
+            elif " - REF: " in desc_atual:
+                base_desc = desc_atual.split(" - REF: ")[0]
+                desc_atual = f"{base_desc} - REF: {ano}-{mes:02d}"
+
+            desc_atual = f"{desc_atual} (Parcela {i}/{total_parcelas})"
             
             nova_transacao = Transacao(
                 caixa_id=caixa_id,
@@ -298,6 +307,14 @@ async def criar_transacao(
                 _, last_day = calendar.monthrange(ano, mes)
                 data_venc_atual = base_date.replace(year=ano, month=mes, day=min(base_date.day, last_day)).strftime("%Y-%m-%d")
             
+            desc_atual = descricao
+            if " - Ref: " in desc_atual:
+                base_desc = desc_atual.split(" - Ref: ")[0]
+                desc_atual = f"{base_desc} - Ref: {ano}-{mes:02d}"
+            elif " - REF: " in desc_atual:
+                base_desc = desc_atual.split(" - REF: ")[0]
+                desc_atual = f"{base_desc} - REF: {ano}-{mes:02d}"
+
             nova_transacao = Transacao(
                 caixa_id=caixa_id,
                 pessoa_id=pessoa_id,
@@ -307,7 +324,7 @@ async def criar_transacao(
                 valor=valor,
                 data_vencimento=data_venc_atual,
                 data_pagamento=data_pagamento if i == 1 else None,
-                descricao=descricao,
+                descricao=desc_atual,
                 notas=notas,
                 anexo_url=anexo_url if i == 1 else None,
                 status=status if i == 1 else "pendente",
