@@ -576,7 +576,8 @@ def listar_transacoes(
         query = """
             SELECT t.id, t.caixa_id, t.pessoa_id, t.usuario_id, t.tipo, t.categoria, t.valor, 
                    t.data_vencimento, t.data_pagamento, t.descricao, t.status, t.anexo_url,
-                   c.loja_id, p.nome
+                   c.loja_id, p.nome,
+                   t.recorrencia, t.grupo_recorrencia, t.parcela_atual, t.total_parcelas
             FROM transacoes t
             LEFT JOIN caixas c ON t.caixa_id = c.id
             LEFT JOIN pessoas p ON t.pessoa_id = p.id
@@ -639,7 +640,11 @@ def listar_transacoes(
                 descricao=r[9],
                 status=r[10],
                 anexo_url=r[11],
-                pessoa_nome=r[13] if r[13] else "N/A"
+                pessoa_nome=r[13] if r[13] else "N/A",
+                recorrencia=r[14] if r[14] else "nenhuma",
+                grupo_recorrencia=r[15] if len(r) > 15 else None,
+                parcela_atual=r[16] if len(r) > 16 else None,
+                total_parcelas=r[17] if len(r) > 17 else None
             ))
         return res
 

@@ -16,6 +16,8 @@ interface Transacao {
     notas?: string;
     anexo_url?: string;
     status: 'pago' | 'pendente' | 'atrasado';
+    recorrencia?: string;
+    grupo_recorrencia?: string;
 }
 
 type SortKey = 'data_vencimento' | 'descricao' | 'categoria' | 'valor' | 'status';
@@ -213,6 +215,14 @@ export default function ListaTransacoes({
                                 {t.pessoa_nome && (
                                     <div className="text-[9px] text-yellow-500 uppercase tracking-wider font-sans mt-0.5">Irmão: {t.pessoa_nome}</div>
                                 )}
+                                {(t.recorrencia && t.recorrencia !== 'nenhuma') && (
+                                    <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-blue-500/20 bg-blue-500/10 text-[8px] uppercase tracking-wider text-blue-400">
+                                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        Conta Recorrente (Estorna se excluída)
+                                    </div>
+                                )}
                             </td>
                             <td className="px-5 py-4 text-[10px] uppercase tracking-widest text-gray-500 font-medium font-sans">
                                 {t.categoria}
@@ -277,8 +287,16 @@ export default function ListaTransacoes({
             onClose={() => setItemParaExcluir(null)}
             onConfirm={confirmDelete}
             titulo="Excluir Lançamento"
-            mensagem="Tem certeza que deseja excluir este lançamento? Esta operação é irreversível e o saldo bancário do caixa será ajustado automaticamente."
-            confirmText="Sim, Excluir Agora"
+            mensagem={
+                itemParaExcluir !== null && transacoes.find(t => t.id === itemParaExcluir)?.tipo === 'saida' && transacoes.find(t => t.id === itemParaExcluir)?.status === 'pago'
+                    ? "Este lançamento é uma despesa. Ao confirmar a exclusão, ela NÃO será apagada permanentemente, mas sim ESTORNADA e retornará para a sua lista de Contas a Pagar. O saldo bancário do caixa será ajustado automaticamente."
+                    : "Tem certeza que deseja excluir este lançamento? Esta operação é irreversível e o saldo bancário do caixa será ajustado automaticamente."
+            }
+            confirmText={
+                itemParaExcluir !== null && transacoes.find(t => t.id === itemParaExcluir)?.tipo === 'saida' && transacoes.find(t => t.id === itemParaExcluir)?.status === 'pago'
+                    ? "Sim, Estornar Lançamento"
+                    : "Sim, Excluir Agora"
+            }
             cancelText="Manter Lançamento"
         />
     </>
