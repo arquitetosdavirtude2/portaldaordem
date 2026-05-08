@@ -12,6 +12,7 @@ interface Transacao {
     data_vencimento: string;
     descricao: string;
     status: string;
+    grupo_recorrencia?: string;
 }
 
 export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtualizacao }: { acesso: any, onNovoLancamento: () => void, onEdit: (t: any) => void, chaveAtualizacao: number }) {
@@ -24,6 +25,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
     const [transacaoParaPagar, setTransacaoParaPagar] = useState<Transacao | null>(null);
     const [isModalExcluirAberto, setIsModalExcluirAberto] = useState(false);
     const [transacaoParaExcluir, setTransacaoParaExcluir] = useState<Transacao | null>(null);
+    const [excluirGrupo, setExcluirGrupo] = useState(false);
     const [baixandoRelatorio, setBaixandoRelatorio] = useState(false);
 
     const carregarContasPagar = async () => {
@@ -97,6 +99,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
 
     const handleExcluir = (t: Transacao) => {
         setTransacaoParaExcluir(t);
+        setExcluirGrupo(false);
         setIsModalExcluirAberto(true);
     };
 
@@ -104,7 +107,7 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
         if (!transacaoParaExcluir) return;
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/${transacaoParaExcluir.id}`, {
+            const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/${transacaoParaExcluir.id}?excluir_grupo=${excluirGrupo}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
@@ -311,19 +314,61 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
                 />
             )}
 
-            {isModalExcluirAberto && (
-                <ModalConfirmacao 
-                    isOpen={isModalExcluirAberto}
-                    titulo="Excluir Compromisso"
-                    mensagem={`Tem certeza que deseja excluir permanentemente o compromisso "${transacaoParaExcluir?.descricao}"? Esta ação é irreversível.`}
-                    onConfirm={confirmarExclusao}
-                    onClose={() => {
-                        setIsModalExcluirAberto(false);
-                        setTransacaoParaExcluir(null);
-                    }}
-                    confirmText="Sim, Excluir"
-                    cancelText="Cancelar"
-                />
+            {isModalExcluirAberto && transacaoParaExcluir && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+                        <div className="p-6">
+                            <h3 className="text-lg font-serif tracking-widest text-white mb-2 uppercase">Excluir Compromisso</h3>
+                            <p className="text-sm text-gray-400 font-sans tracking-wide leading-relaxed mb-6">
+                                Tem certeza que deseja excluir permanentemente o compromisso <strong className="text-white">"{transacaoParaExcluir.descricao}"</strong>? Esta ação é irreversível.
+                            </p>
+                            
+                            {transacaoParaExcluir.grupo_recorrencia && (
+                                <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-xl">
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <div className="relative flex items-center mt-0.5">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={excluirGrupo}
+                                                onChange={(e) => setExcluirGrupo(e.target.checked)}
+                                                className="peer sr-only"
+                                            />
+                                            <div className="w-5 h-5 rounded border border-white/20 bg-black/20 peer-checked:bg-red-500 peer-checked:border-red-500 transition-all flex items-center justify-center">
+                                                <svg className={`w-3.5 h-3.5 text-white ${excluirGrupo ? 'opacity-100' : 'opacity-0'} transition-opacity`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-red-400 mb-0.5 font-sans tracking-wide">Excluir TODAS as parcelas pendentes</div>
+                                            <div className="text-xs text-gray-500 leading-relaxed">
+                                                Esta opção apagará não apenas esta conta, mas todas as outras parcelas/meses que foram geradas junto com ela e que ainda não foram pagas.
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3 justify-end mt-4">
+                                <button 
+                                    onClick={() => {
+                                        setIsModalExcluirAberto(false);
+                                        setTransacaoParaExcluir(null);
+                                    }}
+                                    className="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 text-[11px] font-medium tracking-widest uppercase hover:bg-white/5 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={confirmarExclusao}
+                                    className="px-5 py-2.5 rounded-xl border border-red-500/20 bg-red-500/10 text-red-500 text-[11px] font-medium tracking-widest uppercase hover:bg-red-500 hover:text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_25px_rgba(239,68,68,0.4)]"
+                                >
+                                    Sim, Excluir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
