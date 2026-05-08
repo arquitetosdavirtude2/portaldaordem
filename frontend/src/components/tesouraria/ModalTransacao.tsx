@@ -56,7 +56,8 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
         data_pagamento: initialPagamento,
         descricao: transacaoInicial?.descricao || '',
         notas: transacaoInicial?.notas || '',
-        status: transacaoInicial?.status || 'pago'
+        status: transacaoInicial?.status || 'pago',
+        modo_atualizacao: 'unica'
     });
 
     const [arquivo, setArquivo] = useState<File | null>(null);
@@ -265,7 +266,8 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     descricao: form.descricao,
                     notas: form.notas,
                     status: 'pago',
-                    pessoa_id: form.pessoa_id ? parseInt(form.pessoa_id) : null
+                    pessoa_id: form.pessoa_id ? parseInt(form.pessoa_id) : null,
+                    modo_atualizacao: form.modo_atualizacao
                 };
                 const res = await fetch(`${apiUrl}/api/tesouraria/transacoes/${transacaoInicial.id}`, {
                     method: 'PATCH',
@@ -540,6 +542,27 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             />
                         </div>
                     </div>
+
+                    {/* Modo Atualização */}
+                    {isEdit && transacaoInicial?.grupo_recorrencia && (
+                        <div className="pt-4 border-t border-white/5 space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-blue-400 tracking-wider flex items-center gap-1.5">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Opções de Edição para Lançamento Recorrente
+                            </label>
+                            <select 
+                                value={form.modo_atualizacao}
+                                onChange={e => setForm({...form, modo_atualizacao: e.target.value})}
+                                className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-xs text-blue-100 outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
+                            >
+                                <option value="unica" className="bg-[#0f172a]">Alterar APENAS este lançamento ({transacaoInicial.parcela_atual}/{transacaoInicial.total_parcelas})</option>
+                                <option value="futuras" className="bg-[#0f172a]">Alterar este lançamento e todos os FUTUROS</option>
+                                <option value="todas" className="bg-[#0f172a]">Alterar TODOS os lançamentos desta recorrência</option>
+                            </select>
+                        </div>
+                    )}
 
                     {/* Linha 4: Datas */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

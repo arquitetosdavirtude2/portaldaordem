@@ -282,19 +282,25 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
 
                         {isEdit && transacaoInicial?.grupo_recorrencia && (
                             <div className="space-y-1.5 md:col-span-2 pt-2 border-t border-white/5">
-                                <label className="text-[10px] font-medium text-yellow-500/80 uppercase tracking-wider">Modo de Edição em Lote</label>
-                                <select
+                                <label className="text-[10px] uppercase font-bold text-blue-400 tracking-wider flex items-center gap-1.5">
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    Opções de Edição para Conta Recorrente
+                                </label>
+                                <select 
                                     value={form.modo_atualizacao}
-                                    onChange={e => setForm({ ...form, modo_atualizacao: e.target.value })}
-                                    className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 text-xs text-yellow-500 outline-none focus:border-yellow-500 appearance-none cursor-pointer"
+                                    onChange={e => setForm({...form, modo_atualizacao: e.target.value})}
+                                    className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-xs text-blue-100 outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
                                 >
-                                    <option value="unica" className="bg-[#0f172a]">Alterar apenas esta</option>
-                                    <option value="futuras" className="bg-[#0f172a]">Alterar esta e as próximas</option>
-                                    <option value="todas" className="bg-[#0f172a]">Alterar todas do grupo (passadas e futuras)</option>
+                                    <option value="unica" className="bg-[#0f172a]">Alterar APENAS esta parcela ({transacaoInicial.parcela_atual}/{transacaoInicial.total_parcelas})</option>
+                                    <option value="futuras" className="bg-[#0f172a]">Alterar esta parcela e todas as FUTURAS</option>
+                                    <option value="todas" className="bg-[#0f172a]">Alterar TODAS as parcelas deste compromisso</option>
                                 </select>
-                                <p className="text-[9px] text-yellow-500/60 mt-1 uppercase tracking-wider">Esta conta faz parte de um grupo recorrente/parcelado.</p>
                             </div>
                         )}
+
+
                     </div>
 
                     <div className="pt-6">
