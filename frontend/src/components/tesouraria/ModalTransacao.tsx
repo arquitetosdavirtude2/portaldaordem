@@ -548,7 +548,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                 </div>
                             </div>
                             <div className="flex-1 space-y-1.5">
-                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Vencimento</label>
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Data</label>
                                 <input 
                                     type="date"
                                     required
