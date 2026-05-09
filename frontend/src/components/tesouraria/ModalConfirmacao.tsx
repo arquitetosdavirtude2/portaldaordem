@@ -11,7 +11,7 @@ interface ModalConfirmacaoProps {
     confirmText?: string;
     textoCancelar?: string;
     cancelText?: string;
-    corBotao?: 'red' | 'yellow' | 'blue';
+    corBotao?: 'red' | 'yellow' | 'blue' | 'green';
 }
 
 export default function ModalConfirmacao({ 
@@ -37,7 +37,8 @@ export default function ModalConfirmacao({
     const cores = {
         red: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500 hover:text-white',
         yellow: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500 hover:text-white',
-        blue: 'bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500 hover:text-white'
+        blue: 'bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500 hover:text-white',
+        green: 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500 hover:text-white'
     };
 
     return createPortal(

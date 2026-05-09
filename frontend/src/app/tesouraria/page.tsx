@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DashboardFinanceiro from '@/components/tesouraria/DashboardFinanceiro';
 import GestaoIrmaosFinanceiro from '@/components/tesouraria/GestaoIrmaosFinanceiro';
 import ContasPagar from '@/components/tesouraria/ContasPagar';
+import ContasReceber from '@/components/tesouraria/ContasReceber';
 import GestaoAcademia from '@/components/tesouraria/GestaoAcademia';
 import ModalTransacao from '@/components/tesouraria/ModalTransacao';
 import ModalCompromisso from '@/components/tesouraria/ModalCompromisso';
@@ -23,7 +24,7 @@ interface Acesso {
 export default function TesourariaPage() {
     const router = useRouter();
     const [acesso, setAcesso] = useState<Acesso | null>(null);
-    const [abaAtiva, setAbaAtiva] = useState<'geral' | 'irmaos' | 'academia' | 'contas_pagar'>('geral');
+    const [abaAtiva, setAbaAtiva] = useState<'geral' | 'irmaos' | 'academia' | 'contas_pagar' | 'contas_receber'>('geral');
     const [carregando, setCarregando] = useState(true);
     const [isModalAberto, setIsModalAberto] = useState(false);
     const [caixas, setCaixas] = useState<any[]>([]);
@@ -31,6 +32,7 @@ export default function TesourariaPage() {
     const [caixaAtualizacao, setCaixaAtualizacao] = useState(0);
     const [transacaoParaEditar, setTransacaoParaEditar] = useState<any>(null);
     const [isModalCompromissoAberto, setIsModalCompromissoAberto] = useState(false);
+    const [tipoModalCompromisso, setTipoModalCompromisso] = useState<'entrada' | 'saida'>('saida');
 
     useEffect(() => {
         const acessoSalvo = localStorage.getItem('acesso');
@@ -158,9 +160,15 @@ export default function TesourariaPage() {
                         </button>
                         <button
                             onClick={() => setAbaAtiva('contas_pagar')}
-                            className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 ${abaAtiva === 'contas_pagar' ? 'border-yellow-500 text-yellow-500 bg-yellow-500/5' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                            className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 ${abaAtiva === 'contas_pagar' ? 'border-red-500 text-red-500 bg-red-500/5' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
                         >
                             Contas a Pagar
+                        </button>
+                        <button
+                            onClick={() => setAbaAtiva('contas_receber')}
+                            className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 ${abaAtiva === 'contas_receber' ? 'border-green-500 text-green-500 bg-green-500/5' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Contas a Receber
                         </button>
                     </div>
 
@@ -182,11 +190,26 @@ export default function TesourariaPage() {
                             <GestaoIrmaosFinanceiro acesso={acesso} />
                         ) : abaAtiva === 'academia' ? (
                             <GestaoAcademia acesso={acesso} />
-                        ) : (
+                        ) : abaAtiva === 'contas_pagar' ? (
                             <ContasPagar 
                                 acesso={acesso} 
                                 onNovoLancamento={() => {
                                     setTransacaoParaEditar(null);
+                                    setTipoModalCompromisso('saida');
+                                    setIsModalCompromissoAberto(true);
+                                }}
+                                onEdit={(t) => {
+                                    setTransacaoParaEditar(t);
+                                    setIsModalCompromissoAberto(true);
+                                }}
+                                chaveAtualizacao={chaveAtualizacao}
+                            />
+                        ) : (
+                            <ContasReceber 
+                                acesso={acesso} 
+                                onNovoLancamento={() => {
+                                    setTransacaoParaEditar(null);
+                                    setTipoModalCompromisso('entrada');
                                     setIsModalCompromissoAberto(true);
                                 }}
                                 onEdit={(t) => {
@@ -225,6 +248,7 @@ export default function TesourariaPage() {
                     acesso={acesso}
                     caixas={caixas}
                     transacaoInicial={transacaoParaEditar}
+                    tipoInicial={tipoModalCompromisso}
                     onClose={() => {
                         setIsModalCompromissoAberto(false);
                         setTransacaoParaEditar(null);

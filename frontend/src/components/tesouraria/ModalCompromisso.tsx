@@ -8,15 +8,18 @@ interface Caixa {
     nome: string;
 }
 
-export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, transacaoInicial }: {
+export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, transacaoInicial, tipoInicial = 'saida' }: {
     acesso: any,
     caixas: Caixa[],
     onClose: () => void,
     onSuccess: () => void,
-    transacaoInicial?: any
+    transacaoInicial?: any,
+    tipoInicial?: 'entrada' | 'saida'
 }) {
     const isEdit = !!transacaoInicial;
     const [enviando, setEnviando] = useState(false);
+    
+    const [tipo, setTipo] = useState<'entrada' | 'saida'>(transacaoInicial?.tipo || tipoInicial);
     
 
     const categoriasSaida = [
@@ -31,6 +34,17 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         { id: 'outro_saida', label: 'Outras Despesas' }
     ];
 
+    const categoriasEntrada = [
+        { id: 'mensalidade', label: 'Mensalidade' },
+        { id: 'joia', label: 'Joia de Ingresso' },
+        { id: 'doacao', label: 'Doação / Patrocínio' },
+        { id: 'evento', label: 'Arrecadação de Eventos' },
+        { id: 'ressarcimento', label: 'Ressarcimento / Reembolso' },
+        { id: 'outro_entrada', label: 'Outras Receitas' }
+    ];
+
+    const categoriasAtuais = tipo === 'saida' ? categoriasSaida : categoriasEntrada;
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setEnviando(true);
@@ -44,7 +58,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 // PATCH expects JSON
                 const payload = {
                     caixa_id: form.caixa_id,
-                    tipo: 'saida',
+                    tipo: tipo,
                     categoria: form.categoria,
                     valor: parseFloat(form.valor),
                     data_vencimento: form.data_vencimento,
@@ -64,7 +78,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 // POST expects Form (because it might have files in other modes)
                 const formData = new FormData();
                 formData.append('caixa_id', form.caixa_id.toString());
-                formData.append('tipo', 'saida');
+                formData.append('tipo', tipo);
                 formData.append('categoria', form.categoria);
                 formData.append('valor', form.valor);
                 formData.append('data_vencimento', form.data_vencimento);
@@ -94,17 +108,27 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
 
     const [form, setForm] = useState({
         caixa_id: transacaoInicial?.caixa_id || caixas[0]?.id || 1,
-        categoria: transacaoInicial?.categoria || 'outro_saida',
+        categoria: transacaoInicial?.categoria || (tipo === 'saida' ? 'outro_saida' : 'outro_entrada'),
         valor: transacaoInicial?.valor?.toString() || '',
         data_vencimento: transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0],
         descricao: transacaoInicial?.descricao || '',
         notas: transacaoInicial?.notas || '',
         status: transacaoInicial?.status || 'pendente',
-        mes_ref: new Date().toISOString().slice(0, 7), // YYYY-MM
         recorrencia: transacaoInicial?.recorrencia || 'nenhuma',
-        total_parcelas: transacaoInicial?.total_parcelas || 1,
+        total_parcelas: transacaoInicial?.total_parcelas || 2,
+        mes_ref: transacaoInicial?.data_vencimento?.substring(0, 7) || new Date().toISOString().substring(0, 7),
         modo_atualizacao: 'unica'
     });
+
+    // Reset categoria when tipo changes
+    useEffect(() => {
+        if (!isEdit) {
+            setForm(prev => ({
+                ...prev,
+                categoria: tipo === 'saida' ? 'outro_saida' : 'outro_entrada'
+            }));
+        }
+    }, [tipo, isEdit]);
 
     const [calculandoPerCapita, setCalculandoPerCapita] = useState(false);
     const [infoPerCapita, setInfoPerCapita] = useState<{ contagem: number, total: number } | null>(null);
@@ -143,18 +167,45 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all animate-in fade-in duration-300">
             <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 m-4">
             
-                <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        <h3 className="text-sm font-medium text-white uppercase tracking-[0.2em]">
-                            {isEdit ? 'Editar Despesa' : 'Novo Compromisso de Pagamento'}
-                        </h3>
+                <div className="p-6 border-b border-white/5">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className={`w-2 h-2 rounded-full ${tipo === 'saida' ? 'bg-red-500' : 'bg-green-500'} animate-pulse`}></span>
+                                <h2 className="text-xl font-serif tracking-[0.2em] text-white uppercase">
+                                    {isEdit ? 'Editar Lançamento' : tipo === 'saida' ? 'Novo Compromisso de Pagamento' : 'Novo Lançamento a Receber'}
+                                </h2>
+                            </div>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-sans ml-4">
+                                {isEdit ? 'Atualize as informações do registro' : 'Agende um lançamento futuro no sistema'}
+                            </p>
+                        </div>
+                        <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-2 text-xl">✕</button>
-                </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-6 font-sans">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {!isEdit && (
+                            <div className="flex p-1 bg-black/40 border border-white/5 rounded-xl mb-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setTipo('saida')}
+                                    className={`flex-1 py-2 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${tipo === 'saida' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500'}`}
+                                >
+                                    Contas a Pagar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTipo('entrada')}
+                                    className={`flex-1 py-2 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${tipo === 'entrada' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'text-gray-500'}`}
+                                >
+                                    Contas a Receber
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
                             <label className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">Conta de Origem</label>
                             <select 
@@ -195,7 +246,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 onChange={e => setForm({...form, categoria: e.target.value})}
                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-red-500/50 appearance-none cursor-pointer"
                             >
-                                {categoriasSaida.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
+                                {categoriasAtuais.map(cat => <option key={cat.id} value={cat.id} className="bg-[#0f172a]">{cat.label}</option>)}
                             </select>
                         </div>
 
@@ -315,14 +366,15 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                         <button
                             type="submit"
                             disabled={enviando}
-                            className="w-full py-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white font-medium uppercase tracking-widest font-sans text-[11px] rounded-xl transition-all shadow-xl active:scale-95 h-14"
+                            className={`w-full py-4 ${tipo === 'saida' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-gray-700 text-white font-medium uppercase tracking-widest font-sans text-[11px] rounded-xl transition-all shadow-xl active:scale-95 h-14`}
                         >
-                            {enviando ? 'Gravando no Banco...' : isEdit ? 'Salvar Alterações' : 'Lançar Compromisso'}
+                            {enviando ? 'Gravando no Banco...' : isEdit ? 'Salvar Alterações' : tipo === 'saida' ? 'Lançar Compromisso' : 'Lançar Recebível'}
                         </button>
                     </div>
                 </form>
             </div>
             <style jsx>{` .color-scheme-dark { color-scheme: dark; } `}</style>
+        </div>
         </div>,
         document.body
     );

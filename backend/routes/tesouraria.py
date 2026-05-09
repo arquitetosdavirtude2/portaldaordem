@@ -1371,7 +1371,7 @@ def relatorio_inadimplentes(
             d['nome'],
             d['telefone'],
             d['cargo'],
-            status_txt,
+                            status_txt,
             d['data_admissao'],
             f"R$ {d['joia_pendente']:.2f}",
             f"R$ {d['mensalidade_pendente']:.2f}",
@@ -1386,6 +1386,45 @@ def relatorio_inadimplentes(
     }
     
     return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
+
+@router.get("/relatorio/contas-receber/{loja_id}")
+def relatorio_contas_receber(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
+    """Gera um relatório CSV das contas a receber (pendentes) da loja."""
+    import io, csv
+    from datetime import datetime
+    try:
+        from sqlalchemy import text
+        query = text("""
+            SELECT t.data_vencimento, t.descricao, t.categoria, t.valor
+            FROM transacoes t
+            JOIN caixas c ON t.caixa_id = c.id
+            WHERE t.status = 'pendente' 
+              AND t.tipo = 'entrada'
+              AND c.loja_id = :lid
+            ORDER BY t.data_vencimento ASC
+        """)
+        rows = db_treasury.execute(query, {"lid": loja_id}).fetchall()
+        
+        output = io.StringIO()
+        output.write('\ufeff')
+        writer = csv.writer(output, delimiter=';')
+        writer.writerow(['Vencimento', 'Descrição', 'Categoria', 'Valor'])
+        
+        for r in rows:
+            writer.writerow([
+                datetime.strptime(r[0], "%Y-%m-%d").strftime("%d/%m/%Y"),
+                r[1],
+                r[2].upper(),
+                f"R$ {r[3]:.2f}"
+            ])
+            
+        output.seek(0)
+        headers = {
+            'Content-Disposition': f'attachment; filename="contas_a_receber_{loja_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
+        }
+        return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/relatorio/contas-pagar/{loja_id}")
 def relatorio_contas_pagar(
@@ -1425,8 +1464,6 @@ def relatorio_contas_pagar(
         }
         return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/relatorio/individual/{transacao_id}")
 def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
     """Gera um recibo/relatório individual formatado para impressão."""
