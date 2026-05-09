@@ -58,6 +58,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 // PATCH expects JSON
                 const payload = {
                     caixa_id: form.caixa_id,
+                    pessoa_id: form.pessoa_id || null,
                     tipo: tipo,
                     categoria: form.categoria,
                     valor: parseFloat(form.valor),
@@ -78,6 +79,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 // POST expects Form (because it might have files in other modes)
                 const formData = new FormData();
                 formData.append('caixa_id', form.caixa_id.toString());
+                if (form.pessoa_id) formData.append('pessoa_id', form.pessoa_id.toString());
                 formData.append('tipo', tipo);
                 formData.append('categoria', form.categoria);
                 formData.append('valor', form.valor);
@@ -106,8 +108,10 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         }
     };
 
+    const [pessoas, setPessoas] = useState<any[]>([]);
     const [form, setForm] = useState({
         caixa_id: transacaoInicial?.caixa_id || caixas[0]?.id || 1,
+        pessoa_id: transacaoInicial?.pessoa_id || '',
         categoria: transacaoInicial?.categoria || (tipo === 'saida' ? 'outro_saida' : 'outro_entrada'),
         valor: transacaoInicial?.valor?.toString() || '',
         data_vencimento: transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0],
@@ -119,6 +123,23 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         mes_ref: transacaoInicial?.data_vencimento?.substring(0, 7) || new Date().toISOString().substring(0, 7),
         modo_atualizacao: 'unica'
     });
+
+    // Carregar lista de pessoas (Irmãos)
+    useEffect(() => {
+        const fetchPessoas = async () => {
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+                const res = await fetch(`${apiUrl}/api/pessoas/loja/${acesso.loja_id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setPessoas(data.sort((a: any, b: any) => a.nome.localeCompare(b.nome)));
+                }
+            } catch (error) {
+                console.error('Erro ao buscar pessoas:', error);
+            }
+        };
+        fetchPessoas();
+    }, [acesso.loja_id]);
 
     // Reset categoria when tipo changes
     useEffect(() => {
@@ -244,9 +265,23 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                             <select 
                                 value={form.categoria}
                                 onChange={e => setForm({...form, categoria: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-red-500/50 appearance-none cursor-pointer"
+                                className={`w-full bg-black/40 border ${tipo === 'saida' ? 'focus:border-red-500/50' : 'focus:border-green-500/50'} border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none appearance-none cursor-pointer`}
                             >
                                 {categoriasAtuais.map(cat => <option key={cat.id} value={cat.id} className="bg-[#0f172a]">{cat.label}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-wider">Vincular Irmão (Opcional)</label>
+                            <select 
+                                value={form.pessoa_id}
+                                onChange={e => setForm({...form, pessoa_id: e.target.value})}
+                                className={`w-full bg-black/40 border ${tipo === 'saida' ? 'focus:border-red-500/50' : 'focus:border-green-500/50'} border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none appearance-none cursor-pointer`}
+                            >
+                                <option value="" className="bg-[#0f172a]">Nenhum / Diversos</option>
+                                {pessoas.map(p => (
+                                    <option key={p.id} value={p.id} className="bg-[#0f172a]">{p.nome}</option>
+                                ))}
                             </select>
                         </div>
 
