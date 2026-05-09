@@ -113,7 +113,10 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 {
                     nome: 'Outras Receitas',
                     categorias: [
-                        { id: 'outro_entrada', label: 'Resíduo / Outros' }
+                        { id: 'doacao', label: 'Doação / Patrocínio' },
+                        { id: 'evento', label: 'Arrecadação de Eventos' },
+                        { id: 'ressarcimento', label: 'Ressarcimento / Reembolso' },
+                        { id: 'outro_entrada', label: 'Outras Receitas' }
                     ]
                 }
             ],
