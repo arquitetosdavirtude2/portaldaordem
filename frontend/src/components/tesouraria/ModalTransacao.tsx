@@ -611,8 +611,17 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         </div>
                     </div>
 
-                    {/* Linha 6: Notas */}
-
+                    {/* Linha 5: Notas (Restaurada para o local original) */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Observações Internas</label>
+                        <textarea 
+                            rows={3}
+                            value={form.notas}
+                            onChange={e => setForm({...form, notas: e.target.value})}
+                            placeholder="Informações adicionais para auditoria..."
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-400 outline-none focus:border-yellow-500/50 resize-none transition-all hover:border-white/20"
+                        ></textarea>
+                    </div>
 
                     {erro && (
                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] uppercase font-medium tracking-widest text-center animate-pulse">
@@ -637,18 +646,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     >
                         {enviando ? 'Processando...' : isEdit ? 'Salvar Alterações' : 'Confirmar Lançamento'}
                     </button>
-                </div>
-
-                {/* Notas movidas para o final do formulário principal */}
-                <div className="px-8 pb-8 space-y-2">
-                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Observações Internas</label>
-                    <textarea 
-                        rows={2}
-                        value={form.notas}
-                        onChange={e => setForm({...form, notas: e.target.value})}
-                        placeholder="Informações adicionais para auditoria..."
-                        className="w-full bg-black/20 border border-white/5 rounded-xl p-4 text-xs text-gray-500 outline-none focus:border-yellow-500/30 resize-none transition-all hover:border-white/10"
-                    ></textarea>
                 </div>
             </div>
             
