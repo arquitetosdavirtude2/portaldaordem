@@ -341,11 +341,11 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8">
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-6">
                     
                     {/* Linha 1: Conta e Tipo */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <div className="flex justify-between items-center ml-1">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Conta de Origem/Destino</label>
                                 {!isEdit && (
@@ -364,7 +364,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     value={form.caixa_id}
                                     onChange={e => setForm({...form, caixa_id: parseInt(e.target.value)})}
                                     disabled={isEdit}
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer disabled:opacity-50 transition-all hover:border-white/20"
+                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer disabled:opacity-50 transition-all hover:border-white/20"
                                 >
                                     {caixas.map(c => <option key={c.id} value={c.id} className="bg-[#0a0a0a]">{c.nome}</option>)}
                                 </select>
@@ -403,20 +403,20 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                 </div>
                             )}
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Tipo de Operação</label>
                             <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
                                 <button 
                                     type="button"
                                     onClick={() => setForm({...form, tipo: 'entrada'})}
-                                    className={`flex-1 py-3 rounded-lg text-[10px] uppercase font-medium transition-all ${form.tipo === 'entrada' ? 'bg-green-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                    className={`flex-1 py-2 rounded-lg text-[10px] uppercase font-medium transition-all ${form.tipo === 'entrada' ? 'bg-green-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                                 >
                                     Entrada (+)
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setForm({...form, tipo: 'saida'})}
-                                    className={`flex-1 py-3 rounded-lg text-[10px] uppercase font-medium transition-all ${form.tipo === 'saida' ? 'bg-red-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                    className={`flex-1 py-2 rounded-lg text-[10px] uppercase font-medium transition-all ${form.tipo === 'saida' ? 'bg-red-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                                 >
                                     Saída (-)
                                 </button>
@@ -426,7 +426,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
 
                     {/* Linha 2: Categoria e Subcategoria */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Grupo</label>
                             <select 
                                 value={form.grupo}
@@ -435,19 +435,19 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     const categoriasDoGrupo = categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].find(g => g.nome === novoGrupo)?.categorias || [];
                                     setForm({ ...form, grupo: novoGrupo, categoria: categoriasDoGrupo[0]?.id || '' });
                                 }}
-                                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
+                                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
                                 {categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].map(grupo => (
                                     <option key={grupo.nome} value={grupo.nome} className="bg-[#0a0a0a]">{grupo.nome}</option>
                                 ))}
                             </select>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Categoria</label>
                             <select 
                                 value={form.categoria}
                                 onChange={e => setForm({...form, categoria: e.target.value})}
-                                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
+                                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 appearance-none cursor-pointer transition-all hover:border-white/20"
                             >
                                 {categoriasHierarquicas[form.tipo as 'entrada' | 'saida'].find(g => g.nome === form.grupo)?.categorias.map(cat => (
                                     <option key={cat.id} value={cat.id} className="bg-[#0a0a0a]">{cat.label}</option>
@@ -456,12 +456,12 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         </div>
                     </div>
 
-                    {/* Linha 3: Irmão e Valor */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center ml-1 min-h-[24px]">
+                    {/* Linha 3: Irmão e Valor/Data */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center ml-1 min-h-[16px]">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Obreiro Relacionado</label>
-                                <label className="flex items-center gap-1.5 cursor-pointer group h-full">
+                                <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <input 
                                         type="checkbox" 
                                         checked={mostrarAdormecidos}
@@ -477,8 +477,8 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                 </div>
                                 <input 
                                     type="text"
-                                    placeholder="Buscar obreiro por nome ou cargo..."
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 pl-10 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
+                                    placeholder="Buscar obreiro..."
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-10 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
                                     onFocus={() => setIsDropdownAberto(true)}
                                     onChange={(e) => {
                                         setBuscaPessoa(e.target.value);
@@ -530,33 +530,32 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                 )}
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <div className="flex gap-3">
-                                <div className="relative flex-1 space-y-2">
-                                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Valor Total</label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] font-medium">R$</span>
-                                        <input 
-                                            type="number" 
-                                            step="0.01"
-                                            required
-                                            value={form.valor}
-                                            onChange={e => setForm({...form, valor: e.target.value})}
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 pl-8 text-xs text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
-                                            placeholder="0,00"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex-1 space-y-2">
-                                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Vencimento</label>
+
+                        <div className="flex gap-3 h-full">
+                            <div className="relative flex-1 space-y-1.5">
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Valor Total</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] font-medium">R$</span>
                                     <input 
-                                        type="date"
+                                        type="number" 
+                                        step="0.01"
                                         required
-                                        value={form.data_pagamento}
-                                        onChange={e => setForm({...form, data_pagamento: e.target.value})}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark transition-all hover:border-white/20"
+                                        value={form.valor}
+                                        onChange={e => setForm({...form, valor: e.target.value})}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-8 text-xs text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
+                                        placeholder="0,00"
                                     />
                                 </div>
+                            </div>
+                            <div className="flex-1 space-y-1.5">
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Vencimento</label>
+                                <input 
+                                    type="date"
+                                    required
+                                    value={form.data_pagamento}
+                                    onChange={e => setForm({...form, data_pagamento: e.target.value})}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark transition-all hover:border-white/20"
+                                />
                             </div>
                         </div>
                     </div>
@@ -583,9 +582,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     )}
 
                     {/* Linha 4: Mês Ref e Descrição */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                         {(form.categoria === 'mensalidade' || form.categoria === 'joia') ? (
-                            <div className="space-y-2 animate-in slide-in-from-top-2">
+                            <div className="space-y-1.5 animate-in slide-in-from-top-2">
                                 <label className="text-[10px] uppercase font-medium text-yellow-500 tracking-widest ml-1 flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
                                     Mês de Referência
@@ -594,33 +593,33 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     type="month"
                                     value={mesReferencia}
                                     onChange={e => setMesReferencia(e.target.value)}
-                                    className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 color-scheme-dark transition-all font-medium"
+                                    className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 color-scheme-dark transition-all font-medium"
                                 />
                             </div>
                         ) : null}
                         
-                        <div className={`space-y-2 ${(form.categoria === 'mensalidade' || form.categoria === 'joia') ? '' : 'md:col-span-2'}`}>
+                        <div className={`space-y-1.5 ${(form.categoria === 'mensalidade' || form.categoria === 'joia') ? '' : 'md:col-span-2'}`}>
                             <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Descrição do Lançamento</label>
                             <input 
                                 type="text"
                                 required
                                 value={form.descricao}
                                 onChange={e => setForm({...form, descricao: e.target.value})}
-                                placeholder="Ex: Pagamento Mensalidade Abril"
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
+                                placeholder="Ex: Pagamento Mensalidade"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
                             />
                         </div>
                     </div>
 
-                    {/* Linha 5: Notas (Restaurada para o local original) */}
-                    <div className="space-y-2">
+                    {/* Linha 5: Notas */}
+                    <div className="space-y-1.5">
                         <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Observações Internas</label>
                         <textarea 
                             rows={3}
                             value={form.notas}
                             onChange={e => setForm({...form, notas: e.target.value})}
-                            placeholder="Informações adicionais para auditoria..."
-                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-400 outline-none focus:border-yellow-500/50 resize-none transition-all hover:border-white/20"
+                            placeholder="Informações adicionais..."
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-400 outline-none focus:border-yellow-500/50 resize-none transition-all hover:border-white/20"
                         ></textarea>
                     </div>
 
