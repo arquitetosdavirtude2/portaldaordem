@@ -762,7 +762,7 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         # 1. Buscar Caixas (Contas) da Loja com SALDO CALCULADO EM TEMPO REAL
         # Não confiamos mais no campo 'saldo_atual' da tabela caixas.
         query_caixas = text("""
-            SELECT c.id, c.nome, COALESCE(c.finalidade, 'geral'),
+            SELECT c.id, c.nome, c.finalidade,
                 (SELECT COALESCE(SUM(CASE WHEN t.tipo='entrada' THEN t.valor ELSE -t.valor END), 0)
                  FROM transacoes t 
                  WHERE t.caixa_id = c.id AND t.status = 'pago') as saldo_real
