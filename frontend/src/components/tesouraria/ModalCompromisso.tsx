@@ -219,9 +219,17 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 )}
                             </div>
                             {infoPerCapita && (
-                                <p className="text-[9px] text-yellow-500/70 font-medium uppercase tracking-widest font-sans mt-1 px-1">
-                                    Cálculo Automático: {infoPerCapita.contagem} Obreiros x R$ 50,00 (VM Isento)
-                                </p>
+                                <div className="mt-1 px-1 space-y-1">
+                                    <p className="text-[9px] text-yellow-500/70 font-medium uppercase tracking-widest font-sans">
+                                        Cálculo Automático: {infoPerCapita.contagem} Obreiros x R$ 50,00 (VM Isento)
+                                    </p>
+                                    <p className="text-[8px] text-blue-400/80 font-medium uppercase tracking-tighter font-sans flex items-center gap-1">
+                                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Contas futuras pendentes serão atualizadas automaticamente se o quadro de obreiros mudar.
+                                    </p>
+                                </div>
                             )}
                         </div>
 

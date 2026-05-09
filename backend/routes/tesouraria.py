@@ -837,6 +837,68 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
             "error": str(e)
         }
 
+def _get_per_capita_stats(loja_id: int, mes_ref: str, db):
+    from sqlalchemy import text
+    from datetime import datetime
+    
+    # Parse do mês de referência
+    try:
+        ref_date = datetime.strptime(mes_ref, "%Y-%m")
+        ref_ano = ref_date.year
+        ref_mes = ref_date.month
+    except:
+        return {"contagem": 0, "valor_unitario": 50.0, "total": 0.0}
+    
+    # Query para pegar pessoas (não VM e não candidatos)
+    query = text("""
+        SELECT data_admissao, data_iniciacao, data_adormecimento, ativo
+        FROM pessoas
+        WHERE loja_id = :lid
+          AND (cargo_id != 1 OR cargo_id IS NULL)
+          AND (COALESCE(tipo_pessoa, 'obreiro') != 'candidato')
+    """)
+    rows = db.execute(query, {"lid": loja_id}).fetchall()
+    
+    contagem = 0
+    for r in rows:
+        data_adm_str = r[0] or r[1] # data_admissao ou data_iniciacao
+        data_ador_str = r[2]
+        is_ativo = r[3] == 1
+        
+        # Se está adormecido, verificar se foi NESTE mês
+        if not is_ativo or (data_ador_str and data_ador_str.strip()):
+            if data_ador_str:
+                try:
+                    dt_ador = datetime.strptime(data_ador_str, "%Y-%m-%d").date()
+                    # Se adormeceu no mês de referência (ou depois), ainda conta para este mês
+                    if dt_ador.year > ref_ano or (dt_ador.year == ref_ano and dt_ador.month >= ref_mes):
+                        pass # Continua para checar data de admissão
+                    else:
+                        continue # Adormeceu em meses passados, não conta
+                except:
+                    continue # Data inválida e inativo, melhor não contar
+            else:
+                continue # Inativo sem data, não conta
+
+        if not data_adm_str:
+            contagem += 1
+            continue
+            
+        try:
+            dt_adm = datetime.strptime(data_adm_str, "%Y-%m-%d").date()
+            
+            # Regra: Se iniciou no mês de referência após o dia 15, não conta
+            if dt_adm.year == ref_ano and dt_adm.month == ref_mes:
+                if dt_adm.day <= 15:
+                    contagem += 1
+            # Se iniciou antes do mês de referência, conta
+            elif dt_adm.year < ref_ano or (dt_adm.year == ref_ano and dt_adm.month < ref_mes):
+                contagem += 1
+        except:
+            contagem += 1
+            
+    return {"contagem": contagem, "valor_unitario": 50.0, "total": contagem * 50.0}
+
 @router.get("/contagem-per-capita/{loja_id}")
 def obter_contagem_per_capita(
     loja_id: int, 
@@ -844,53 +906,40 @@ def obter_contagem_per_capita(
     db_treasury: Session = Depends(get_treasury_db)
 ):
     """Calcula quantos obreiros ativos devem pagar Per Capita no mês de referência."""
-    try:
-        from sqlalchemy import text
-        from datetime import datetime
-        
-        # Parse do mês de referência
-        ref_date = datetime.strptime(mes_ref, "%Y-%m")
-        ref_ano = ref_date.year
-        ref_mes = ref_date.month
-        
-        # Query para pegar obreiros ativos que não sejam o Venerável Mestre (cargo_id=1)
-        # E EXCLUIR CANDIDATOS (tipo_pessoa='candidato')
-        query = text("""
-            SELECT data_admissao, tipo_ingresso, data_iniciacao
-            FROM pessoas
-            WHERE loja_id = :lid
-              AND (cargo_id != 1 OR cargo_id IS NULL)
-              AND (COALESCE(tipo_pessoa, 'obreiro') != 'candidato')
-              AND (COALESCE(data_adormecimento, '') = '' AND COALESCE(ativo, 1) = 1)
-        """)
-        rows = db_treasury.execute(query, {"lid": loja_id}).fetchall()
-        
-        contagem = 0
-        for r in rows:
-            data_adm_str = r[0] or r[2] # data_admissao ou data_iniciacao
-            if not data_adm_str:
-                contagem += 1
-                continue
-                
-            try:
-                dt_adm = datetime.strptime(data_adm_str, "%Y-%m-%d").date()
-                
-                # Regra: Se iniciou no mês de referência após o dia 15, não conta
-                if dt_adm.year == ref_ano and dt_adm.month == ref_mes:
-                    if dt_adm.day <= 15:
-                        contagem += 1
-                # Se iniciou antes do mês de referência, conta
-                elif dt_adm.year < ref_ano or (dt_adm.year == ref_ano and dt_adm.month < ref_mes):
-                    contagem += 1
-                # Se for no futuro, não conta
-            except:
-                contagem += 1
-                
-        return {"contagem": contagem, "valor_unitario": 50.0, "total": contagem * 50.0}
-    except Exception as e:
-        print(f"Erro contagem per capita: {e}")
-        return {"contagem": 0, "valor_unitario": 50.0, "total": 0.0}
+    return _get_per_capita_stats(loja_id, mes_ref, db_treasury)
 
+def sync_per_capitas_pendentes(loja_id: int, db):
+    """Varre todas as transações de per_capita pendentes da loja e atualiza valores baseado no quadro atual."""
+    from models import Transacao, Caixa
+    from datetime import datetime
+    
+    # Pegar todos os caixas da loja
+    caixas_ids = [c.id for c in db.query(Caixa).filter(Caixa.loja_id == loja_id).all()]
+    if not caixas_ids:
+        return
+        
+    # Buscar transações de per_capita pendentes nestes caixas
+    transacoes = db.query(Transacao).filter(
+        Transacao.caixa_id.in_(caixas_ids),
+        Transacao.categoria == 'per_capita',
+        Transacao.status == 'pendente'
+    ).all()
+    
+    for t in transacoes:
+        # Extrair mês de referência da data de vencimento (ou descrição se necessário)
+        # Vamos usar a data de vencimento como guia
+        if not t.data_vencimento:
+            continue
+            
+        mes_ref = t.data_vencimento[:7] # YYYY-MM
+        stats = _get_per_capita_stats(loja_id, mes_ref, db)
+        
+        t.valor = stats['total']
+        # Preservar o prefixo da descrição se existir (ex: "Per Capita - Ref: 2024-05")
+        base_desc = t.descricao.split(" - ")[0] if " - " in t.descricao else "Per Capita"
+        t.descricao = f"{base_desc} - {stats['contagem']} Obreiros"
+        
+    db.commit()
 
 class IrmaoFinanceiro(BaseModel):
     id: int

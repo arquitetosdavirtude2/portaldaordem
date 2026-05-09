@@ -234,6 +234,15 @@ def criar_pessoa(pessoa: PessoaCreate, db: Session = Depends(get_db)):
     db.add(nova)
     db.commit()
     db.refresh(nova)
+    
+    # Sincronizar Per Capitas pendentes da loja
+    if nova.loja_id:
+        try:
+            from routes.tesouraria import sync_per_capitas_pendentes
+            sync_per_capitas_pendentes(nova.loja_id, db)
+        except Exception as e:
+            print(f"Erro ao sincronizar per capita (POST): {e}")
+
     return _build_response(nova)
 
 
@@ -276,6 +285,15 @@ def atualizar_pessoa(pessoa_id: int, dados: PessoaUpdate, db: Session = Depends(
 
     db.commit()
     db.refresh(pessoa)
+
+    # Sincronizar Per Capitas pendentes da loja
+    if pessoa.loja_id:
+        try:
+            from routes.tesouraria import sync_per_capitas_pendentes
+            sync_per_capitas_pendentes(pessoa.loja_id, db)
+        except Exception as e:
+            print(f"Erro ao sincronizar per capita (PATCH): {e}")
+
     return _build_response(pessoa)
 
 
@@ -284,6 +302,16 @@ def deletar_pessoa(pessoa_id: int, db: Session = Depends(get_db)):
     pessoa = db.query(Pessoa).filter(Pessoa.id == pessoa_id).first()
     if not pessoa:
         raise HTTPException(status_code=404, detail="Pessoa não encontrada")
+    loja_id_backup = pessoa.loja_id
     db.delete(pessoa)
     db.commit()
+    
+    # Sincronizar Per Capitas pendentes da loja
+    if loja_id_backup:
+        try:
+            from routes.tesouraria import sync_per_capitas_pendentes
+            sync_per_capitas_pendentes(loja_id_backup, db)
+        except Exception as e:
+            print(f"Erro ao sincronizar per capita (DELETE): {e}")
+
     return {"message": "Pessoa removida com sucesso"}
