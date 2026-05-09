@@ -1466,6 +1466,8 @@ def relatorio_contas_pagar(
         }
         return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/relatorio/individual/{transacao_id}")
 def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
     """Gera um recibo/relatório individual formatado para impressão."""
