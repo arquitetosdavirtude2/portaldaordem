@@ -532,17 +532,31 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center ml-1 min-h-[24px]">
-                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Valor Total (R$)</label>
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Valor e Data</label>
                             </div>
-                            <input 
-                                type="number" 
-                                step="0.01"
-                                required
-                                value={form.valor}
-                                onChange={e => setForm({...form, valor: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
-                                placeholder="0,00"
-                            />
+                            <div className="flex gap-3">
+                                <div className="relative flex-1">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] font-medium">R$</span>
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        required
+                                        value={form.valor}
+                                        onChange={e => setForm({...form, valor: e.target.value})}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 pl-8 text-xs text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
+                                        placeholder="0,00"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <input 
+                                        type="date"
+                                        required
+                                        value={form.data_pagamento}
+                                        onChange={e => setForm({...form, data_pagamento: e.target.value})}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark transition-all hover:border-white/20"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -567,7 +581,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         </div>
                     )}
 
-                    {/* Linha 4: Datas */}
+                    {/* Linha 4: Mês Ref e Descrição */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {(form.categoria === 'mensalidade' || form.categoria === 'joia') ? (
                             <div className="space-y-2 animate-in slide-in-from-top-2">
@@ -583,42 +597,22 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                 />
                             </div>
                         ) : null}
-                        <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Data Efetiva do Pagamento</label>
+                        
+                        <div className={`space-y-2 ${(form.categoria === 'mensalidade' || form.categoria === 'joia') ? '' : 'md:col-span-2'}`}>
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Descrição do Lançamento</label>
                             <input 
-                                type="date"
+                                type="text"
                                 required
-                                value={form.data_pagamento}
-                                onChange={e => setForm({...form, data_pagamento: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-200 outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark transition-all hover:border-white/20"
+                                value={form.descricao}
+                                onChange={e => setForm({...form, descricao: e.target.value})}
+                                placeholder="Ex: Pagamento Mensalidade Abril"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
                             />
                         </div>
                     </div>
 
-                    {/* Linha 5: Descrição */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Descrição do Lançamento</label>
-                        <input 
-                            type="text"
-                            required
-                            value={form.descricao}
-                            onChange={e => setForm({...form, descricao: e.target.value})}
-                            placeholder="Ex: Pagamento Mensalidade Abril"
-                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
-                        />
-                    </div>
-
                     {/* Linha 6: Notas */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Observações Internas</label>
-                        <textarea 
-                            rows={3}
-                            value={form.notas}
-                            onChange={e => setForm({...form, notas: e.target.value})}
-                            placeholder="Informações adicionais para auditoria..."
-                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-400 outline-none focus:border-yellow-500/50 resize-none transition-all hover:border-white/20"
-                        ></textarea>
-                    </div>
+
 
                     {erro && (
                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] uppercase font-medium tracking-widest text-center animate-pulse">
@@ -643,6 +637,18 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     >
                         {enviando ? 'Processando...' : isEdit ? 'Salvar Alterações' : 'Confirmar Lançamento'}
                     </button>
+                </div>
+
+                {/* Notas movidas para o final do formulário principal */}
+                <div className="px-8 pb-8 space-y-2">
+                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Observações Internas</label>
+                    <textarea 
+                        rows={2}
+                        value={form.notas}
+                        onChange={e => setForm({...form, notas: e.target.value})}
+                        placeholder="Informações adicionais para auditoria..."
+                        className="w-full bg-black/20 border border-white/5 rounded-xl p-4 text-xs text-gray-500 outline-none focus:border-yellow-500/30 resize-none transition-all hover:border-white/10"
+                    ></textarea>
                 </div>
             </div>
             
