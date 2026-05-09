@@ -827,6 +827,7 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         print(f"ERRO CRÍTICO NO RESUMO: {e}")
         import traceback
         print(traceback.format_exc())
+        import traceback
         return {
             "caixas": [],
             "total_entrada_pendente": 0.0,
@@ -834,7 +835,8 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
             "saldo_geral": 0.0,
             "saldo_benevolencia": 0.0,
             "saldo_joias_mensalidade": 0.0,
-            "error": str(e)
+            "error": str(e),
+            "traceback": traceback.format_exc()
         }
 
 def _get_per_capita_stats(loja_id: int, mes_ref: str, db):
