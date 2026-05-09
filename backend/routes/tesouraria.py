@@ -551,11 +551,19 @@ def obter_detalhes_transacao(transacao_id: int, db_treasury: Session = Depends(g
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/transacoes/{transacao_id}")
-def excluir_transacao(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
+def excluir_transacao(transacao_id: int, excluir_grupo: bool = False, db_treasury: Session = Depends(get_treasury_db)):
     transacao = db_treasury.query(Transacao).filter(Transacao.id == transacao_id).first()
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     
+    if excluir_grupo and transacao.grupo_recorrencia:
+        db_treasury.query(Transacao).filter(
+            Transacao.grupo_recorrencia == transacao.grupo_recorrencia,
+            Transacao.status == 'pendente'
+        ).delete()
+        db_treasury.commit()
+        return {"status": "success", "message": "Todas as parcelas futuras foram excluídas"}
+
     # Reverse balance if paid
     if transacao.status == "pago":
         caixa = transacao.caixa
