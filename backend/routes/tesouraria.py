@@ -493,7 +493,19 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
                 
                 # Se for a mesma transação (ou campos genericos do lote)
                 if hasattr(t, k):
-                    setattr(t, k, v)
+                    # Se for a descrição e for edição em lote, recalcular a REF: se existir
+                    if k == 'descricao' and t.id != transacao_id and v and (' - Ref: ' in v or ' - REF: ' in v):
+                        try:
+                            sep = ' - Ref: ' if ' - Ref: ' in v else ' - REF: '
+                            base_desc = v.split(sep)[0]
+                            # Usa o ano/mês da transação ALVO (t)
+                            nova_ref = t.data_vencimento[:7]
+                            v_recalculado = f"{base_desc}{sep}{nova_ref}"
+                            setattr(t, k, v_recalculado)
+                        except:
+                            setattr(t, k, v)
+                    else:
+                        setattr(t, k, v)
 
         db_treasury.commit()
         db_treasury.refresh(transacao)
