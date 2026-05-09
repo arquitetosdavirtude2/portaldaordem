@@ -531,23 +531,24 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <div className="flex items-center ml-1 min-h-[24px]">
-                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Valor e Data</label>
-                            </div>
                             <div className="flex gap-3">
-                                <div className="relative flex-1">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] font-medium">R$</span>
-                                    <input 
-                                        type="number" 
-                                        step="0.01"
-                                        required
-                                        value={form.valor}
-                                        onChange={e => setForm({...form, valor: e.target.value})}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 pl-8 text-xs text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
-                                        placeholder="0,00"
-                                    />
+                                <div className="relative flex-1 space-y-2">
+                                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Valor Total</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] font-medium">R$</span>
+                                        <input 
+                                            type="number" 
+                                            step="0.01"
+                                            required
+                                            value={form.valor}
+                                            onChange={e => setForm({...form, valor: e.target.value})}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 pl-8 text-xs text-white font-medium outline-none focus:border-yellow-500/50 transition-all"
+                                            placeholder="0,00"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="flex-1">
+                                <div className="flex-1 space-y-2">
+                                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Vencimento</label>
                                     <input 
                                         type="date"
                                         required
