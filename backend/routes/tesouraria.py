@@ -195,130 +195,154 @@ async def criar_transacao(
     db_main: Session = Depends(get_db),
     db_treasury: Session = Depends(get_treasury_db)
 ):
-    from sqlalchemy import text
-    from models import Usuario
-    import uuid
-    from datetime import datetime
-    import math
+    try:
+        from sqlalchemy import text
+        from models import Usuario
+        import uuid
+        from datetime import datetime
+        import math
 
-    caixa = db_treasury.query(Caixa).filter(Caixa.id == caixa_id).first()
-    if not caixa:
-        raise HTTPException(status_code=404, detail="Caixa não encontrado")
+        caixa = db_treasury.query(Caixa).filter(Caixa.id == caixa_id).first()
+        if not caixa:
+            raise HTTPException(status_code=404, detail="Caixa não encontrado")
 
-    uid_final = usuario_id
-    if uid_final:
-        exists = db_treasury.execute(text("SELECT id FROM usuarios WHERE id = :uid"), {"uid": uid_final}).fetchone()
-        if not exists:
-            uid_final = None
-    if not uid_final:
-        first_user = db_treasury.execute(text("SELECT id FROM usuarios LIMIT 1")).fetchone()
-        uid_final = first_user[0] if first_user else 1
-    
-    anexo_url = None
-    if comprovante:
-        ext = os.path.splitext(comprovante.filename)[1]
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        filename = f"recibo_{timestamp}{ext}"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        with open(filepath, "wb") as buffer:
-            shutil.copyfileobj(comprovante.file, buffer)
-        anexo_url = f"/api/static/uploads/comprovantes/{filename}"
-
-    grupo_uuid = str(uuid.uuid4()) if recorrencia in ['mensal', 'anual', 'parcelado'] else None
-    
-    transacoes_criadas = []
-    
-    if recorrencia == 'parcelado' and total_parcelas and total_parcelas > 1:
-        valor_parcela = math.floor((valor / total_parcelas) * 100) / 100
-        resto = round(valor - (valor_parcela * total_parcelas), 2)
+        uid_final = usuario_id
+        if uid_final:
+            exists = db_treasury.execute(text("SELECT id FROM usuarios WHERE id = :uid"), {"uid": uid_final}).fetchone()
+            if not exists:
+                uid_final = None
+        if not uid_final:
+            first_user = db_treasury.execute(text("SELECT id FROM usuarios LIMIT 1")).fetchone()
+            uid_final = first_user[0] if first_user else 1
         
-        try:
-            base_date = datetime.strptime(data_vencimento, "%Y-%m-%d")
-        except:
-            base_date = datetime.now()
+        anexo_url = None
+        if comprovante:
+            ext = os.path.splitext(comprovante.filename)[1]
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            filename = f"recibo_{timestamp}{ext}"
+            filepath = os.path.join(UPLOAD_DIR, filename)
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            with open(filepath, "wb") as buffer:
+                shutil.copyfileobj(comprovante.file, buffer)
+            anexo_url = f"/api/static/uploads/comprovantes/{filename}"
 
-        for i in range(1, total_parcelas + 1):
-            valor_atual = valor_parcela
-            if i == total_parcelas:
-                valor_atual = round(valor_parcela + resto, 2)
-                
-            mes = base_date.month + (i - 1)
-            ano = base_date.year + (mes - 1) // 12
-            mes = (mes - 1) % 12 + 1
-            # Adjust day to avoid out of range
+        grupo_uuid = str(uuid.uuid4()) if recorrencia in ['mensal', 'anual', 'parcelado'] else None
+        
+        transacoes_criadas = []
+        
+        if recorrencia == 'parcelado' and total_parcelas and total_parcelas > 1:
+            valor_parcela = math.floor((valor / total_parcelas) * 100) / 100
+            resto = round(valor - (valor_parcela * total_parcelas), 2)
+            
             try:
-                data_venc_atual = base_date.replace(year=ano, month=mes).strftime("%Y-%m-%d")
-            except ValueError:
-                import calendar
-                _, last_day = calendar.monthrange(ano, mes)
-                data_venc_atual = base_date.replace(year=ano, month=mes, day=min(base_date.day, last_day)).strftime("%Y-%m-%d")
-            
-            # Adjust reference month if present
-            desc_atual = descricao
-            if " - Ref: " in desc_atual:
-                base_desc = desc_atual.split(" - Ref: ")[0]
-                desc_atual = f"{base_desc} - Ref: {ano}-{mes:02d}"
-            elif " - REF: " in desc_atual:
-                base_desc = desc_atual.split(" - REF: ")[0]
-                desc_atual = f"{base_desc} - REF: {ano}-{mes:02d}"
+                base_date = datetime.strptime(data_vencimento, "%Y-%m-%d")
+            except:
+                base_date = datetime.now()
 
-            desc_atual = f"{desc_atual} (Parcela {i}/{total_parcelas})"
-            
-            nova_transacao = Transacao(
-                caixa_id=caixa_id,
-                pessoa_id=pessoa_id,
-                usuario_id=uid_final,
-                tipo=tipo,
-                categoria=categoria,
-                valor=valor_atual,
-                data_vencimento=data_venc_atual,
-                data_pagamento=data_pagamento if i == 1 else None,
-                descricao=desc_atual,
-                notas=notas,
-                anexo_url=anexo_url if i == 1 else None,
-                status=status if i == 1 else "pendente",
-                recorrencia=recorrencia,
-                grupo_recorrencia=grupo_uuid,
-                parcela_atual=i,
-                total_parcelas=total_parcelas,
-                mes_referencia=f"{ano}-{mes:02d}"
-            )
-            transacoes_criadas.append(nova_transacao)
-            db_treasury.add(nova_transacao)
-
-    elif recorrencia in ['mensal', 'anual']:
-        repeticoes = 12 if recorrencia == 'mensal' else 5 # 12 meses ou 5 anos
-        
-        try:
-            base_date = datetime.strptime(data_vencimento, "%Y-%m-%d")
-        except:
-            base_date = datetime.now()
-
-        for i in range(1, repeticoes + 1):
-            if recorrencia == 'mensal':
+            for i in range(1, total_parcelas + 1):
+                valor_atual = valor_parcela
+                if i == total_parcelas:
+                    valor_atual = round(valor_parcela + resto, 2)
+                    
                 mes = base_date.month + (i - 1)
                 ano = base_date.year + (mes - 1) // 12
                 mes = (mes - 1) % 12 + 1
-            else:
-                mes = base_date.month
-                ano = base_date.year + (i - 1)
+                # Adjust day to avoid out of range
+                try:
+                    data_venc_atual = base_date.replace(year=ano, month=mes).strftime("%Y-%m-%d")
+                except ValueError:
+                    import calendar
+                    _, last_day = calendar.monthrange(ano, mes)
+                    data_venc_atual = base_date.replace(year=ano, month=mes, day=min(base_date.day, last_day)).strftime("%Y-%m-%d")
+                
+                # Adjust reference month if present
+                desc_atual = descricao
+                if " - Ref: " in desc_atual:
+                    base_desc = desc_atual.split(" - Ref: ")[0]
+                    desc_atual = f"{base_desc} - Ref: {ano}-{mes:02d}"
+                elif " - REF: " in desc_atual:
+                    base_desc = desc_atual.split(" - REF: ")[0]
+                    desc_atual = f"{base_desc} - REF: {ano}-{mes:02d}"
 
-            try:
-                data_venc_atual = base_date.replace(year=ano, month=mes).strftime("%Y-%m-%d")
-            except ValueError:
-                import calendar
-                _, last_day = calendar.monthrange(ano, mes)
-                data_venc_atual = base_date.replace(year=ano, month=mes, day=min(base_date.day, last_day)).strftime("%Y-%m-%d")
+                desc_atual = f"{desc_atual} (Parcela {i}/{total_parcelas})"
+                
+                nova_transacao = Transacao(
+                    caixa_id=caixa_id,
+                    pessoa_id=pessoa_id,
+                    usuario_id=uid_final,
+                    tipo=tipo,
+                    categoria=categoria,
+                    valor=valor_atual,
+                    data_vencimento=data_venc_atual,
+                    data_pagamento=data_pagamento if i == 1 else None,
+                    descricao=desc_atual,
+                    notas=notas,
+                    anexo_url=anexo_url if i == 1 else None,
+                    status=status if i == 1 else "pendente",
+                    recorrencia=recorrencia,
+                    grupo_recorrencia=grupo_uuid,
+                    parcela_atual=i,
+                    total_parcelas=total_parcelas,
+                    mes_referencia=f"{ano}-{mes:02d}"
+                )
+                transacoes_criadas.append(nova_transacao)
+                db_treasury.add(nova_transacao)
+
+        elif recorrencia in ['mensal', 'anual']:
+            repeticoes = 12 if recorrencia == 'mensal' else 5 # 12 meses ou 5 anos
             
-            desc_atual = descricao
-            if " - Ref: " in desc_atual:
-                base_desc = desc_atual.split(" - Ref: ")[0]
-                desc_atual = f"{base_desc} - Ref: {ano}-{mes:02d}"
-            elif " - REF: " in desc_atual:
-                base_desc = desc_atual.split(" - REF: ")[0]
-                desc_atual = f"{base_desc} - REF: {ano}-{mes:02d}"
+            try:
+                base_date = datetime.strptime(data_vencimento, "%Y-%m-%d")
+            except:
+                base_date = datetime.now()
 
+            for i in range(1, repeticoes + 1):
+                if recorrencia == 'mensal':
+                    mes = base_date.month + (i - 1)
+                    ano = base_date.year + (mes - 1) // 12
+                    mes = (mes - 1) % 12 + 1
+                else:
+                    mes = base_date.month
+                    ano = base_date.year + (i - 1)
+
+                try:
+                    data_venc_atual = base_date.replace(year=ano, month=mes).strftime("%Y-%m-%d")
+                except ValueError:
+                    import calendar
+                    _, last_day = calendar.monthrange(ano, mes)
+                    data_venc_atual = base_date.replace(year=ano, month=mes, day=min(base_date.day, last_day)).strftime("%Y-%m-%d")
+                
+                desc_atual = descricao
+                if " - Ref: " in desc_atual:
+                    base_desc = desc_atual.split(" - Ref: ")[0]
+                    desc_atual = f"{base_desc} - Ref: {ano}-{mes:02d}"
+                elif " - REF: " in desc_atual:
+                    base_desc = desc_atual.split(" - REF: ")[0]
+                    desc_atual = f"{base_desc} - REF: {ano}-{mes:02d}"
+
+                nova_transacao = Transacao(
+                    caixa_id=caixa_id,
+                    pessoa_id=pessoa_id,
+                    usuario_id=uid_final,
+                    tipo=tipo,
+                    categoria=categoria,
+                    valor=valor,
+                    data_vencimento=data_venc_atual,
+                    data_pagamento=data_pagamento if i == 1 else None,
+                    descricao=desc_atual,
+                    notas=notas,
+                    anexo_url=anexo_url if i == 1 else None,
+                    status=status if i == 1 else "pendente",
+                    recorrencia=recorrencia,
+                    grupo_recorrencia=grupo_uuid,
+                    parcela_atual=i,
+                    total_parcelas=repeticoes,
+                    mes_referencia=f"{ano}-{mes:02d}"
+                )
+                transacoes_criadas.append(nova_transacao)
+                db_treasury.add(nova_transacao)
+                
+        else:
             nova_transacao = Transacao(
                 caixa_id=caixa_id,
                 pessoa_id=pessoa_id,
@@ -326,78 +350,62 @@ async def criar_transacao(
                 tipo=tipo,
                 categoria=categoria,
                 valor=valor,
-                data_vencimento=data_venc_atual,
-                data_pagamento=data_pagamento if i == 1 else None,
-                descricao=desc_atual,
+                data_vencimento=data_vencimento,
+                data_pagamento=data_pagamento,
+                descricao=descricao,
                 notas=notas,
-                anexo_url=anexo_url if i == 1 else None,
-                status=status if i == 1 else "pendente",
-                recorrencia=recorrencia,
-                grupo_recorrencia=grupo_uuid,
-                parcela_atual=i,
-                total_parcelas=repeticoes,
-                mes_referencia=f"{ano}-{mes:02d}"
+                anexo_url=anexo_url,
+                status=status,
+                recorrencia="nenhuma",
+                mes_referencia=mes_referencia
             )
             transacoes_criadas.append(nova_transacao)
             db_treasury.add(nova_transacao)
-            
-    else:
-        nova_transacao = Transacao(
-            caixa_id=caixa_id,
-            pessoa_id=pessoa_id,
-            usuario_id=uid_final,
-            tipo=tipo,
-            categoria=categoria,
-            valor=valor,
-            data_vencimento=data_vencimento,
-            data_pagamento=data_pagamento,
-            descricao=descricao,
-            notas=notas,
-            anexo_url=anexo_url,
-            status=status,
-            recorrencia="nenhuma",
-            mes_referencia=mes_referencia
-        )
-        transacoes_criadas.append(nova_transacao)
-        db_treasury.add(nova_transacao)
 
-    db_treasury.commit()
-    
-    # Refresh a primeira transacao para retornar
-    primeira_transacao = transacoes_criadas[0]
-    db_treasury.refresh(primeira_transacao)
-    
-    if primeira_transacao.status == "pago":
-        if primeira_transacao.tipo == "entrada":
-            caixa.saldo_atual += primeira_transacao.valor
-        else:
-            caixa.saldo_atual -= primeira_transacao.valor
         db_treasury.commit()
+        
+        # Refresh a primeira transacao para retornar
+        primeira_transacao = transacoes_criadas[0]
+        db_treasury.refresh(primeira_transacao)
+        
+        if primeira_transacao.status == "pago":
+            if primeira_transacao.tipo == "entrada":
+                caixa.saldo_atual += primeira_transacao.valor
+            else:
+                caixa.saldo_atual -= primeira_transacao.valor
+            db_treasury.commit()
 
-    p_nome = None
-    if primeira_transacao.pessoa_id:
-        p = db_main.query(Pessoa).filter(Pessoa.id == primeira_transacao.pessoa_id).first()
-        p_nome = p.nome if p else None
+        p_nome = None
+        if primeira_transacao.pessoa_id:
+            p = db_main.query(Pessoa).filter(Pessoa.id == primeira_transacao.pessoa_id).first()
+            p_nome = p.nome if p else None
 
-    return TransacaoResponse(
-        id=primeira_transacao.id,
-        caixa_id=primeira_transacao.caixa_id,
-        pessoa_id=primeira_transacao.pessoa_id,
-        pessoa_nome=p_nome,
-        tipo=primeira_transacao.tipo,
-        categoria=primeira_transacao.categoria,
-        valor=primeira_transacao.valor,
-        data_vencimento=primeira_transacao.data_vencimento,
-        data_pagamento=primeira_transacao.data_pagamento,
-        descricao=primeira_transacao.descricao,
-        notas=primeira_transacao.notas,
-        anexo_url=primeira_transacao.anexo_url,
-        status=primeira_transacao.status,
-        recorrencia=primeira_transacao.recorrencia,
-        grupo_recorrencia=primeira_transacao.grupo_recorrencia,
-        parcela_atual=primeira_transacao.parcela_atual,
-        total_parcelas=primeira_transacao.total_parcelas
-    )
+        return TransacaoResponse(
+            id=primeira_transacao.id,
+            caixa_id=primeira_transacao.caixa_id,
+            pessoa_id=primeira_transacao.pessoa_id,
+            pessoa_nome=p_nome,
+            tipo=primeira_transacao.tipo,
+            categoria=primeira_transacao.categoria,
+            valor=primeira_transacao.valor,
+            data_vencimento=primeira_transacao.data_vencimento,
+            data_pagamento=primeira_transacao.data_pagamento,
+            descricao=primeira_transacao.descricao,
+            notas=primeira_transacao.notas,
+            anexo_url=primeira_transacao.anexo_url,
+            status=primeira_transacao.status,
+            recorrencia=primeira_transacao.recorrencia,
+            grupo_recorrencia=primeira_transacao.grupo_recorrencia,
+            parcela_atual=primeira_transacao.parcela_atual,
+            total_parcelas=primeira_transacao.total_parcelas,
+            mes_referencia=primeira_transacao.mes_referencia
+        )
+    except Exception as e:
+        db_treasury.rollback()
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.patch("/transacoes/{transacao_id}", response_model=TransacaoResponse)
 def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: Session = Depends(get_treasury_db)):
@@ -526,7 +534,26 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
 
         db_treasury.commit()
         db_treasury.refresh(transacao)
-        return transacao
+
+        return TransacaoResponse(
+            id=transacao.id,
+            caixa_id=transacao.caixa_id,
+            pessoa_id=transacao.pessoa_id,
+            tipo=transacao.tipo,
+            categoria=transacao.categoria,
+            valor=transacao.valor,
+            data_vencimento=transacao.data_vencimento,
+            data_pagamento=transacao.data_pagamento,
+            mes_referencia=transacao.mes_referencia,
+            descricao=transacao.descricao or "",
+            notas=transacao.notas,
+            anexo_url=transacao.anexo_url,
+            status=transacao.status,
+            recorrencia=transacao.recorrencia,
+            grupo_recorrencia=transacao.grupo_recorrencia,
+            parcela_atual=transacao.parcela_atual,
+            total_parcelas=transacao.total_parcelas
+        )
 
     except HTTPException:
         db_treasury.rollback()
