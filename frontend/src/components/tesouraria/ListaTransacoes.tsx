@@ -187,7 +187,7 @@ export default function ListaTransacoes({
                             Referência <SortIcon active={sortKey === 'data_vencimento'} dir={sortDir} />
                         </th>
                         <th className={thClass}>
-                            Data Pagto
+                            Data
                         </th>
                         <th className={thClass} onClick={() => handleSort('descricao')}>
                             Descrição <SortIcon active={sortKey === 'descricao'} dir={sortDir} />

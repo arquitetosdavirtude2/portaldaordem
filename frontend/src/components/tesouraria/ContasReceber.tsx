@@ -211,7 +211,7 @@ export default function ContasReceber({ acesso, onNovoLancamento, onEdit, chaveA
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-white/5 bg-white/5 uppercase tracking-widest text-gray-500 font-sans font-medium text-[9px]">
-                            <th className="px-5 py-3 w-[110px]">Previsão</th>
+                            <th className="px-5 py-3 w-[110px]">Data</th>
                             <th className="px-5 py-3">Descrição</th>
                             <th className="px-5 py-3 text-right w-[130px]">Valor</th>
                             <th className="px-5 py-3 text-right pr-8 w-[160px]">Ação</th>
