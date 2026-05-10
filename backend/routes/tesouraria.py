@@ -576,7 +576,7 @@ def excluir_transacao(transacao_id: int, excluir_grupo: bool = False, db_treasur
         db_treasury.commit()
         return {"status": "success", "message": "Todas as parcelas futuras foram excluídas"}
 
-    # Reverse balance if paid
+    # Reverse balance if paid and move back to pending (estorno)
     if transacao.status == "pago":
         caixa = transacao.caixa
         if transacao.tipo == "entrada":
@@ -584,12 +584,12 @@ def excluir_transacao(transacao_id: int, excluir_grupo: bool = False, db_treasur
         else:
             caixa.saldo_atual += transacao.valor
             
-        # Se for uma saída (despesa), ao invés de deletar, volta para o Contas a Pagar
-        if transacao.tipo == "saida":
-            transacao.status = "pendente"
-            transacao.data_pagamento = None
-            db_treasury.commit()
-            return {"status": "success", "message": "Transação estornada para Contas a Pagar"}
+        transacao.status = "pendente"
+        transacao.data_pagamento = None
+        db_treasury.commit()
+        
+        msg = "Transação estornada para Contas a Receber" if transacao.tipo == "entrada" else "Transação estornada para Contas a Pagar"
+        return {"status": "success", "message": msg}
             
     db_treasury.delete(transacao)
     db_treasury.commit()
