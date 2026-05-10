@@ -403,10 +403,6 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         else:
             update_data = dados.dict(exclude_unset=True)
 
-        # Proteção para pessoa_id negativo
-        if 'pessoa_id' in update_data and update_data['pessoa_id'] and update_data['pessoa_id'] < 0:
-            update_data['pessoa_id'] = None
-
         modo_atualizacao = update_data.pop("modo_atualizacao", "unica")
 
         # Formata datas
@@ -421,10 +417,14 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
             update_data["data_pagamento"] = dp
             
         if "pessoa_id" in update_data:
-            if update_data["pessoa_id"] == 0 or (update_data["pessoa_id"] and int(update_data["pessoa_id"]) < 0):
+            p_id = update_data["pessoa_id"]
+            if p_id is None or str(p_id) == "0" or str(p_id) == "":
                 update_data["pessoa_id"] = None
             else:
-                update_data["pessoa_id"] = int(update_data["pessoa_id"])
+                try:
+                    update_data["pessoa_id"] = int(p_id)
+                except (ValueError, TypeError):
+                    update_data["pessoa_id"] = None
 
         # Helper para saldo
         def update_balance(box_id, amount, is_add):
