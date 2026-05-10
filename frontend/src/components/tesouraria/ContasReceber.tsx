@@ -220,16 +220,21 @@ export default function ContasReceber({ acesso, onNovoLancamento, onEdit, chaveA
                     <tbody className="divide-y divide-white/5">
                         {pendentes.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="px-5 py-20 text-center text-gray-600 text-[11px] italic uppercase tracking-widest">
+                                <td colSpan={5} className="px-5 py-20 text-center text-gray-600 text-[11px] italic uppercase tracking-widest">
                                     Sem recebíveis pendentes.
                                 </td>
                             </tr>
                         ) : (
                             pendentes.map(t => (
                                 <tr key={t.id} className="hover:bg-green-500/[0.02] transition-colors group">
-                                    <td className="px-5 py-3 w-[110px]">
+                                    <td className="px-5 py-3 w-[100px]">
                                         <div className="text-[10px] font-medium font-sans tabular-nums tracking-widest text-gray-400">
                                             {t.data_vencimento.split('-').reverse().join('/')}
+                                        </div>
+                                    </td>
+                                    <td className="px-5 py-3 w-[100px]">
+                                        <div className="text-[10px] font-medium font-sans tabular-nums tracking-widest text-gray-300">
+                                            {t.status === 'pago' ? (t.data_pagamento || t.data_vencimento).split('-').reverse().join('/') : '---'}
                                         </div>
                                     </td>
                                     <td className="px-5 py-3">

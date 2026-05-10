@@ -204,11 +204,11 @@ export default function ListaTransacoes({
                 <tbody className="divide-y divide-white/5">
                     {transacoesOrdenadas.map(t => (
                         <tr key={t.id} className="hover:bg-white/[0.03] transition-colors group">
-                            <td className="px-5 py-4 text-[10px] text-gray-400 font-sans tabular-nums tracking-widest">
-                                {t.data_vencimento ? t.data_vencimento.split('-').slice(0,2).reverse().join('/') : '-'}
+                            <td className="px-5 py-4 text-[10px] text-gray-400 font-sans tabular-nums tracking-widest whitespace-nowrap">
+                                {t.data_vencimento ? t.data_vencimento.split('-').reverse().join('/') : '-'}
                             </td>
                             <td className="px-5 py-4 text-[11px] text-gray-300 whitespace-nowrap font-medium font-sans tabular-nums tracking-widest">
-                                {(t.data_pagamento || t.data_vencimento)?.split('-').reverse().join('/') || '---'}
+                                {t.data_pagamento ? t.data_pagamento.split('-').reverse().join('/') : '---'}
                             </td>
                             <td className="px-5 py-4">
                                 <div className="text-[11px] font-medium font-sans tracking-widest text-gray-200">{t.descricao}</div>

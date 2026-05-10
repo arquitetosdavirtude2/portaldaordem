@@ -188,25 +188,27 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all animate-in fade-in duration-300">
             <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 m-4">
             
-                <div className="p-6 border-b border-white/5">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className={`w-2 h-2 rounded-full ${tipo === 'saida' ? 'bg-red-500' : 'bg-green-500'} animate-pulse`}></span>
-                                <h2 className="text-xl font-serif tracking-[0.2em] text-white uppercase">
-                                    {isEdit ? 'Editar Lançamento' : tipo === 'saida' ? 'Novo Compromisso de Pagamento' : 'Novo Lançamento a Receber'}
-                                </h2>
-                            </div>
-                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-sans ml-4">
-                                {isEdit ? 'Atualize as informações do registro' : 'Agende um lançamento futuro no sistema'}
-                            </p>
+                {/* Header Fixo */}
+                <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className={`w-2 h-2 rounded-full ${tipo === 'saida' ? 'bg-red-500' : 'bg-green-500'} animate-pulse`}></span>
+                            <h2 className="text-xl font-serif tracking-[0.2em] text-white uppercase">
+                                {isEdit ? 'Editar Lançamento' : tipo === 'saida' ? 'Novo Compromisso de Pagamento' : 'Novo Lançamento a Receber'}
+                            </h2>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-sans ml-4">
+                            {isEdit ? 'Atualize as informações do registro' : 'Agende um lançamento futuro no sistema'}
+                        </p>
                     </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                    {/* Corpo com Scroll */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                         {!isEdit && (
                             <div className="flex p-1 bg-black/40 border border-white/5 rounded-xl mb-6">
                                 <button
@@ -399,18 +401,35 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 />
                             </div>
                         </div>
+                    </div>
 
-                    <div className="pt-6">
+                    {/* Rodapé Fixo com Botão */}
+                    <div className="p-6 border-t border-white/5 shrink-0 bg-[#0f172a]">
                         <button
                             type="submit"
                             disabled={enviando}
-                            className={`w-full py-4 ${tipo === 'saida' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-gray-700 text-white font-medium uppercase tracking-widest font-sans text-[11px] rounded-xl transition-all shadow-xl active:scale-95 h-14`}
+                            className={`w-full py-4 ${tipo === 'saida' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} disabled:bg-gray-700 text-white font-medium uppercase tracking-widest font-sans text-[11px] rounded-xl transition-all shadow-xl active:scale-95 h-14 flex items-center justify-center`}
                         >
-                            {enviando ? 'Gravando no Banco...' : isEdit ? 'Salvar Alterações' : tipo === 'saida' ? 'Lançar Compromisso' : 'Lançar Recebível'}
+                            {enviando ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                    GRAVANDO...
+                                </div>
+                            ) : (
+                                isEdit ? 'SALVAR ALTERAÇÕES' : tipo === 'saida' ? 'LANÇAR COMPROMISSO' : 'LANÇAR RECEBÍVEL'
+                            )}
                         </button>
                     </div>
                 </form>
             </div>
+            <style jsx>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
+                .color-scheme-dark { color-scheme: dark; }
+            `}</style>
+        </div>
             <style jsx>{` .color-scheme-dark { color-scheme: dark; } `}</style>
         </div>
         </div>,
