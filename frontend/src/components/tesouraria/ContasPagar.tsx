@@ -10,6 +10,7 @@ interface Transacao {
     categoria: string;
     valor: number;
     data_vencimento: string;
+    data_pagamento?: string;
     descricao: string;
     status: string;
     grupo_recorrencia?: string;
