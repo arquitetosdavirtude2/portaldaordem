@@ -40,28 +40,6 @@ class CaixaCreate(BaseModel):
     descricao: Optional[str] = None
     saldo_inicial: float = 0.0
 
-@router.get("/diagnostic")
-def diagnostic(db_treasury: Session = Depends(get_treasury_db)):
-    """Rota de diagnóstico para depuração de unificação MySQL."""
-    import os
-    from database import TREASURY_DB_URL
-    from models import Transacao, Pessoa, Caixa
-    
-    try:
-        t_count = db_treasury.query(Transacao).count()
-        p_count = db_treasury.query(Pessoa).count()
-        c_count = db_treasury.query(Caixa).count()
-        return {
-            "db_url": TREASURY_DB_URL,
-            "trans_count": t_count,
-            "pessoas_count": p_count,
-            "caixas_count": c_count,
-            "cwd": os.getcwd(),
-            "mysql_status": "OK"
-        }
-    except Exception as e:
-        return {"error": str(e), "db_url": TREASURY_DB_URL}
-
 class TransacaoResponse(BaseModel):
     id: Optional[int] = None
     caixa_id: Optional[int] = None
