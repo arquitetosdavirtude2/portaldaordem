@@ -456,19 +456,21 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
             c_tipo = t.tipo
             c_status = t.status
 
-            new_status = update_data.get("status", c_status) if t.id == transacao_id else c_status
-            new_valor = update_data.get("valor", c_valor)
-            new_tipo = update_data.get("tipo", c_tipo)
+            # O status só muda para a transação principal (transacao_id)
+            # Valor e Tipo podem mudar para o lote todo
+            new_status = update_data.get("status") if (t.id == transacao_id and update_data.get("status") is not None) else c_status
+            new_valor = update_data.get("valor") if update_data.get("valor") is not None else c_valor
+            new_tipo = update_data.get("tipo") if update_data.get("tipo") is not None else c_tipo
 
             # Atualizar Saldo Bancário apenas se status/valor mudou
             if new_status == "pago" and c_status != "pago":
-                update_balance(c_id, new_valor, new_tipo == "entrada")
+                update_balance(c_id, new_valor or 0, new_tipo == "entrada")
             elif c_status == "pago":
                 # Reverse old
-                update_balance(c_id, c_valor, c_tipo != "entrada")
+                update_balance(c_id, c_valor or 0, c_tipo != "entrada")
                 # Apply new only if it is still pago
                 if new_status == "pago":
-                    update_balance(c_id, new_valor, new_tipo == "entrada")
+                    update_balance(c_id, new_valor or 0, new_tipo == "entrada")
 
             # Atualizar os campos no banco
             for k, v in update_data.items():
@@ -510,7 +512,7 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
                         
                         if sep:
                             try:
-                                base_desc = v.split(sep)[0]
+                                base_desc = str(v).split(sep)[0]
                                 # Usa o mês de referência da transação ALVO (t) se existir, senão usa data_vencimento
                                 nova_ref = t.mes_referencia if t.mes_referencia else t.data_vencimento[:7]
                                 v_recalculado = f"{base_desc}{sep}{nova_ref}"
@@ -524,17 +526,7 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
 
         db_treasury.commit()
         db_treasury.refresh(transacao)
-
-        return TransacaoResponse(
-            id=transacao.id,
-            caixa_id=transacao.caixa_id,
-            pessoa_id=transacao.pessoa_id,
-            tipo=transacao.tipo,
-            categoria=transacao.categoria,
-            valor=transacao.valor,
-            status=transacao.status,
-            descricao=transacao.descricao or ""
-        )
+        return transacao
 
     except HTTPException:
         db_treasury.rollback()
