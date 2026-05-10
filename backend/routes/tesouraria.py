@@ -206,6 +206,11 @@ async def criar_transacao(
         if not caixa:
             raise HTTPException(status_code=404, detail="Caixa não encontrado")
 
+        # Proteção para pessoa_id negativo (VMs virtuais)
+        pid_final = pessoa_id
+        if pid_final and pid_final < 0:
+            pid_final = None
+        
         uid_final = usuario_id
         if uid_final:
             exists = db_treasury.execute(text("SELECT id FROM usuarios WHERE id = :uid"), {"uid": uid_final}).fetchone()
@@ -268,7 +273,7 @@ async def criar_transacao(
                 
                 nova_transacao = Transacao(
                     caixa_id=caixa_id,
-                    pessoa_id=pessoa_id,
+                    pessoa_id=pid_final,
                     usuario_id=uid_final,
                     tipo=tipo,
                     categoria=categoria,
@@ -322,7 +327,7 @@ async def criar_transacao(
 
                 nova_transacao = Transacao(
                     caixa_id=caixa_id,
-                    pessoa_id=pessoa_id,
+                    pessoa_id=pid_final,
                     usuario_id=uid_final,
                     tipo=tipo,
                     categoria=categoria,
@@ -345,7 +350,7 @@ async def criar_transacao(
         else:
             nova_transacao = Transacao(
                 caixa_id=caixa_id,
-                pessoa_id=pessoa_id,
+                pessoa_id=pid_final,
                 usuario_id=uid_final,
                 tipo=tipo,
                 categoria=categoria,
@@ -418,6 +423,10 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
             update_data = dados.model_dump(exclude_unset=True)
         else:
             update_data = dados.dict(exclude_unset=True)
+
+        # Proteção para pessoa_id negativo
+        if 'pessoa_id' in update_data and update_data['pessoa_id'] and update_data['pessoa_id'] < 0:
+            update_data['pessoa_id'] = None
 
         modo_atualizacao = update_data.pop("modo_atualizacao", "unica")
 
