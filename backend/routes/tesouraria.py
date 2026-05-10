@@ -489,38 +489,47 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
 
                 if k == 'data_vencimento' and t.id != transacao_id:
                     # Para outras do grupo, mudar apenas o dia
-                    try:
-                        new_day = v.split('-')[2]
-                        old_ym = t.data_vencimento[:8] # YYYY-MM-
-                        
-                        # Handle month ends (e.g. 31st on Feb)
+                    if v and t.data_vencimento:
                         try:
-                            datetime.strptime(f"{old_ym}{new_day}", "%Y-%m-%d")
-                            setattr(t, k, f"{old_ym}{new_day}")
-                        except ValueError:
-                            import calendar
-                            y, m = map(int, old_ym.split('-')[:2])
-                            _, last_day = calendar.monthrange(y, m)
-                            safe_day = min(int(new_day), last_day)
-                            setattr(t, k, f"{old_ym}{safe_day:02d}")
-                    except Exception:
-                        pass
+                            v_str = str(v)
+                            new_day = v_str.split('-')[2] if '-' in v_str and len(v_str.split('-')) >= 3 else "01"
+                            old_ym = t.data_vencimento[:8] # YYYY-MM-
+                            
+                            # Handle month ends (e.g. 31st on Feb)
+                            try:
+                                datetime.strptime(f"{old_ym}{new_day}", "%Y-%m-%d")
+                                setattr(t, k, f"{old_ym}{new_day}")
+                            except ValueError:
+                                import calendar
+                                y, m = map(int, old_ym.split('-')[:2])
+                                _, last_day = calendar.monthrange(y, m)
+                                safe_day = min(int(new_day), last_day)
+                                setattr(t, k, f"{old_ym}{safe_day:02d}")
+                        except Exception:
+                            pass
                     continue
                 
                 # Se for a mesma transação (ou campos genericos do lote)
                 if hasattr(t, k):
                     # Se for a descrição e for edição em lote, recalcular a REF: se existir
                     if k == 'descricao' and t.id != transacao_id and v:
+                        v_str = str(v)
                         sep = None
-                        if ' - Ref: ' in v: sep = ' - Ref: '
-                        elif ' - REF: ' in v: sep = ' - REF: '
+                        if ' - Ref: ' in v_str: sep = ' - Ref: '
+                        elif ' - REF: ' in v_str: sep = ' - REF: '
                         
                         if sep:
                             try:
-                                base_desc = str(v).split(sep)[0]
+                                base_desc = v_str.split(sep)[0]
                                 # Usa o mês de referência da transação ALVO (t) se existir, senão usa data_vencimento
-                                nova_ref = t.mes_referencia if t.mes_referencia else t.data_vencimento[:7]
-                                v_recalculado = f"{base_desc}{sep}{nova_ref}"
+                                nova_ref = t.mes_referencia if t.mes_referencia else (t.data_vencimento[:7] if t.data_vencimento else "")
+                                
+                                # Mantém o sufixo de parcela se existir
+                                suffix = ""
+                                if t.parcela_atual and t.total_parcelas:
+                                    suffix = f" (Parcela {t.parcela_atual}/{t.total_parcelas})"
+                                
+                                v_recalculado = f"{base_desc}{sep}{nova_ref}{suffix}"
                                 setattr(t, k, v_recalculado)
                             except:
                                 setattr(t, k, v)
