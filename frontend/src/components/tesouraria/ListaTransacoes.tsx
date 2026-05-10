@@ -286,15 +286,21 @@ export default function ListaTransacoes({
             isOpen={itemParaExcluir !== null}
             onClose={() => setItemParaExcluir(null)}
             onConfirm={confirmDelete}
-            titulo="Excluir Lançamento"
+            titulo={transacoes.find(t => t.id === itemParaExcluir)?.status === 'pago' ? "Estornar Lançamento" : "Excluir Lançamento"}
             mensagem={
-                itemParaExcluir !== null && transacoes.find(t => t.id === itemParaExcluir)?.tipo === 'saida' && transacoes.find(t => t.id === itemParaExcluir)?.status === 'pago'
-                    ? "Este lançamento é uma despesa. Ao confirmar a exclusão, ela NÃO será apagada permanentemente, mas sim ESTORNADA e retornará para a sua lista de Contas a Pagar. O saldo bancário do caixa será ajustado automaticamente."
-                    : "Tem certeza que deseja excluir este lançamento? Esta operação é irreversível e o saldo bancário do caixa será ajustado automaticamente."
+                (() => {
+                    const t = transacoes.find(x => x.id === itemParaExcluir);
+                    if (!t) return "";
+                    if (t.status === 'pago') {
+                        const destino = t.tipo === 'entrada' ? 'Contas a Receber' : 'Contas a Pagar';
+                        return `Este lançamento já está liquidado no sistema. Ao confirmar, ele NÃO será apagado permanentemente, mas sim ESTORNADO e retornará para a sua lista de ${destino} como pendente. O saldo bancário do caixa será ajustado automaticamente.`;
+                    }
+                    return "Tem certeza que deseja excluir este lançamento? Esta operação é irreversível e o saldo bancário do caixa será ajustado automaticamente.";
+                })()
             }
             confirmText={
-                itemParaExcluir !== null && transacoes.find(t => t.id === itemParaExcluir)?.tipo === 'saida' && transacoes.find(t => t.id === itemParaExcluir)?.status === 'pago'
-                    ? "Sim, Estornar Lançamento"
+                transacoes.find(t => t.id === itemParaExcluir)?.status === 'pago'
+                    ? "Sim, Estornar Agora"
                     : "Sim, Excluir Agora"
             }
             cancelText="Manter Lançamento"
