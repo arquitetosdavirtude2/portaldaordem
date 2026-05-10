@@ -101,13 +101,25 @@ export default function DashboardFinanceiro({
                     </h2>
                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans font-medium">Controle e Lançamentos Financeiros</p>
                 </div>
-                <button
-                    onClick={onNovoLancamento}
-                    className="w-full md:w-auto px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-medium uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.4)] active:scale-95 flex items-center justify-center gap-2"
-                >
-                    <span className="text-lg leading-none">+</span>
-                    ADICIONAR NOVO LANÇAMENTO
-                </button>
+                <div className="flex w-full md:w-auto gap-2">
+                    <button
+                        onClick={() => {
+                            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+                            const url = `${apiUrl}/api/tesouraria/relatorio/financeiro?loja_id=${acesso.loja_id}&status=pago&mes=${mesAtivo}&ano=${anoAtivo}&caixa_id=${caixaAtivo}`;
+                            window.open(url, '_blank');
+                        }}
+                        className="flex-1 md:flex-none px-6 py-3.5 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 rounded-lg text-xs font-medium uppercase tracking-widest transition-all"
+                    >
+                        📄 Relatório
+                    </button>
+                    <button
+                        onClick={onNovoLancamento}
+                        className="flex-1 md:flex-none px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-xs font-medium uppercase tracking-widest transition-all shadow-[0_4px_15px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.4)] active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <span className="text-lg leading-none">+</span>
+                        LANÇAR NOVO
+                    </button>
+                </div>
             </div>
 
             {/* Summary Cards */}

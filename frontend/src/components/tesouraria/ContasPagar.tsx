@@ -53,26 +53,9 @@ export default function ContasPagar({ acesso, onNovoLancamento, onEdit, chaveAtu
     }, [acesso.loja_id, chaveAtualizacao, statusAtivo, mesAtivo, anoAtivo]);
 
     const handleDownloadRelatorio = async () => {
-        setBaixandoRelatorio(true);
-        try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-            const res = await fetch(`${apiUrl}/api/tesouraria/relatorio/contas-pagar/${acesso.loja_id}`);
-            if (res.ok) {
-                const blob = await res.blob();
-                const urlObj = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = urlObj;
-                a.download = `contas_a_pagar_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(urlObj);
-            }
-        } catch (error) {
-            console.error('Erro ao baixar relatório:', error);
-        } finally {
-            setBaixandoRelatorio(false);
-        }
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+        const url = `${apiUrl}/api/tesouraria/relatorio/financeiro?loja_id=${acesso.loja_id}&tipo=saida&status=${statusAtivo}&mes=${mesAtivo}&ano=${anoAtivo}`;
+        window.open(url, '_blank');
     };
 
     const handlePagar = async (t: Transacao) => {

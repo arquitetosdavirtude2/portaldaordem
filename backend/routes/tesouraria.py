@@ -420,8 +420,11 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
             if "/" in dp: dp = "-".join(dp.split("/")[::-1])
             update_data["data_pagamento"] = dp
             
-        if "pessoa_id" in update_data and update_data["pessoa_id"] == 0:
-            update_data["pessoa_id"] = None
+        if "pessoa_id" in update_data:
+            if update_data["pessoa_id"] == 0 or (update_data["pessoa_id"] and int(update_data["pessoa_id"]) < 0):
+                update_data["pessoa_id"] = None
+            else:
+                update_data["pessoa_id"] = int(update_data["pessoa_id"])
 
         # Helper para saldo
         def update_balance(box_id, amount, is_add):
@@ -496,8 +499,8 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
                         except Exception:
                             pass
                     continue
-                
-                # Se for a mesma transação (ou campos genericos do lote)
+
+                # Se for a mesma transação (ou campos genericos do lote como pessoa_id, categoria, etc)
                 if hasattr(t, k):
                     # Se for a descrição e for edição em lote, recalcular a REF: se existir
                     if k == 'descricao' and t.id != transacao_id and v:
@@ -1507,6 +1510,163 @@ def relatorio_contas_pagar(
         return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/relatorio/financeiro")
+def relatorio_financeiro(
+    loja_id: int, 
+    tipo: Optional[str] = None, 
+    status: Optional[str] = None, 
+    mes: Optional[int] = None, 
+    ano: Optional[int] = None,
+    caixa_id: Optional[int] = 0,
+    db_treasury: Session = Depends(get_treasury_db),
+    db_main: Session = Depends(get_db)
+):
+    """Gera um relatório financeiro em lote (HTML) para impressão."""
+    from sqlalchemy import text
+    
+    # 1. Buscar dados da Loja
+    loja = db_main.execute(text("SELECT nome, numero FROM lojas WHERE id = :lid"), {"lid": loja_id}).fetchone()
+    l_nome = loja[0] if loja else "Portal da Ordem"
+    l_num = loja[1] if loja else ""
+    
+    # 2. Construir Query de Transações
+    query_base = """
+        SELECT t.id, t.descricao, t.valor, t.tipo, t.categoria, t.data_vencimento, t.data_pagamento, 
+               t.status, t.pessoa_id, c.nome as caixa_nome
+        FROM transacoes t
+        JOIN caixas c ON t.caixa_id = c.id
+        WHERE c.loja_id = :lid
+    """
+    params = {"lid": loja_id}
+    
+    if tipo:
+        query_base += " AND t.tipo = :tipo"
+        params["tipo"] = tipo
+    if status:
+        query_base += " AND t.status = :status"
+        params["status"] = status
+    if mes and ano:
+        query_base += " AND ( (MONTH(t.data_vencimento) = :mes AND YEAR(t.data_vencimento) = :ano) OR (t.mes_referencia = :mes_ref) )"
+        params["mes"] = mes
+        params["ano"] = ano
+        params["mes_ref"] = f"{ano}-{mes:02d}"
+    if caixa_id and int(caixa_id) > 0:
+        query_base += " AND t.caixa_id = :cid"
+        params["cid"] = caixa_id
+        
+    query_base += " ORDER BY t.data_vencimento ASC"
+    
+    rows = db_treasury.execute(text(query_base), params).fetchall()
+    
+    # 3. Processar Linhas para o HTML
+    total_valor = 0
+    table_rows_html = ""
+    
+    for r in rows:
+        t_id, desc, valor, t_tipo, cat, venc, pagto, t_status, p_id, c_nome = r
+        total_valor += valor
+        
+        p_nome = "---"
+        if p_id:
+            if p_id < 0:
+                p = db_treasury.execute(text("SELECT nome FROM usuarios WHERE id = :id"), {"id": abs(p_id)}).fetchone()
+            else:
+                p = db_treasury.execute(text("SELECT nome FROM pessoas WHERE id = :id"), {"id": p_id}).fetchone()
+            if p: p_nome = p[0]
+
+        data_exibicao = datetime.strptime(venc, "%Y-%m-%d").strftime("%d/%m/%Y") if venc else "-"
+        status_color = "#16a34a" if t_status == 'pago' else "#ca8a04"
+        status_label = "PAGO" if t_status == 'pago' else "PENDENTE"
+        tipo_color = "#16a34a" if t_tipo == 'entrada' else "#dc2626"
+        
+        table_rows_html += f"""
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-size: 12px;">#{t_id}</td>
+                <td style="padding: 10px; font-size: 12px;">{data_exibicao}</td>
+                <td style="padding: 10px; font-size: 12px; font-weight: 500;">{desc}</td>
+                <td style="padding: 10px; font-size: 11px; color: #666;">{p_nome}</td>
+                <td style="padding: 10px; font-size: 12px; font-weight: bold; color: {tipo_color}; text-align: right;">R$ {valor:,.2f}</td>
+                <td style="padding: 10px; font-size: 10px; font-weight: bold; color: {status_color}; text-align: center;">{status_label}</td>
+            </tr>
+        """
+
+    formatted_total = f"{total_valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    
+    titulo_relatorio = "Relatório de Movimentações"
+    if tipo == 'saida' and status == 'pendente': titulo_relatorio = "Contas a Pagar"
+    elif tipo == 'entrada' and status == 'pendente': titulo_relatorio = "Contas a Receber"
+    elif status == 'pago': titulo_relatorio = "Fluxo de Caixa (Efetivados)"
+
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <title>{titulo_relatorio}</title>
+        <style>
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 30px; background: #fff; }}
+            .header {{ text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }}
+            .header h1 {{ margin: 0; font-size: 22px; text-transform: uppercase; }}
+            .header p {{ margin: 5px 0; font-size: 14px; color: #666; font-weight: bold; }}
+            .info-bar {{ display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; background: #f9f9f9; padding: 10px; border-radius: 5px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+            th {{ background: #f0f0f0; text-align: left; padding: 12px 10px; font-size: 11px; text-transform: uppercase; color: #555; border-bottom: 2px solid #ddd; }}
+            .total-box {{ margin-top: 30px; text-align: right; border-top: 2px solid #000; padding-top: 15px; }}
+            .total-label {{ font-size: 16px; font-weight: bold; }}
+            .total-value {{ font-size: 24px; font-weight: 900; margin-left: 20px; }}
+            .footer {{ margin-top: 40px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 15px; }}
+            @media print {{
+                .no-print {{ display: none; }}
+                body {{ margin: 0; }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+            <button onclick="window.print()" style="padding: 10px 20px; background: #ca8a04; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">🖨️ IMPRIMIR RELATÓRIO</button>
+        </div>
+
+        <div class="header">
+            <h1>{l_nome} {f"Nº {l_num}" if l_num else ""}</h1>
+            <p>{titulo_relatorio.upper()}</p>
+        </div>
+
+        <div class="info-bar">
+            <span>Período: {f"{mes:02d}/{ano}" if mes and ano else "Geral"}</span>
+            <span>Emitido em: {datetime.now().strftime("%d/%m/%Y %H:%M")}</span>
+            <span>Loja ID: #{loja_id}</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Data</th>
+                    <th>Descrição / Motivo</th>
+                    <th>Obreiro</th>
+                    <th style="text-align: right;">Valor</th>
+                    <th style="text-align: center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {table_rows_html}
+            </tbody>
+        </table>
+
+        <div class="total-box">
+            <span class="total-label">VALOR TOTAL ACUMULADO NO PERÍODO:</span>
+            <span class="total-value">R$ {formatted_total}</span>
+        </div>
+
+        <div class="footer">
+            Relatório gerado automaticamente pelo Sistema Portal da Ordem.<br>
+            A validade deste documento está sujeita à conferência nos registros oficiais.
+        </div>
+    </body>
+    </html>
+    """
+    return Response(content=html, media_type='text/html')
 
 @router.get("/relatorio/individual/{transacao_id}")
 def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
