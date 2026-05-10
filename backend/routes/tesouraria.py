@@ -12,6 +12,10 @@ from models import Transacao, Pessoa, Caixa, Usuario
 
 from datetime import datetime, date
 import calendar
+import uuid
+import math
+import traceback
+from sqlalchemy import text
 
 MESES_PT = {
     1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
@@ -196,11 +200,7 @@ async def criar_transacao(
     db_treasury: Session = Depends(get_treasury_db)
 ):
     try:
-        from sqlalchemy import text
         from models import Usuario
-        import uuid
-        from datetime import datetime
-        import math
 
         caixa = db_treasury.query(Caixa).filter(Caixa.id == caixa_id).first()
         if not caixa:
@@ -414,9 +414,6 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     
     try:
-        from sqlalchemy import text
-        from datetime import datetime
-
         if hasattr(dados, "model_dump"):
             update_data = dados.model_dump(exclude_unset=True)
         else:
