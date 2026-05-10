@@ -40,6 +40,24 @@ class CaixaCreate(BaseModel):
     descricao: Optional[str] = None
     saldo_inicial: float = 0.0
 
+@router.get("/health")
+def treasury_health(db_treasury: Session = Depends(get_treasury_db)):
+    from sqlalchemy import text
+    try:
+        db_treasury.execute(text("SELECT 1"))
+        return {"status": "OK", "mysql": "Connected"}
+    except Exception as e:
+        return {"status": "Error", "detail": str(e)}
+
+@router.get("/debug/cols")
+def debug_cols(db: Session = Depends(get_treasury_db)):
+    from sqlalchemy import text
+    try:
+        res = db.execute(text("DESCRIBE transacoes")).fetchall()
+        return {"table": "transacoes", "columns": [r[0] for r in res]}
+    except Exception as e:
+        return {"error": str(e)}
+
 @router.get("/diagnostic")
 def diagnostic(db_treasury: Session = Depends(get_treasury_db)):
     """Rota de diagnóstico para depuração de unificação MySQL."""
@@ -410,6 +428,7 @@ async def criar_transacao(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @router.patch("/transacoes/{transacao_id}", response_model=TransacaoResponse)
