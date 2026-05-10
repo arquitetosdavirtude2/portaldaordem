@@ -1373,7 +1373,15 @@ def remover_excecao(
 ):
     """Remove uma exceção de mensalidade."""
     try:
-     @router.get("/relatorio/inadimplentes/{loja_id}")
+        from sqlalchemy import text
+        db_treasury.execute(text("DELETE FROM mensalidade_excecoes WHERE id = :id"), {"id": excecao_id})
+        db_treasury.commit()
+        return {"message": "removido"}
+    except Exception as e:
+        db_treasury.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/relatorio/inadimplentes/{loja_id}")
 def relatorio_inadimplentes(
     loja_id: int,
     incluir_adormecidos: bool = False,
