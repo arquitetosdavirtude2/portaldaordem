@@ -628,7 +628,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             {erro}
                         </div>
                     )}
-                    </div>
                 </form>
 
                 {/* Footer Buttons */}

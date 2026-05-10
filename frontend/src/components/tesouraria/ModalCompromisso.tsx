@@ -429,9 +429,6 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
                 .color-scheme-dark { color-scheme: dark; }
             `}</style>
-        </div>
-            <style jsx>{` .color-scheme-dark { color-scheme: dark; } `}</style>
-        </div>
         </div>,
         document.body
     );
