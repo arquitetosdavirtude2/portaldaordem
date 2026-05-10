@@ -49,6 +49,26 @@ def treasury_health(db_treasury: Session = Depends(get_treasury_db)):
     except Exception as e:
         return {"status": "Error", "detail": str(e)}
 
+@router.get("/debug/migrate")
+def debug_migrate(db: Session = Depends(get_treasury_db)):
+    from sqlalchemy import text
+    results = []
+    queries = [
+        "ALTER TABLE transacoes ADD COLUMN mes_referencia varchar(7) AFTER data_pagamento",
+        "ALTER TABLE transacoes ADD COLUMN grupo_recorrencia varchar(50) AFTER recorrencia",
+        "ALTER TABLE transacoes ADD COLUMN parcela_atual int AFTER grupo_recorrencia",
+        "ALTER TABLE transacoes ADD COLUMN total_parcelas int AFTER parcela_atual",
+        "ALTER TABLE caixas ADD COLUMN finalidade varchar(50) DEFAULT 'geral' AFTER tipo"
+    ]
+    for q in queries:
+        try:
+            db.execute(text(q))
+            db.commit()
+            results.append(f"SUCCESS: {q}")
+        except Exception as e:
+            results.append(f"FAILED: {q} - {str(e)}")
+    return {"results": results}
+
 @router.get("/debug/cols")
 def debug_cols(db: Session = Depends(get_treasury_db)):
     from sqlalchemy import text
