@@ -68,6 +68,7 @@ class TransacaoResponse(BaseModel):
     valor: Optional[float] = 0.0
     data_vencimento: Optional[str] = None
     data_pagamento: Optional[str] = None
+    mes_referencia: Optional[str] = None
     descricao: Optional[str] = None
     notas: Optional[str] = None
     anexo_url: Optional[str] = None
@@ -94,6 +95,7 @@ class TransacaoUpdate(BaseModel):
     tipo: Optional[str] = None
     categoria: Optional[str] = None
     data_vencimento: Optional[str] = None
+    mes_referencia: Optional[str] = None
     recorrencia: Optional[str] = None
     modo_atualizacao: Optional[str] = "unica"
 
@@ -183,6 +185,7 @@ async def criar_transacao(
     valor: float = Form(...),
     data_vencimento: str = Form(...),
     data_pagamento: Optional[str] = Form(None),
+    mes_referencia: Optional[str] = Form(None),
     descricao: str = Form(...),
     notas: Optional[str] = Form(None),
     status: Optional[str] = Form("pendente"),
@@ -278,7 +281,8 @@ async def criar_transacao(
                 recorrencia=recorrencia,
                 grupo_recorrencia=grupo_uuid,
                 parcela_atual=i,
-                total_parcelas=total_parcelas
+                total_parcelas=total_parcelas,
+                mes_referencia=f"{ano}-{mes:02d}"
             )
             transacoes_criadas.append(nova_transacao)
             db_treasury.add(nova_transacao)
@@ -331,7 +335,8 @@ async def criar_transacao(
                 recorrencia=recorrencia,
                 grupo_recorrencia=grupo_uuid,
                 parcela_atual=i,
-                total_parcelas=repeticoes
+                total_parcelas=repeticoes,
+                mes_referencia=f"{ano}-{mes:02d}"
             )
             transacoes_criadas.append(nova_transacao)
             db_treasury.add(nova_transacao)
@@ -350,7 +355,8 @@ async def criar_transacao(
             notas=notas,
             anexo_url=anexo_url,
             status=status,
-            recorrencia="nenhuma"
+            recorrencia="nenhuma",
+            mes_referencia=mes_referencia
         )
         transacoes_criadas.append(nova_transacao)
         db_treasury.add(nova_transacao)
@@ -468,9 +474,12 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
             for k, v in update_data.items():
                 if k == 'status' and t.id != transacao_id:
                     continue # Não atualiza o status em lote (pode estar pago ou pendente independente)
-                if k == 'data_pagamento' and t.id != transacao_id:
+                if (k == 'data_pagamento' and t.id != transacao_id):
                     continue # Não atualiza data pagamento em lote
                 
+                if (k == 'mes_referencia' and t.id != transacao_id):
+                    continue # Não atualiza mês de referência em lote (cada um tem o seu)
+
                 if k == 'data_vencimento' and t.id != transacao_id:
                     # Para outras do grupo, mudar apenas o dia
                     try:
@@ -494,15 +503,21 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoUpdate, db_treasury: 
                 # Se for a mesma transação (ou campos genericos do lote)
                 if hasattr(t, k):
                     # Se for a descrição e for edição em lote, recalcular a REF: se existir
-                    if k == 'descricao' and t.id != transacao_id and v and (' - Ref: ' in v or ' - REF: ' in v):
-                        try:
-                            sep = ' - Ref: ' if ' - Ref: ' in v else ' - REF: '
-                            base_desc = v.split(sep)[0]
-                            # Usa o ano/mês da transação ALVO (t)
-                            nova_ref = t.data_vencimento[:7]
-                            v_recalculado = f"{base_desc}{sep}{nova_ref}"
-                            setattr(t, k, v_recalculado)
-                        except:
+                    if k == 'descricao' and t.id != transacao_id and v:
+                        sep = None
+                        if ' - Ref: ' in v: sep = ' - Ref: '
+                        elif ' - REF: ' in v: sep = ' - REF: '
+                        
+                        if sep:
+                            try:
+                                base_desc = v.split(sep)[0]
+                                # Usa o mês de referência da transação ALVO (t) se existir, senão usa data_vencimento
+                                nova_ref = t.mes_referencia if t.mes_referencia else t.data_vencimento[:7]
+                                v_recalculado = f"{base_desc}{sep}{nova_ref}"
+                                setattr(t, k, v_recalculado)
+                            except:
+                                setattr(t, k, v)
+                        else:
                             setattr(t, k, v)
                     else:
                         setattr(t, k, v)

@@ -63,6 +63,8 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                     categoria: form.categoria,
                     valor: parseFloat(form.valor),
                     data_vencimento: form.data_vencimento,
+                    data_pagamento: form.data_pagamento,
+                    mes_referencia: form.mes_ref,
                     descricao: form.descricao,
                     notas: form.notas,
                     status: form.status,
@@ -84,6 +86,8 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                 formData.append('categoria', form.categoria);
                 formData.append('valor', form.valor);
                 formData.append('data_vencimento', form.data_vencimento);
+                if (form.data_pagamento) formData.append('data_pagamento', form.data_pagamento);
+                formData.append('mes_referencia', form.mes_ref);
                 formData.append('recorrencia', form.recorrencia);
                 if (form.recorrencia === 'parcelado') {
                     formData.append('total_parcelas', form.total_parcelas.toString());
@@ -115,12 +119,13 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
         categoria: transacaoInicial?.categoria || (tipo === 'saida' ? 'outro_saida' : 'outro_entrada'),
         valor: transacaoInicial?.valor?.toString() || '',
         data_vencimento: transacaoInicial?.data_vencimento || new Date().toISOString().split('T')[0],
+        data_pagamento: transacaoInicial?.data_pagamento || '',
         descricao: transacaoInicial?.descricao || '',
         notas: transacaoInicial?.notas || '',
         status: transacaoInicial?.status || 'pendente',
         recorrencia: transacaoInicial?.recorrencia || 'nenhuma',
         total_parcelas: transacaoInicial?.total_parcelas || 2,
-        mes_ref: transacaoInicial?.data_vencimento?.substring(0, 7) || new Date().toISOString().substring(0, 7),
+        mes_ref: transacaoInicial?.mes_referencia || transacaoInicial?.data_vencimento?.substring(0, 7) || new Date().toISOString().substring(0, 7),
         modo_atualizacao: 'unica'
     });
 
@@ -253,17 +258,7 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 />
                             </div>
 
-                            {/* Linha 2: Mês Ref e Categoria */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Mês de Referência</label>
-                                <input 
-                                    type="month"
-                                    value={form.mes_ref}
-                                    onChange={e => setForm({...form, mes_ref: e.target.value})}
-                                    className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none ${tipo === 'saida' ? 'focus:border-red-500/50' : 'focus:border-green-500/50'} cursor-pointer color-scheme-dark transition-all hover:border-white/20`}
-                                />
-                            </div>
-
+                            {/* Linha 2: Categoria e Irmão */}
                             <div className="space-y-1.5">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Categoria</label>
                                 <select 
@@ -275,7 +270,6 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 </select>
                             </div>
 
-                            {/* Linha 3: Irmão e Valor */}
                             <div className="space-y-1.5">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Vincular Irmão (Opcional)</label>
                                 <select 
@@ -290,7 +284,9 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 </select>
                             </div>
 
-                            <div className="space-y-1.5">
+                            {/* Linha 3: Valor (Ocupa a linha toda para ficar bonito ou divide com algo?) */}
+                            {/* Vamos deixar o valor sozinho em uma linha ou dividir com a recorrência? Melhor deixar as datas juntas. */}
+                            <div className="md:col-span-2 space-y-1.5">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Valor</label>
                                 <div className="relative group">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-medium">R$</span>
@@ -311,19 +307,43 @@ export default function ModalCompromisso({ acesso, caixas, onClose, onSuccess, t
                                 </div>
                             </div>
 
-                            {/* Linha 4: Data e Recorrência */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Data</label>
-                                <input 
-                                    type="date"
-                                    required
-                                    value={form.data_vencimento}
-                                    onChange={e => setForm({...form, data_vencimento: e.target.value})}
-                                    className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none ${tipo === 'saida' ? 'focus:border-red-500/50' : 'focus:border-green-500/50'} cursor-pointer color-scheme-dark transition-all hover:border-white/20`}
-                                />
+                            {/* Linha 4: Mês Ref, Vencimento e Lançamento */}
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] uppercase font-bold text-yellow-500 tracking-widest ml-1 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                                        Mês de Referência
+                                    </label>
+                                    <input 
+                                        type="month"
+                                        value={form.mes_ref}
+                                        onChange={e => setForm({...form, mes_ref: e.target.value})}
+                                        className={`w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 cursor-pointer color-scheme-dark transition-all hover:border-yellow-500/30`}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Data de Vencimento</label>
+                                    <input 
+                                        type="date"
+                                        required
+                                        value={form.data_vencimento}
+                                        onChange={e => setForm({...form, data_vencimento: e.target.value})}
+                                        className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none ${tipo === 'saida' ? 'focus:border-red-500/50' : 'focus:border-green-500/50'} cursor-pointer color-scheme-dark transition-all hover:border-white/20`}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Data de Lançamento (Pagto)</label>
+                                    <input 
+                                        type="date"
+                                        value={form.data_pagamento}
+                                        onChange={e => setForm({...form, data_pagamento: e.target.value})}
+                                        className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none ${tipo === 'saida' ? 'focus:border-red-500/50' : 'focus:border-green-500/50'} cursor-pointer color-scheme-dark transition-all hover:border-white/20`}
+                                    />
+                                </div>
                             </div>
 
-                            <div className="space-y-1.5">
+                            {/* Linha 5: Recorrência */}
+                            <div className="md:col-span-2 space-y-1.5">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Recorrência / Parcelamento</label>
                                 <div className="flex gap-2">
                                     <select

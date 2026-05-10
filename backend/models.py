@@ -145,6 +145,7 @@ class Transacao(Base):
     valor = Column(Float)
     data_vencimento = Column(String(20)) # 'YYYY-MM-DD' (usando string para simplificar no SQLite)
     data_pagamento = Column(String(20), nullable=True)
+    mes_referencia = Column(String(7), nullable=True) # 'YYYY-MM'
     descricao = Column(String(255))
     notas = Column(String(1000), nullable=True) # Observações detalhadas
     anexo_url = Column(String(255), nullable=True) # Link/Caminho do comprovante

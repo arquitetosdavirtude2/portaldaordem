@@ -12,10 +12,12 @@ interface Transacao {
     valor: number;
     data_vencimento: string;
     data_pagamento?: string;
+    mes_referencia?: string;
     descricao: string;
     notas?: string;
     anexo_url?: string;
     status: 'pago' | 'pendente' | 'atrasado';
+    mes_referencia?: string;
     recorrencia?: string;
     grupo_recorrencia?: string;
 }
@@ -183,11 +185,14 @@ export default function ListaTransacoes({
             <table className="w-full text-left border-collapse font-sans">
                 <thead>
                     <tr className="border-b border-white/10 bg-white/5 uppercase tracking-widest text-gray-400 font-medium">
-                        <th className={thClass} onClick={() => handleSort('data_vencimento')}>
-                            Referência <SortIcon active={sortKey === 'data_vencimento'} dir={sortDir} />
+                        <th className={thClass} onClick={() => handleSort('mes_referencia')}>
+                            Ref. <SortIcon active={sortKey === 'mes_referencia'} dir={sortDir} />
                         </th>
-                        <th className={thClass}>
-                            Data
+                        <th className={thClass} onClick={() => handleSort('data_vencimento')}>
+                            Venc. <SortIcon active={sortKey === 'data_vencimento'} dir={sortDir} />
+                        </th>
+                        <th className={thClass} onClick={() => handleSort('data_pagamento')}>
+                            Lanç. <SortIcon active={sortKey === 'data_pagamento'} dir={sortDir} />
                         </th>
                         <th className={thClass} onClick={() => handleSort('descricao')}>
                             Descrição <SortIcon active={sortKey === 'descricao'} dir={sortDir} />
@@ -204,11 +209,14 @@ export default function ListaTransacoes({
                 <tbody className="divide-y divide-white/5">
                     {transacoesOrdenadas.map(t => (
                         <tr key={t.id} className="hover:bg-white/[0.03] transition-colors group">
+                            <td className="px-5 py-4 text-[10px] text-gray-500 font-sans tabular-nums tracking-widest whitespace-nowrap">
+                                {t.mes_referencia ? t.mes_referencia.split('-').reverse().join('/') : (t.data_vencimento.substring(0, 7).split('-').reverse().join('/'))}
+                            </td>
                             <td className="px-5 py-4 text-[10px] text-gray-400 font-sans tabular-nums tracking-widest whitespace-nowrap">
                                 {t.data_vencimento ? t.data_vencimento.split('-').reverse().join('/') : '-'}
                             </td>
                             <td className="px-5 py-4 text-[11px] text-gray-300 whitespace-nowrap font-medium font-sans tabular-nums tracking-widest">
-                                {t.data_pagamento ? t.data_pagamento.split('-').reverse().join('/') : '---'}
+                                {t.data_pagamento ? t.data_pagamento.split('-').reverse().join('/') : (t.status === 'pago' ? t.data_vencimento.split('-').reverse().join('/') : '---')}
                             </td>
                             <td className="px-5 py-4">
                                 <div className="text-[11px] font-medium font-sans tracking-widest text-gray-200">{t.descricao}</div>

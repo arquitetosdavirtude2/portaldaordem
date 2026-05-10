@@ -11,6 +11,7 @@ interface Transacao {
     valor: number;
     data_vencimento: string;
     data_pagamento?: string;
+    mes_referencia?: string;
     descricao: string;
     status: string;
     grupo_recorrencia?: string;
@@ -212,7 +213,9 @@ export default function ContasReceber({ acesso, onNovoLancamento, onEdit, chaveA
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-white/5 bg-white/5 uppercase tracking-widest text-gray-500 font-sans font-medium text-[9px]">
-                            <th className="px-5 py-3 w-[110px]">Data</th>
+                            <th className="px-5 py-3 w-[80px]">Ref.</th>
+                            <th className="px-5 py-3 w-[100px]">Vencimento</th>
+                            <th className="px-5 py-3 w-[100px]">Lançamento</th>
                             <th className="px-5 py-3">Descrição</th>
                             <th className="px-5 py-3 text-right w-[130px]">Valor</th>
                             <th className="px-5 py-3 text-right pr-8 w-[160px]">Ação</th>
@@ -221,21 +224,26 @@ export default function ContasReceber({ acesso, onNovoLancamento, onEdit, chaveA
                     <tbody className="divide-y divide-white/5">
                         {pendentes.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-5 py-20 text-center text-gray-600 text-[11px] italic uppercase tracking-widest">
+                                <td colSpan={6} className="px-5 py-20 text-center text-gray-600 text-[11px] italic uppercase tracking-widest">
                                     Sem recebíveis pendentes.
                                 </td>
                             </tr>
                         ) : (
                             pendentes.map(t => (
                                 <tr key={t.id} className="hover:bg-green-500/[0.02] transition-colors group">
-                                    <td className="px-5 py-3 w-[100px]">
+                                    <td className="px-5 py-3">
+                                        <div className="text-[10px] font-medium font-sans tabular-nums tracking-widest text-gray-500">
+                                            {t.mes_referencia ? t.mes_referencia.split('-').reverse().join('/') : (t.data_vencimento.substring(0, 7).split('-').reverse().join('/'))}
+                                        </div>
+                                    </td>
+                                    <td className="px-5 py-3">
                                         <div className="text-[10px] font-medium font-sans tabular-nums tracking-widest text-gray-400">
                                             {t.data_vencimento.split('-').reverse().join('/')}
                                         </div>
                                     </td>
-                                    <td className="px-5 py-3 w-[100px]">
+                                    <td className="px-5 py-3">
                                         <div className="text-[10px] font-medium font-sans tabular-nums tracking-widest text-gray-300">
-                                            {t.status === 'pago' ? (t.data_pagamento || t.data_vencimento).split('-').reverse().join('/') : '---'}
+                                            {t.data_pagamento ? t.data_pagamento.split('-').reverse().join('/') : (t.status === 'pago' ? t.data_vencimento.split('-').reverse().join('/') : '---')}
                                         </div>
                                     </td>
                                     <td className="px-5 py-3">
