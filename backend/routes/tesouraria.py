@@ -1373,15 +1373,7 @@ def remover_excecao(
 ):
     """Remove uma exceção de mensalidade."""
     try:
-        from sqlalchemy import text
-        db_treasury.execute(text("DELETE FROM mensalidade_excecoes WHERE id = :id"), {"id": excecao_id})
-        db_treasury.commit()
-        return {"message": "removido"}
-    except Exception as e:
-        db_treasury.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/relatorio/inadimplentes/{loja_id}")
+     @router.get("/relatorio/inadimplentes/{loja_id}")
 def relatorio_inadimplentes(
     loja_id: int,
     incluir_adormecidos: bool = False,
@@ -1390,7 +1382,6 @@ def relatorio_inadimplentes(
 ):
     """Gera um relatório CSV consolidado de irmãos inadimplentes."""
     # Obter dados financeiros respeitando o filtro de adormecidos do usuário
-    # Importante: O parâmetro incluir_adormecidos deve ser respeitado aqui
     dados = _calcular_financeiro_irmaos_logic(loja_id, None, None, incluir_adormecidos, db_main, db_treasury)
     
     # Filtrar apenas inadimplentes (Atrasados ou Pendentes)
@@ -1405,7 +1396,6 @@ def relatorio_inadimplentes(
     writer.writerow(['Obreiro', 'WhatsApp', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
     
     for d in inadimplentes:
-        # Adiciona um espaço no início para forçar o Excel a tratar como TEXTO (evita virar data e alinhar à direita)
         meses_aberto = ", ".join(d.get('meses_lista_aberto', []))
         if meses_aberto:
             meses_aberto = " " + meses_aberto
@@ -1416,7 +1406,7 @@ def relatorio_inadimplentes(
             d['nome'],
             d['telefone'],
             d['cargo'],
-                            status_txt,
+            status_txt,
             d['data_admissao'],
             f"R$ {d['joia_pendente']:.2f}",
             f"R$ {d['mensalidade_pendente']:.2f}",
@@ -1425,91 +1415,10 @@ def relatorio_inadimplentes(
         ])
     
     output.seek(0)
-    
     headers = {
         'Content-Disposition': f'attachment; filename="inadimplentes_loja_{loja_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
     }
-    
     return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
-
-@router.get("/relatorio/contas-receber/{loja_id}")
-def relatorio_contas_receber(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
-    """Gera um relatório CSV das contas a receber (pendentes) da loja."""
-    import io, csv
-    from datetime import datetime
-    try:
-        from sqlalchemy import text
-        query = text("""
-            SELECT t.data_vencimento, t.descricao, t.categoria, t.valor
-            FROM transacoes t
-            JOIN caixas c ON t.caixa_id = c.id
-            WHERE t.status = 'pendente' 
-              AND t.tipo = 'entrada'
-              AND c.loja_id = :lid
-            ORDER BY t.data_vencimento ASC
-        """)
-        rows = db_treasury.execute(query, {"lid": loja_id}).fetchall()
-        
-        output = io.StringIO()
-        output.write('\ufeff')
-        writer = csv.writer(output, delimiter=';')
-        writer.writerow(['Vencimento', 'Descrição', 'Categoria', 'Valor'])
-        
-        for r in rows:
-            writer.writerow([
-                datetime.strptime(r[0], "%Y-%m-%d").strftime("%d/%m/%Y"),
-                r[1],
-                r[2].upper(),
-                f"R$ {r[3]:.2f}"
-            ])
-            
-        output.seek(0)
-        headers = {
-            'Content-Disposition': f'attachment; filename="contas_a_receber_{loja_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
-        }
-        return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@router.get("/relatorio/contas-pagar/{loja_id}")
-def relatorio_contas_pagar(
-    loja_id: int,
-    db_treasury: Session = Depends(get_treasury_db)
-):
-    """Gera um relatório CSV de contas a pagar (pendentes)."""
-    try:
-        from sqlalchemy import text
-        query = text("""
-            SELECT t.data_vencimento, t.descricao, t.categoria, t.valor
-            FROM transacoes t
-            JOIN caixas c ON t.caixa_id = c.id
-            WHERE t.status = 'pendente' 
-              AND t.tipo = 'saida'
-              AND c.loja_id = :lid
-            ORDER BY t.data_vencimento ASC
-        """)
-        rows = db_treasury.execute(query, {"lid": loja_id}).fetchall()
-        
-        output = io.StringIO()
-        output.write('\ufeff')
-        writer = csv.writer(output, delimiter=';')
-        writer.writerow(['Vencimento', 'Descrição', 'Categoria', 'Valor'])
-        
-        for r in rows:
-            writer.writerow([
-                datetime.strptime(r[0], "%Y-%m-%d").strftime("%d/%m/%Y"),
-                r[1],
-                r[2].upper(),
-                f"R$ {r[3]:.2f}"
-            ])
-            
-        output.seek(0)
-        headers = {
-            'Content-Disposition': f'attachment; filename="contas_a_pagar_{loja_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
-        }
-        return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/relatorio/financeiro")
 def relatorio_financeiro(
@@ -1523,8 +1432,6 @@ def relatorio_financeiro(
     db_main: Session = Depends(get_db)
 ):
     """Gera um relatório financeiro em lote (HTML) para impressão."""
-    from sqlalchemy import text
-    
     # 1. Buscar dados da Loja
     loja = db_main.execute(text("SELECT nome, numero FROM lojas WHERE id = :lid"), {"lid": loja_id}).fetchone()
     l_nome = loja[0] if loja else "Portal da Ordem"
@@ -1556,17 +1463,14 @@ def relatorio_financeiro(
         params["cid"] = caixa_id
         
     query_base += " ORDER BY t.data_vencimento ASC"
-    
     rows = db_treasury.execute(text(query_base), params).fetchall()
     
     # 3. Processar Linhas para o HTML
     total_valor = 0
     table_rows_html = ""
-    
     for r in rows:
         t_id, desc, valor, t_tipo, cat, venc, pagto, t_status, p_id, c_nome = r
         total_valor += valor
-        
         p_nome = "---"
         if p_id:
             if p_id < 0:
@@ -1592,7 +1496,6 @@ def relatorio_financeiro(
         """
 
     formatted_total = f"{total_valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    
     titulo_relatorio = "Relatório de Movimentações"
     if tipo == 'saida' and status == 'pendente': titulo_relatorio = "Contas a Pagar"
     elif tipo == 'entrada' and status == 'pendente': titulo_relatorio = "Contas a Receber"
@@ -1626,39 +1529,27 @@ def relatorio_financeiro(
         <div class="no-print" style="margin-bottom: 20px; text-align: right;">
             <button onclick="window.print()" style="padding: 10px 20px; background: #ca8a04; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">🖨️ IMPRIMIR RELATÓRIO</button>
         </div>
-
         <div class="header">
             <h1>{l_nome} {f"Nº {l_num}" if l_num else ""}</h1>
             <p>{titulo_relatorio.upper()}</p>
         </div>
-
         <div class="info-bar">
             <span>Período: {f"{mes:02d}/{ano}" if mes and ano else "Geral"}</span>
             <span>Emitido em: {datetime.now().strftime("%d/%m/%Y %H:%M")}</span>
             <span>Loja ID: #{loja_id}</span>
         </div>
-
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Data</th>
-                    <th>Descrição / Motivo</th>
-                    <th>Obreiro</th>
-                    <th style="text-align: right;">Valor</th>
-                    <th style="text-align: center;">Status</th>
+                    <th>ID</th><th>Data</th><th>Descrição / Motivo</th><th>Obreiro</th><th style="text-align: right;">Valor</th><th style="text-align: center;">Status</th>
                 </tr>
             </thead>
-            <tbody>
-                {table_rows_html}
-            </tbody>
+            <tbody>{table_rows_html}</tbody>
         </table>
-
         <div class="total-box">
             <span class="total-label">VALOR TOTAL ACUMULADO NO PERÍODO:</span>
             <span class="total-value">R$ {formatted_total}</span>
         </div>
-
         <div class="footer">
             Relatório gerado automaticamente pelo Sistema Portal da Ordem.<br>
             A validade deste documento está sujeita à conferência nos registros oficiais.
@@ -1671,7 +1562,6 @@ def relatorio_financeiro(
 @router.get("/relatorio/individual/{transacao_id}")
 def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_treasury_db)):
     """Gera um recibo/relatório individual formatado para impressão."""
-    from sqlalchemy import text
     query = """
         SELECT t.id, t.descricao, t.valor, t.tipo, t.categoria, t.data_vencimento, t.data_pagamento, 
                t.notas, t.pessoa_id, c.nome as caixa_nome, l.nome as loja_nome, l.numero as loja_numero
@@ -1684,25 +1574,17 @@ def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_t
     if not row:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
     
-    # Mapping
     t_id, desc, valor, tipo, cat, ref, pagto, notas, p_id, c_nome, l_nome, l_num = row
-    
     p_nome = "---"
     if p_id:
         if p_id < 0:
-            # Busca em usuarios (Mestre Loja virtual)
             p = db_treasury.execute(text("SELECT nome FROM usuarios WHERE id = :id"), {"id": abs(p_id)}).fetchone()
         else:
-            # Busca em pessoas
             p = db_treasury.execute(text("SELECT nome FROM pessoas WHERE id = :id"), {"id": p_id}).fetchone()
-        
         if p: p_nome = p[0]
-
-    data_ref = datetime.strptime(ref, "%Y-%m-%d").strftime("%m/%Y") if ref else "-"
-    # Se não houver data de pagamento explícita, usa a data de referência como fallback para exibição no recibo
-    data_pag = datetime.strptime(pagto, "%Y-%m-%d").strftime("%d/%m/%Y") if pagto else (datetime.strptime(ref, "%Y-%m-%d").strftime("%d/%m/%Y") if ref else "-")
     
-    # Formatação de valor PT-BR
+    data_ref = datetime.strptime(ref, "%Y-%m-%d").strftime("%m/%Y") if ref else "-"
+    data_pag = datetime.strptime(pagto, "%Y-%m-%d").strftime("%d/%m/%Y") if pagto else (datetime.strptime(ref, "%Y-%m-%d").strftime("%d/%m/%Y") if ref else "-")
     formatted_valor = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
     html = f"""
@@ -1713,7 +1595,7 @@ def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_t
         <title>Recibo de Lançamento #{t_id}</title>
         <style>
             body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 40px; line-height: 1.6; background: #f9f9f9; }}
-            .container {{ max-width: 800px; margin: auto; background: #fff; padding: 40px; border-radius: 10px; shadow: 0 0 20px rgba(0,0,0,0.1); border: 1px solid #eee; }}
+            .container {{ max-width: 800px; margin: auto; background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); border: 1px solid #eee; }}
             .header {{ text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }}
             .header h1 {{ margin: 0; font-size: 24px; text-transform: uppercase; color: #000; }}
             .header p {{ margin: 5px 0; font-size: 14px; font-weight: bold; color: #666; }}
@@ -1728,79 +1610,32 @@ def relatorio_individual(transacao_id: int, db_treasury: Session = Depends(get_t
             .signature-area {{ margin-top: 60px; display: flex; justify-content: space-around; }}
             .signature-box {{ border-top: 1px solid #333; width: 250px; text-align: center; padding-top: 10px; font-size: 12px; font-weight: bold; }}
             .watermark {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 80px; color: rgba(0,0,0,0.03); font-weight: bold; pointer-events: none; text-transform: uppercase; }}
-            @media print {{
-                .no-print {{ display: none; }}
-                body {{ margin: 0; background: #fff; }}
-                .container {{ border: none; box-shadow: none; max-width: 100%; width: 100%; }}
-            }}
+            @media print {{ .no-print {{ display: none; }} body {{ margin: 0; background: #fff; }} .container {{ border: none; box-shadow: none; max-width: 100%; width: 100%; }} }}
         </style>
     </head>
     <body>
         <div class="no-print" style="margin-bottom: 20px; text-align: right; max-width: 800px; margin: 0 auto 20px auto;">
-            <button onclick="window.print()" style="padding: 12px 25px; background: #ca8a04; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(202,138,4,0.3);">🖨️ Imprimir Comprovante</button>
+            <button onclick="window.print()" style="padding: 12px 25px; background: #ca8a04; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 900; text-transform: uppercase;">🖨️ Imprimir Comprovante</button>
         </div>
-
         <div class="container">
             <div class="watermark">PORTAL DA ORDEM</div>
-            <div class="header">
-                <h1>{l_nome} {f"Nº {l_num}" if l_num else ""}</h1>
-                <p>COMPROVANTE DE MOVIMENTAÇÃO FINANCEIRA</p>
-            </div>
-
+            <div class="header"><h1>{l_nome} {f"Nº {l_num}" if l_num else ""}</h1><p>COMPROVANTE DE MOVIMENTAÇÃO FINANCEIRA</p></div>
             <div class="content">
-                <div class="row">
-                    <span class="label">Controle Interno</span>
-                    <span class="value">#{t_id}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Descrição do Lançamento</span>
-                    <span class="value">{desc}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Categoria</span>
-                    <span class="value">{cat.upper()}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Tipo de Operação</span>
-                    <span class="value" style="color: {'#16a34a' if tipo == 'entrada' else '#dc2626'}">{tipo.upper()}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Obreiro Relacionado</span>
-                    <span class="value">{p_nome or "---"}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Mês de Referência</span>
-                    <span class="value">{data_ref}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Data de Efetivação (Pagamento)</span>
-                    <span class="value">{data_pag}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Conta / Caixa</span>
-                    <span class="value">{c_nome}</span>
-                </div>
-                
-                <div class="valor-box">
-                    <span class="valor-label">VALOR TOTAL</span>
-                    <span class="valor-value">R$ {formatted_valor}</span>
-                </div>
-                
+                <div class="row"><span class="label">Controle Interno</span><span class="value">#{t_id}</span></div>
+                <div class="row"><span class="label">Descrição</span><span class="value">{desc}</span></div>
+                <div class="row"><span class="label">Categoria</span><span class="value">{cat.upper()}</span></div>
+                <div class="row"><span class="label">Tipo</span><span class="value" style="color: {'#16a34a' if tipo == 'entrada' else '#dc2626'}">{tipo.upper()}</span></div>
+                <div class="row"><span class="label">Obreiro</span><span class="value">{p_nome}</span></div>
+                <div class="row"><span class="label">Referência</span><span class="value">{data_ref}</span></div>
+                <div class="row"><span class="label">Pagamento</span><span class="value">{data_pag}</span></div>
+                <div class="row"><span class="label">Conta</span><span class="value">{c_nome}</span></div>
+                <div class="valor-box"><span class="valor-label">VALOR TOTAL</span><span class="valor-value">R$ {formatted_valor}</span></div>
                 {f'<div style="margin-top: 25px; background: #fcfcfc; padding: 15px; border-left: 4px solid #eee;"><span class="label">Observações:</span><p style="margin: 5px 0 0 0; font-size: 13px; color: #444; font-style: italic;">{notas}</p></div>' if notas else ''}
-                
-                <div class="signature-area">
-                    <div class="signature-box">TESOURARIA</div>
-                    <div class="signature-box">BENEFICIÁRIO / PAGADOR</div>
-                </div>
+                <div class="signature-area"><div class="signature-box">TESOURARIA</div><div class="signature-box">BENEFICIÁRIO / PAGADOR</div></div>
             </div>
-
-            <div class="footer">
-                Este documento é um comprovante interno gerado em {datetime.now().strftime("%d/%m/%Y às %H:%M")} através do sistema Portal da Ordem.<br>
-                A validade deste comprovante está sujeita à conferência nos registros oficiais da Loja.
-            </div>
+            <div class="footer">Gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")} via Portal da Ordem.</div>
         </div>
     </body>
     </html>
     """
-    
     return Response(content=html, media_type='text/html')
