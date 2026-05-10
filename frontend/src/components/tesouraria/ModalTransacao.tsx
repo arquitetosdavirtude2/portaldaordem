@@ -583,7 +583,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             />
                         </div>
                     </div>
-                    </div>
 
                     {/* Modo Atualização */}
                     {isEdit && transacaoInicial?.grupo_recorrencia && (
@@ -617,7 +616,6 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             placeholder="Ex: Pagamento Mensalidade"
                             className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500/50 transition-all hover:border-white/20"
                         />
-                    </div>
                     </div>
 
                     {/* Linha 5: Notas */}

@@ -17,12 +17,11 @@ interface Transacao {
     notas?: string;
     anexo_url?: string;
     status: 'pago' | 'pendente' | 'atrasado';
-    mes_referencia?: string;
     recorrencia?: string;
     grupo_recorrencia?: string;
 }
 
-type SortKey = 'data_vencimento' | 'descricao' | 'categoria' | 'valor' | 'status';
+type SortKey = 'mes_referencia' | 'data_vencimento' | 'data_pagamento' | 'descricao' | 'categoria' | 'valor' | 'status';
 type SortDir = 'asc' | 'desc';
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
