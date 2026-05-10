@@ -263,11 +263,11 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     categoria: form.categoria,
                     valor: parseFloat(form.valor),
                     data_vencimento: dataVencimentoFinal,
-                    data_pagamento: form.data_pagamento,
+                    data_pagamento: form.data_pagamento || null,
                     mes_referencia: mesRefFinal,
                     descricao: form.descricao,
                     notas: form.notas,
-                    status: 'pago',
+                    status: form.status,
                     pessoa_id: form.pessoa_id ? parseInt(form.pessoa_id) : null,
                     modo_atualizacao: form.modo_atualizacao
                 };
@@ -289,11 +289,11 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                 formData.append('categoria', form.categoria);
                 formData.append('valor', form.valor);
                 formData.append('data_vencimento', dataVencimentoFinal);
-                formData.append('data_pagamento', form.data_pagamento);
+                formData.append('data_pagamento', form.data_pagamento || '');
                 formData.append('mes_referencia', mesRefFinal);
                 formData.append('descricao', form.descricao);
                 formData.append('notas', form.notas || '');
-                formData.append('status', 'pago');
+                formData.append('status', form.status);
                 formData.append('usuario_id', String(usuarioId));
                 if (form.pessoa_id) formData.append('pessoa_id', form.pessoa_id);
                 if (arquivo) formData.append('comprovante', arquivo);
@@ -419,6 +419,26 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                                     className={`flex-1 py-2 rounded-lg text-[10px] uppercase font-medium transition-all ${form.tipo === 'saida' ? 'bg-red-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                                 >
                                     Saída (-)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Status do Lançamento</label>
+                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
+                                <button 
+                                    type="button"
+                                    onClick={() => setForm({...form, status: 'pago'})}
+                                    className={`flex-1 py-2 rounded-lg text-[10px] uppercase font-medium transition-all ${form.status === 'pago' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                >
+                                    Pago / Efetivado
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setForm({...form, status: 'pendente'})}
+                                    className={`flex-1 py-2 rounded-lg text-[10px] uppercase font-medium transition-all ${form.status === 'pendente' ? 'bg-yellow-600 text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                                >
+                                    Pendente / Agendado
                                 </button>
                             </div>
                         </div>
