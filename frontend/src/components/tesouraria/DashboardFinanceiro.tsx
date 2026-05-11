@@ -132,14 +132,14 @@ export default function DashboardFinanceiro({
                 {/* Saldo Total */}
                 <div 
                     onClick={() => setCaixaAtivo(0)}
-                    className={`p-6 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/5 relative overflow-hidden group cursor-pointer transition-all border-2 ${caixaAtivo === 0 ? 'border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.3)] scale-[1.02]' : 'border-yellow-500/30 hover:border-yellow-500/50'}`}
+                    className={`p-4 rounded-xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/5 relative overflow-hidden group cursor-pointer transition-all border-2 ${caixaAtivo === 0 ? 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)] scale-[1.01]' : 'border-yellow-500/20 hover:border-yellow-500/40'}`}
                 >
-                    <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity">
-                        <span className="text-4xl text-yellow-500">🏦</span>
+                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="text-3xl text-yellow-500">🏦</span>
                     </div>
                     <div className="relative z-10">
-                        <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Saldo Consolidado</div>
-                        <div className="text-2xl font-medium text-white tracking-wider font-sans tabular-nums">
+                        <div className="text-[9px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-1">Saldo Consolidado</div>
+                        <div className="text-xl font-semibold text-white tracking-wider font-sans tabular-nums">
                             R$ {resumo?.saldo_geral?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                         </div>
                     </div>
@@ -148,76 +148,77 @@ export default function DashboardFinanceiro({
                 {/* Benevolência */}
                 <div 
                     onClick={() => {
-                        const c = resumo?.caixas.find(x => x.finalidade === 'benevolencia');
-                        if (c) setCaixaAtivo(c.id);
+                        const ben = resumo?.caixas.find(c => c.finalidade === 'benevolencia');
+                        if (ben) setCaixaAtivo(ben.id);
                     }}
-                    className={`p-6 rounded-2xl border-2 relative overflow-hidden group cursor-pointer transition-all ${resumo?.caixas.find(x => x.id === caixaAtivo)?.finalidade === 'benevolencia' ? 'bg-green-500/10 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-[1.02]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                    className={`p-4 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 relative overflow-hidden group cursor-pointer transition-all border-2 ${resumo?.caixas.find(c => c.id === caixaAtivo)?.finalidade === 'benevolencia' ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)] scale-[1.01]' : 'border-emerald-500/20 hover:border-emerald-500/40'}`}
                 >
-                    <div className="absolute top-0 right-0 p-3 opacity-10">
-                        <span className="text-4xl text-green-500">🕊️</span>
+                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="text-3xl text-emerald-500">🕊️</span>
                     </div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Benevolência</div>
-                    <div className="text-2xl font-medium text-green-400 tracking-wider font-sans tabular-nums">
-                        R$ {resumo?.saldo_benevolencia?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-                    </div>
-                    <div className="mt-2 text-[9px] text-gray-500 uppercase font-medium tracking-widest">
-                        {resumo?.caixas.find(c => c.finalidade === 'benevolencia')?.nome || 'Benevolência'}
+                    <div className="relative z-10">
+                        <div className="text-[9px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-1">Benevolência</div>
+                        <div className="text-xl font-semibold text-emerald-500 tracking-wider font-sans tabular-nums">
+                            R$ {resumo?.saldo_benevolencia?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        </div>
+                        <div className="text-[8px] text-gray-500 uppercase tracking-widest mt-0.5 truncate">
+                            {resumo?.caixas.find(c => c.finalidade === 'benevolencia')?.nome || 'Geral'}
+                        </div>
                     </div>
                 </div>
 
                 {/* Joias e Mensalidades */}
                 <div 
                     onClick={() => {
-                        const c = resumo?.caixas.find(x => x.finalidade === 'mensalidade');
-                        if (c) setCaixaAtivo(c.id);
+                        const jm = resumo?.caixas.find(c => c.finalidade === 'mensalidade');
+                        if (jm) setCaixaAtivo(jm.id);
                     }}
-                    className={`p-6 rounded-2xl border-2 relative overflow-hidden group cursor-pointer transition-all ${resumo?.caixas.find(x => x.id === caixaAtivo)?.finalidade === 'mensalidade' ? 'bg-blue-500/10 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-[1.02]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                    className={`p-4 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 relative overflow-hidden group cursor-pointer transition-all border-2 ${resumo?.caixas.find(c => c.id === caixaAtivo)?.finalidade === 'mensalidade' ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)] scale-[1.01]' : 'border-blue-500/20 hover:border-blue-500/40'}`}
                 >
-                    <div className="absolute top-0 right-0 p-3 opacity-10">
-                        <span className="text-4xl text-blue-500">💎</span>
+                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="text-3xl text-blue-500">💎</span>
                     </div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Joias e Mensalidades</div>
-                    <div className="text-2xl font-medium text-blue-400 tracking-wider font-sans tabular-nums">
-                        R$ {resumo?.saldo_joias_mensalidade?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-                    </div>
-                    <div className="mt-2 text-[9px] text-gray-500 uppercase font-medium tracking-widest">
-                        {resumo?.caixas.find(c => c.finalidade === 'mensalidade')?.nome || 'Geral'}
+                    <div className="relative z-10">
+                        <div className="text-[9px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-1">Joias e Mensalidades</div>
+                        <div className="text-xl font-semibold text-blue-500 tracking-wider font-sans tabular-nums">
+                            R$ {resumo?.saldo_joias_mensalidade?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        </div>
+                        <div className="text-[8px] text-gray-500 uppercase tracking-widest mt-0.5 truncate">
+                            {resumo?.caixas.find(c => c.finalidade === 'mensalidade')?.nome || 'Geral'}
+                        </div>
                     </div>
                 </div>
 
                 {/* Pendências */}
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-500/5 relative overflow-hidden group border border-orange-500/30">
-                    <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity">
-                        <span className="text-4xl text-orange-500">⏳</span>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/5 relative overflow-hidden group border border-orange-500/20 shadow-lg">
+                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="text-3xl text-orange-500">⏳</span>
                     </div>
                     <div className="relative z-10">
-                        <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Recebimentos Pendentes</div>
-                        <div className="text-2xl font-medium text-orange-500 tracking-wider font-sans tabular-nums">
+                        <div className="text-[9px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-1">Recebimentos Pendentes</div>
+                        <div className="text-xl font-semibold text-orange-500 tracking-wider font-sans tabular-nums">
                             R$ {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                         </div>
                         
                         {resumo?.detalhamento_pendente && (
-                            <div className="mt-4 pt-3 border-t border-orange-500/10 flex flex-col gap-2">
+                            <div className="mt-2 pt-2 border-t border-orange-500/10 flex flex-col gap-1">
                                 <div className="flex justify-between items-center group/item">
-                                    <span className="text-[9px] uppercase tracking-wider text-gray-500 flex items-center gap-1">
-                                        📅 Mensalidades (Mês)
-                                        <span className="opacity-0 group-hover/item:opacity-100 transition-opacity text-[8px] bg-orange-500/10 px-1 rounded">Ref. atual</span>
+                                    <span className="text-[8px] uppercase tracking-wider text-gray-500 flex items-center gap-1">
+                                        📅 Mês Atual
                                     </span>
-                                    <span className="text-[10px] font-bold text-gray-300">R$ {resumo.detalhamento_pendente.mensalidade_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-[9px] font-semibold text-gray-300">R$ {resumo.detalhamento_pendente.mensalidade_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between items-center group/item">
-                                    <span className="text-[9px] uppercase tracking-wider text-red-400/70 flex items-center gap-1">
-                                        ⚠️ Mensalidades (Atrasadas)
-                                        <span className="opacity-0 group-hover/item:opacity-100 transition-opacity text-[8px] bg-red-500/10 px-1 rounded">Meses anteriores</span>
+                                    <span className="text-[8px] uppercase tracking-wider text-red-400/70 flex items-center gap-1">
+                                        ⚠️ Atrasadas
                                     </span>
-                                    <span className="text-[10px] font-bold text-red-400">R$ {resumo.detalhamento_pendente.mensalidade_atrasada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-[9px] font-semibold text-red-400">R$ {resumo.detalhamento_pendente.mensalidade_atrasada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between items-center group/item">
-                                    <span className="text-[9px] uppercase tracking-wider text-gray-500 flex items-center gap-1">
-                                        📥 Contas a Receber
-                                        <span className="opacity-0 group-hover/item:opacity-100 transition-opacity text-[8px] bg-orange-500/10 px-1 rounded">Total pendente</span>
+                                    <span className="text-[8px] uppercase tracking-wider text-gray-500 flex items-center gap-1">
+                                        📥 Outros
                                     </span>
-                                    <span className="text-[10px] font-bold text-gray-300">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-[9px] font-semibold text-gray-300">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         )}
