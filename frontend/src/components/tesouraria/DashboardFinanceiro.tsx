@@ -193,30 +193,27 @@ export default function DashboardFinanceiro({
                 </div>
 
                 {/* Pendências */}
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-orange-500/15 via-orange-500/5 to-transparent relative overflow-hidden group border border-orange-500/10 shadow-2xl">
-                    <div className="absolute -top-2 -right-2 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 rotate-12">
-                        <span className="text-6xl text-orange-500">⏳</span>
-                    </div>
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500/15 via-orange-500/5 to-transparent relative overflow-hidden group border border-orange-500/10 shadow-2xl">
                     <div className="relative z-10">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-400 mb-2">Recebimentos Pendentes</div>
-                        <div className="text-2xl font-medium text-orange-500 tracking-tight font-sans">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-400 mb-1">Recebimentos Pendentes</div>
+                        <div className="text-xl font-medium text-orange-500 tracking-tight font-sans">
                             <span className="text-sm font-normal opacity-50 mr-1.5">R$</span>
                             {resumo?.total_entrada_pendente?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                         </div>
                         
                         {resumo?.detalhamento_pendente && (
-                            <div className="mt-4 pt-3 border-t border-white/5 flex flex-col gap-2">
+                            <div className="mt-2 pt-2 border-t border-white/5 flex flex-col gap-1">
                                 <div className="flex justify-between items-center group/item">
-                                    <span className="text-[9px] uppercase tracking-[0.15em] text-gray-500 font-medium">Mês Atual</span>
-                                    <span className="text-[10px] font-semibold text-gray-300 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-[8px] uppercase tracking-[0.1em] text-gray-500 font-medium">Mensalidades Mês Atual</span>
+                                    <span className="text-[9px] font-semibold text-gray-300 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between items-center group/item">
-                                    <span className="text-[9px] uppercase tracking-[0.15em] text-red-500/60 font-medium">Atrasadas</span>
-                                    <span className="text-[10px] font-semibold text-red-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_atrasada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-[8px] uppercase tracking-[0.1em] text-red-500/60 font-medium">Mensalidades Atrasadas</span>
+                                    <span className="text-[9px] font-semibold text-red-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_atrasada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between items-center group/item">
-                                    <span className="text-[9px] uppercase tracking-[0.15em] text-blue-500/60 font-medium">Contas a Receber</span>
-                                    <span className="text-[10px] font-semibold text-blue-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <div className="flex justify-between items-center group/item bg-white/5 p-1 rounded-lg mt-1">
+                                    <span className="text-[8px] uppercase tracking-[0.1em] text-blue-500/80 font-bold">Contas a Receber</span>
+                                    <span className="text-[10px] font-bold text-blue-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         )}

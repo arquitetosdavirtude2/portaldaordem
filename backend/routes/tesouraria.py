@@ -882,7 +882,7 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
             "saldo_geral": float(saldo_total),
             "saldo_benevolencia": float(saldo_ben),
             "saldo_joias_mensalidade": float(saldo_jm),
-            "total_entrada_pendente": float(total_mens_mes + total_mens_atrasada + total_outros),
+            "total_entrada_pendente": float(total_outros),
             "total_saida_pendente": float(total_pagar or 0),
             "detalhamento_pendente": {
                 "mensalidade_mes": float(total_mens_mes),
