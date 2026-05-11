@@ -840,28 +840,37 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
                 saldo_jm += c_saldo
         
         # 2. Calcular Pendências (Apenas da Loja atual)
+        now = datetime.now()
+        mes_atual_ref = now.strftime("%Y-%m")
+        
         query_pend = text("""
-            SELECT t.tipo, SUM(t.valor) as total 
+            SELECT 
+                SUM(CASE WHEN t.tipo = 'saida' THEN t.valor ELSE 0 END) as total_saida,
+                SUM(CASE WHEN t.tipo = 'entrada' AND t.categoria = 'Mensalidade' AND t.mes_referencia = :mat THEN t.valor ELSE 0 END) as mens_mes,
+                SUM(CASE WHEN t.tipo = 'entrada' AND t.categoria = 'Mensalidade' AND (t.mes_referencia < :mat OR t.mes_referencia IS NULL) THEN t.valor ELSE 0 END) as mens_atrasada,
+                SUM(CASE WHEN t.tipo = 'entrada' AND t.categoria <> 'Mensalidade' THEN t.valor ELSE 0 END) as contas_receber
             FROM transacoes t
             JOIN caixas c ON t.caixa_id = c.id
             WHERE t.status = 'pendente' 
               AND c.loja_id = :lid
-            GROUP BY t.tipo
         """)
-        pend_rows = db_treasury.execute(query_pend, {"lid": loja_id}).fetchall()
+        pend_result = db_treasury.execute(query_pend, {"lid": loja_id, "mat": mes_atual_ref}).fetchone()
         
-        ent_pend = 0.0
-        sai_pend = 0.0
-        for p in pend_rows:
-            if p[0] == 'entrada':
-                ent_pend = float(p[1] or 0.0)
-            elif p[0] == 'saida':
-                sai_pend = float(p[1] or 0.0)
+        sai_pend = float(pend_result[0] or 0.0)
+        mens_mes = float(pend_result[1] or 0.0)
+        mens_atrasada = float(pend_result[2] or 0.0)
+        contas_receber = float(pend_result[3] or 0.0)
+        ent_pend = mens_mes + mens_atrasada + contas_receber
         
         return {
             "caixas": caixas,
             "total_entrada_pendente": ent_pend,
             "total_saida_pendente": sai_pend,
+            "detalhamento_pendente": {
+                "mensalidade_mes": mens_mes,
+                "mensalidade_atrasada": mens_atrasada,
+                "contas_receber": contas_receber
+            },
             "saldo_geral": saldo_geral,
             "saldo_benevolencia": saldo_ben,
             "saldo_joias_mensalidade": saldo_jm

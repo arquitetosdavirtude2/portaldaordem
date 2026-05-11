@@ -16,6 +16,11 @@ interface Resumo {
     caixas: Caixa[];
     total_entrada_pendente: number;
     total_saida_pendente: number;
+    detalhamento_pendente?: {
+        mensalidade_mes: number;
+        mensalidade_atrasada: number;
+        contas_receber: number;
+    };
     saldo_geral: number;
     saldo_benevolencia: number;
     saldo_joias_mensalidade: number;
@@ -181,13 +186,41 @@ export default function DashboardFinanceiro({
                 </div>
 
                 {/* Pendências */}
-                <div className="p-6 rounded-2xl bg-white/5 border border-white/10 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-3 opacity-10">
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-500/5 relative overflow-hidden group border border-orange-500/30">
+                    <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity">
                         <span className="text-4xl text-orange-500">⏳</span>
                     </div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Recebimentos Pendentes</div>
-                    <div className="text-2xl font-medium text-orange-400 tracking-wider font-sans tabular-nums">
-                        R$ {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                    <div className="relative z-10">
+                        <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Recebimentos Pendentes</div>
+                        <div className="text-2xl font-medium text-orange-500 tracking-wider font-sans tabular-nums">
+                            R$ {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        </div>
+                        
+                        {resumo?.detalhamento_pendente && (
+                            <div className="mt-4 pt-3 border-t border-orange-500/10 flex flex-col gap-2">
+                                <div className="flex justify-between items-center group/item">
+                                    <span className="text-[9px] uppercase tracking-wider text-gray-500 flex items-center gap-1">
+                                        📅 Mensalidades (Mês)
+                                        <span className="opacity-0 group-hover/item:opacity-100 transition-opacity text-[8px] bg-orange-500/10 px-1 rounded">Ref. atual</span>
+                                    </span>
+                                    <span className="text-[10px] font-bold text-gray-300">R$ {resumo.detalhamento_pendente.mensalidade_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex justify-between items-center group/item">
+                                    <span className="text-[9px] uppercase tracking-wider text-red-400/70 flex items-center gap-1">
+                                        ⚠️ Mensalidades (Atrasadas)
+                                        <span className="opacity-0 group-hover/item:opacity-100 transition-opacity text-[8px] bg-red-500/10 px-1 rounded">Meses anteriores</span>
+                                    </span>
+                                    <span className="text-[10px] font-bold text-red-400">R$ {resumo.detalhamento_pendente.mensalidade_atrasada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex justify-between items-center group/item">
+                                    <span className="text-[9px] uppercase tracking-wider text-gray-500 flex items-center gap-1">
+                                        📥 Contas a Receber
+                                        <span className="opacity-0 group-hover/item:opacity-100 transition-opacity text-[8px] bg-orange-500/10 px-1 rounded">Total pendente</span>
+                                    </span>
+                                    <span className="text-[10px] font-bold text-gray-300">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
