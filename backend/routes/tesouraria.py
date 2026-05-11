@@ -1534,12 +1534,27 @@ def relatorio_financeiro(
         <meta charset="UTF-8">
         <title>{titulo_relatorio}</title>
         <style>
-            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 30px; background: #fff; }}
-            .header {{ text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }}
-            .header h1 {{ margin: 0; font-size: 22px; text-transform: uppercase; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 30px; background: #fff; position: relative; }}
+            .watermark {{
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-30deg);
+                font-size: 100px;
+                color: rgba(0, 0, 0, 0.03);
+                white-space: nowrap;
+                pointer-events: none;
+                z-index: -1;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 10px;
+            }}
+            .header {{ text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; position: relative; }}
+            .header .logo-gomb {{ position: absolute; left: 0; top: -10px; height: 80px; }}
+            .header h1 {{ margin: 0; font-size: 22px; text-transform: uppercase; margin-top: 10px; }}
             .header p {{ margin: 5px 0; font-size: 14px; color: #666; font-weight: bold; }}
             .info-bar {{ display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; background: #f9f9f9; padding: 10px; border-radius: 5px; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; background: rgba(255, 255, 255, 0.8); }}
             th {{ background: #f0f0f0; text-align: left; padding: 12px 10px; font-size: 11px; text-transform: uppercase; color: #555; border-bottom: 2px solid #ddd; }}
             .total-box {{ margin-top: 30px; text-align: right; border-top: 2px solid #000; padding-top: 15px; }}
             .total-label {{ font-size: 16px; font-weight: bold; }}
@@ -1548,14 +1563,17 @@ def relatorio_financeiro(
             @media print {{
                 .no-print {{ display: none; }}
                 body {{ margin: 0; }}
+                .watermark {{ color: rgba(0, 0, 0, 0.05); }} /* Slightly darker for print */
             }}
         </style>
     </head>
     <body>
+        <div class="watermark">Portal da Ordem</div>
         <div class="no-print" style="margin-bottom: 20px; text-align: right;">
             <button onclick="window.print()" style="padding: 10px 20px; background: #ca8a04; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">🖨️ IMPRIMIR RELATÓRIO</button>
         </div>
         <div class="header">
+            <img src="/logo-gomb.png" class="logo-gomb" alt="GOMB">
             <h1>{l_nome} {f"Nº {l_num}" if l_num else ""}</h1>
             <p>{titulo_relatorio.upper()}</p>
         </div>
