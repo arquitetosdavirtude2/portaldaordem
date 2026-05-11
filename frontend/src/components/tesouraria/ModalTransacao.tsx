@@ -443,7 +443,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             </select>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Categoria</label>
+                            <div className="flex items-center ml-1 min-h-[20px]">
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Categoria</label>
+                            </div>
                             <select 
                                 value={form.categoria}
                                 onChange={e => setForm({...form, categoria: e.target.value})}
@@ -459,7 +461,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                     {/* Linha 3: Irmão e Valor/Data */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                         <div className="space-y-1.5">
-                            <div className="flex justify-between items-center ml-1 min-h-[16px]">
+                            <div className="flex justify-between items-center ml-1 min-h-[20px]">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Obreiro Relacionado</label>
                                 <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <input 
@@ -532,7 +534,7 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         </div>
 
                         <div className="flex-1 space-y-1.5">
-                            <div className="min-h-[16px] ml-1">
+                            <div className="flex items-center ml-1 min-h-[20px]">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Valor Total</label>
                             </div>
                             <div className="relative">
@@ -550,10 +552,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         </div>
                     </div>
 
-                    {/* Linha 4: Datas */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                         <div className="space-y-1.5">
-                            <div className="min-h-[16px] ml-1">
+                            <div className="flex items-center ml-1 min-h-[20px]">
                                 <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Mês de Referência</label>
                             </div>
                             <input
@@ -564,7 +565,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Data de Vencimento</label>
+                            <div className="flex items-center ml-1 min-h-[20px]">
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Data de Vencimento</label>
+                            </div>
                             <input 
                                 type="date"
                                 required
@@ -574,7 +577,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Data de Lançamento (Pagto)</label>
+                            <div className="flex items-center ml-1 min-h-[20px]">
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Data de Pagamento</label>
+                            </div>
                             <input 
                                 type="date"
                                 required
