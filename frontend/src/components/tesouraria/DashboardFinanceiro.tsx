@@ -201,7 +201,7 @@ export default function DashboardFinanceiro({
                         <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-400 mb-2">Recebimentos Pendentes</div>
                         <div className="text-2xl font-medium text-orange-500 tracking-tight font-sans">
                             <span className="text-sm font-normal opacity-50 mr-1.5">R$</span>
-                            {resumo?.total_entrada_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                            {resumo?.total_entrada_pendente?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                         </div>
                         
                         {resumo?.detalhamento_pendente && (
@@ -215,8 +215,8 @@ export default function DashboardFinanceiro({
                                     <span className="text-[10px] font-semibold text-red-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_atrasada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between items-center group/item">
-                                    <span className="text-[9px] uppercase tracking-[0.15em] text-gray-500 font-medium">Outros</span>
-                                    <span className="text-[10px] font-semibold text-gray-300 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-[9px] uppercase tracking-[0.15em] text-blue-500/60 font-medium">Contas a Receber</span>
+                                    <span className="text-[10px] font-semibold text-blue-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         )}
