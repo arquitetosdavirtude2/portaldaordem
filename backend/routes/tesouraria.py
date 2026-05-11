@@ -839,32 +839,27 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         total_outros = 0.0
         
         for irmao in irmaos_fin:
-            # irmao é um dict com 'meses_atraso'
             for m in irmao.get('meses_atraso', []):
                 if m.get('status') != 'pendente': continue
-                
-                # m['mes_ref'] pode ser 'JOIA' ou 'YYYY-MM'
-                if m['mes_ref'] == 'JOIA':
-                    # Joia é tratada como "Contas a Receber" no resumo
-                    total_outros += (2000.0 - irmao.get('joia_paga', 0))
-                else:
+                if m['mes_ref'] != 'JOIA':
                     if m['mes_ref'] == mes_ref_atual:
                         total_mens_mes += 250.0
                     else:
                         total_mens_atrasada += 250.0
 
-        # 3. Outras Contas a Receber (que não são vinculadas a irmãos)
+        # 3. Contas a Receber Gerais (não mensalidades/joias) - Filtrando pelo mês atual para bater com a aba
         query_extras = text("""
             SELECT COALESCE(SUM(t.valor),0)
             FROM transacoes t
             JOIN caixas c ON t.caixa_id = c.id
             WHERE t.status = 'pendente' 
               AND t.tipo = 'entrada'
-              AND t.pessoa_id IS NULL
+              AND t.categoria NOT IN ('mensalidade', 'joia')
               AND c.loja_id = :lid
+              AND t.data_vencimento LIKE :mes_ref
         """)
-        total_extras = db_treasury.execute(query_extras, {"lid": loja_id}).fetchone()[0]
-        total_outros += float(total_extras or 0)
+        total_extras = db_treasury.execute(query_extras, {"lid": loja_id, "mes_ref": f"{mes_ref_atual}%"}).fetchone()[0]
+        total_outros = float(total_extras or 0)
 
         # 4. Contas a Pagar (Saídas Pendentes)
         query_pagar = text("""

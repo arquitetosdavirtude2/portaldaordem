@@ -202,18 +202,18 @@ export default function DashboardFinanceiro({
                         </div>
                         
                         {resumo?.detalhamento_pendente && (
-                            <div className="mt-2 pt-2 border-t border-white/5 flex flex-col gap-1">
-                                <div className="flex justify-between items-center group/item">
-                                    <span className="text-[8px] uppercase tracking-[0.1em] text-gray-500 font-medium">Mensalidades Mês Atual</span>
-                                    <span className="text-[9px] font-semibold text-gray-300 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            <div className="mt-1.5 pt-1.5 border-t border-white/5 flex flex-col gap-0.5">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[8px] uppercase tracking-[0.05em] text-gray-500 font-medium">Mensalidades Mês Atual</span>
+                                    <span className="text-[9px] font-semibold text-gray-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between items-center group/item">
-                                    <span className="text-[8px] uppercase tracking-[0.1em] text-red-500/60 font-medium">Mensalidades Atrasadas</span>
-                                    <span className="text-[9px] font-semibold text-red-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_atrasada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[8px] uppercase tracking-[0.05em] text-red-500/50 font-medium">Mensalidades Atrasadas</span>
+                                    <span className="text-[9px] font-semibold text-red-400/80 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.mensalidade_atrasada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between items-center group/item bg-white/5 p-1 rounded-lg mt-1">
-                                    <span className="text-[8px] uppercase tracking-[0.1em] text-blue-500/80 font-bold">Contas a Receber</span>
-                                    <span className="text-[10px] font-bold text-blue-400 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[8px] uppercase tracking-[0.05em] text-blue-500/60 font-medium">Contas a Receber</span>
+                                    <span className="text-[9px] font-semibold text-blue-400/90 font-sans tracking-tight">R$ {resumo.detalhamento_pendente.contas_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         )}
