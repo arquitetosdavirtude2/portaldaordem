@@ -797,16 +797,15 @@ def excluir_extrato(extrato_id: int, db_treasury: Session = Depends(get_treasury
 
 @router.get("/resumo/{loja_id}")
 def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_db)):
-    """Resumo financeiro dinâmico via MySQL."""
+    """Resumo financeiro do Dashboard com pendências dinâmicas."""
     try:
         from sqlalchemy import text
-        db_treasury.expire_all()
+        from datetime import datetime
         
-        # 1. Buscar Caixas (Contas) da Loja com SALDO CALCULADO EM TEMPO REAL
-        # Não confiamos mais no campo 'saldo_atual' da tabela caixas.
+        # 1. Saldos de Caixas
         query_caixas = text("""
             SELECT c.id, c.nome, c.finalidade,
-                (SELECT COALESCE(SUM(CASE WHEN t.tipo='entrada' THEN t.valor ELSE -t.valor END), 0)
+                (SELECT COALESCE(SUM(CASE WHEN t.tipo='entrada' THEN t.valor ELSE -t.valor END), 0) 
                  FROM transacoes t 
                  WHERE t.caixa_id = c.id AND t.status = 'pago') as saldo_real
             FROM caixas c 
@@ -814,72 +813,86 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         """)
         caixas_rows = db_treasury.execute(query_caixas, {"lid": loja_id}).fetchall()
         
-        caixas = []
-        saldo_geral = 0.0
+        caixas_info = []
+        saldo_total = 0.0
         saldo_ben = 0.0
         saldo_jm = 0.0
         
         for r in caixas_rows:
-            # c.id, c.nome, c.finalidade, saldo_real
-            c_id = r[0]
-            c_nome = r[1]
-            c_fin = r[2] or 'mensalidade'
-            c_saldo = float(r[3] or 0.0)
-
-            caixas.append({
-                "id": c_id,
-                "nome": c_nome,
-                "finalidade": c_fin,
-                "saldo_atual": c_saldo
-            })
-            
-            saldo_geral += c_saldo
-            if c_fin == 'benevolencia':
-                saldo_ben += c_saldo
-            elif c_fin == 'mensalidade':
-                saldo_jm += c_saldo
+            c_id, c_nome, c_fin, c_saldo = r[0], r[1], (r[2] or 'mensalidade'), float(r[3] or 0.0)
+            caixas_info.append({"id": c_id, "nome": c_nome, "finalidade": c_fin, "saldo_atual": c_saldo})
+            saldo_total += c_saldo
+            if c_fin == 'benevolencia': saldo_ben += c_saldo
+            elif c_fin == 'mensalidade': saldo_jm += c_saldo
         
-        # 2. Calcular Pendências (Apenas da Loja atual)
+        # 2. Pendências Dinâmicas (Soma de todos os irmãos)
         now = datetime.now()
-        mes_atual_ref = now.strftime("%Y-%m")
+        mes_ref_atual = now.strftime("%Y-%m")
+        mat = now.month
+        mat_ano = now.year
         
-        query_pend = text("""
-            SELECT 
-                SUM(CASE WHEN t.tipo = 'saida' THEN t.valor ELSE 0 END) as total_saida,
-                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) LIKE 'mensalidade%' AND t.mes_referencia = :mat THEN t.valor ELSE 0 END) as mens_mes,
-                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) LIKE 'mensalidade%' AND (t.mes_referencia < :mat OR t.mes_referencia IS NULL) THEN t.valor ELSE 0 END) as mens_atrasada,
-                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) NOT LIKE 'mensalidade%' THEN t.valor ELSE 0 END) as contas_receber
+        # Chama a lógica dinâmica de cálculo de dívidas
+        irmaos_fin = _calcular_financeiro_irmaos_logic(loja_id, mat, mat_ano, False, db_treasury, db_treasury)
+        
+        total_mens_mes = 0.0
+        total_mens_atrasada = 0.0
+        total_outros = 0.0
+        
+        for irmao in irmaos_fin:
+            # irmao é um dict com 'meses_atraso'
+            for m in irmao.get('meses_atraso', []):
+                if m.get('status') != 'pendente': continue
+                
+                # m['mes_ref'] pode ser 'JOIA' ou 'YYYY-MM'
+                if m['mes_ref'] == 'JOIA':
+                    # Joia é tratada como "Contas a Receber" no resumo
+                    total_outros += (2000.0 - irmao.get('joia_paga', 0))
+                else:
+                    if m['mes_ref'] == mes_ref_atual:
+                        total_mens_mes += 250.0
+                    else:
+                        total_mens_atrasada += 250.0
+
+        # 3. Outras Contas a Receber (que não são vinculadas a irmãos)
+        query_extras = text("""
+            SELECT COALESCE(SUM(t.valor),0)
             FROM transacoes t
             JOIN caixas c ON t.caixa_id = c.id
             WHERE t.status = 'pendente' 
+              AND t.tipo = 'entrada'
+              AND t.pessoa_id IS NULL
               AND c.loja_id = :lid
         """)
-        pend_result = db_treasury.execute(query_pend, {"lid": loja_id, "mat": mes_atual_ref}).fetchone()
-        
-        sai_pend = float(pend_result[0] or 0.0)
-        mens_mes = float(pend_result[1] or 0.0)
-        mens_atrasada = float(pend_result[2] or 0.0)
-        contas_receber = float(pend_result[3] or 0.0)
-        ent_pend = mens_mes + mens_atrasada + contas_receber
-        
+        total_extras = db_treasury.execute(query_extras, {"lid": loja_id}).fetchone()[0]
+        total_outros += float(total_extras or 0)
+
+        # 4. Contas a Pagar (Saídas Pendentes)
+        query_pagar = text("""
+            SELECT COALESCE(SUM(t.valor),0)
+            FROM transacoes t
+            JOIN caixas c ON t.caixa_id = c.id
+            WHERE t.status = 'pendente' 
+              AND t.tipo = 'saida'
+              AND c.loja_id = :lid
+        """)
+        total_pagar = db_treasury.execute(query_pagar, {"lid": loja_id}).fetchone()[0]
+
         return {
-            "caixas": caixas,
-            "total_entrada_pendente": ent_pend,
-            "total_saida_pendente": sai_pend,
-            "detalhamento_pendente": {
-                "mensalidade_mes": mens_mes,
-                "mensalidade_atrasada": mens_atrasada,
-                "contas_receber": contas_receber
-            },
-            "saldo_geral": saldo_geral,
-            "saldo_benevolencia": saldo_ben,
-            "saldo_joias_mensalidade": saldo_jm
+            "caixas": caixas_info,
+            "saldo_geral": float(saldo_total),
+            "saldo_benevolencia": float(saldo_ben),
+            "saldo_joias_mensalidade": float(saldo_jm),
+            "total_entrada_pendente": float(total_mens_mes + total_mens_atrasada + total_outros),
+            "total_saida_pendente": float(total_pagar or 0),
+                "mensalidade_mes": float(total_mens_mes),
+                "mensalidade_atrasada": float(total_mens_atrasada),
+                "contas_receber": float(total_outros)
+            }
         }
     except Exception as e:
-        print(f"ERRO CRÍTICO NO RESUMO: {e}")
+        print(f"ERRO NO RESUMO: {e}")
         import traceback
         print(traceback.format_exc())
-        import traceback
         return {
             "caixas": [],
             "total_entrada_pendente": 0.0,

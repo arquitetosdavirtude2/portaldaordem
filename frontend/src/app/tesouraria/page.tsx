@@ -86,8 +86,7 @@ export default function TesourariaPage() {
         ? `${acesso.loja_nome}${acesso.loja_numero ? ` Nº ${acesso.loja_numero}` : ''}`
         : 'Tesouraria';
 
-    return (
-        <div className="min-h-screen w-full flex flex-col font-serif text-gray-100 selection:bg-yellow-500 selection:text-black relative">
+    return (        <div className="min-h-screen w-full flex flex-col font-sans text-gray-100 selection:bg-yellow-500 selection:text-black relative">
             {/* Global Background Fix - Bulletproof */}
             <style dangerouslySetInnerHTML={{ __html: `
                 html, body { 
@@ -108,13 +107,13 @@ export default function TesourariaPage() {
                 <div className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl overflow-hidden mb-6">
                     <div className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2">
-                            <div className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border border-yellow-500/50 text-yellow-500 bg-yellow-500/10">
+                            <div className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-[0.25em] border border-yellow-500/50 text-yellow-500 bg-yellow-500/10">
                                 Gestão Financeira
                             </div>
                             <h1 className="text-2xl md:text-3xl font-bold text-yellow-500 tracking-tight leading-tight uppercase drop-shadow-lg">
                                 {displayTitle}
                             </h1>
-                            <div className="text-[11px] text-gray-400 font-sans tracking-widest uppercase font-bold">
+                            <div className="text-[10px] text-gray-400 font-sans tracking-[0.2em] uppercase font-bold opacity-70">
                                 {acesso.loja_cidade || acesso.estado}
                             </div>
                         </div>
