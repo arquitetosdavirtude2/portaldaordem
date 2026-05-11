@@ -532,7 +532,9 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         </div>
 
                         <div className="flex-1 space-y-1.5">
-                            <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest ml-1">Valor Total</label>
+                            <div className="min-h-[16px] ml-1">
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Valor Total</label>
+                            </div>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] font-medium">R$</span>
                                 <input 
@@ -548,18 +550,17 @@ export default function ModalTransacao({ acesso, caixas, onClose, onSuccess, onC
                         </div>
                     </div>
 
-                    {/* Linha 4: As 3 Datas Sagradas */}
+                    {/* Linha 4: Datas */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-yellow-500 tracking-widest ml-1 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
-                                Mês de Referência
-                            </label>
+                            <div className="min-h-[16px] ml-1">
+                                <label className="text-[10px] uppercase font-medium text-gray-500 tracking-widest">Mês de Referência</label>
+                            </div>
                             <input
                                 type="month"
                                 value={mesReferencia}
                                 onChange={e => setMesReferencia(e.target.value)}
-                                className="w-full bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 text-xs text-yellow-100 outline-none focus:border-yellow-500/60 color-scheme-dark transition-all font-medium"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-gray-200 outline-none focus:border-yellow-500/50 color-scheme-dark transition-all hover:border-white/20"
                             />
                         </div>
                         <div className="space-y-1.5">
