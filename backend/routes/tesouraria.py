@@ -1540,14 +1540,14 @@ def relatorio_financeiro(
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%) rotate(-30deg);
-                font-size: 100px;
+                font-size: 60px;
                 color: rgba(0, 0, 0, 0.04);
                 white-space: nowrap;
                 pointer-events: none;
                 z-index: -1;
                 font-weight: 900;
                 text-transform: uppercase;
-                letter-spacing: 10px;
+                letter-spacing: 5px;
             }}
             .header {{ text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; position: relative; background: transparent; }}
             .header .logo-gomb {{ position: absolute; left: 0; top: -10px; height: 80px; }}
