@@ -1534,14 +1534,14 @@ def relatorio_financeiro(
         <meta charset="UTF-8">
         <title>{titulo_relatorio}</title>
         <style>
-            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 30px; background: #fff; position: relative; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 30px; position: relative; background-color: transparent; }}
             .watermark {{
                 position: fixed;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%) rotate(-30deg);
                 font-size: 100px;
-                color: rgba(0, 0, 0, 0.03);
+                color: rgba(0, 0, 0, 0.04);
                 white-space: nowrap;
                 pointer-events: none;
                 z-index: -1;
@@ -1549,21 +1549,22 @@ def relatorio_financeiro(
                 text-transform: uppercase;
                 letter-spacing: 10px;
             }}
-            .header {{ text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; position: relative; }}
+            .header {{ text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; position: relative; background: transparent; }}
             .header .logo-gomb {{ position: absolute; left: 0; top: -10px; height: 80px; }}
             .header h1 {{ margin: 0; font-size: 22px; text-transform: uppercase; margin-top: 10px; }}
             .header p {{ margin: 5px 0; font-size: 14px; color: #666; font-weight: bold; }}
-            .info-bar {{ display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; background: #f9f9f9; padding: 10px; border-radius: 5px; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; background: rgba(255, 255, 255, 0.8); }}
-            th {{ background: #f0f0f0; text-align: left; padding: 12px 10px; font-size: 11px; text-transform: uppercase; color: #555; border-bottom: 2px solid #ddd; }}
-            .total-box {{ margin-top: 30px; text-align: right; border-top: 2px solid #000; padding-top: 15px; }}
+            .info-bar {{ display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; padding: 10px; border-radius: 5px; border: 1px solid #eee; background: transparent; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; background: transparent; }}
+            th {{ background: rgba(240, 240, 240, 0.5); text-align: left; padding: 12px 10px; font-size: 11px; text-transform: uppercase; color: #555; border-bottom: 2px solid #ddd; }}
+            .total-box {{ margin-top: 30px; text-align: right; border-top: 2px solid #000; padding-top: 15px; background: transparent; }}
             .total-label {{ font-size: 16px; font-weight: bold; }}
             .total-value {{ font-size: 24px; font-weight: 900; margin-left: 20px; }}
-            .footer {{ margin-top: 40px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 15px; }}
+            .footer {{ margin-top: 40px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 15px; background: transparent; }}
             @media print {{
                 .no-print {{ display: none; }}
-                body {{ margin: 0; }}
-                .watermark {{ color: rgba(0, 0, 0, 0.05); }} /* Slightly darker for print */
+                body {{ margin: 0; background-color: #fff !important; }}
+                .watermark {{ color: rgba(0, 0, 0, 0.06); }}
+                * {{ -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }}
             }}
         </style>
     </head>
