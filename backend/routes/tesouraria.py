@@ -846,9 +846,9 @@ def resumo_financeiro(loja_id: int, db_treasury: Session = Depends(get_treasury_
         query_pend = text("""
             SELECT 
                 SUM(CASE WHEN t.tipo = 'saida' THEN t.valor ELSE 0 END) as total_saida,
-                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) = 'mensalidade' AND t.mes_referencia = :mat THEN t.valor ELSE 0 END) as mens_mes,
-                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) = 'mensalidade' AND (t.mes_referencia < :mat OR t.mes_referencia IS NULL) THEN t.valor ELSE 0 END) as mens_atrasada,
-                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) <> 'mensalidade' THEN t.valor ELSE 0 END) as contas_receber
+                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) LIKE 'mensalidade%' AND t.mes_referencia = :mat THEN t.valor ELSE 0 END) as mens_mes,
+                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) LIKE 'mensalidade%' AND (t.mes_referencia < :mat OR t.mes_referencia IS NULL) THEN t.valor ELSE 0 END) as mens_atrasada,
+                SUM(CASE WHEN t.tipo = 'entrada' AND LOWER(t.categoria) NOT LIKE 'mensalidade%' THEN t.valor ELSE 0 END) as contas_receber
             FROM transacoes t
             JOIN caixas c ON t.caixa_id = c.id
             WHERE t.status = 'pendente' 
