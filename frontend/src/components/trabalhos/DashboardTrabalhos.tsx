@@ -12,8 +12,17 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [tabAtiva, setTabAtivo] = useState<'trabalhos' | 'prelecoes'>('trabalhos');
     const [itemEmEstudo, setItemEmEstudo] = useState<any>(null);
     const [videoConcluido, setVideoConcluido] = useState(false);
+    const [quizAtivo, setQuizAtivo] = useState(false);
+    const [quizConcluido, setQuizConcluido] = useState(false);
+    const [respostasQuiz, setRespostasQuiz] = useState<number[]>([]);
+    const [uploadTrabalhoModal, setUploadTrabalhoModal] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const lastTimeRef = useRef(0);
+
+    const perguntasMock = [
+        { id: 1, texto: "Qual o significado simbólico principal deste trabalho?", opcoes: ["O Tempo", "A Força de Vontade", "A Sabedoria", "A Beleza"], respostaCorreta: 0 },
+        { id: 2, texto: "Qual ferramenta é mais associada ao tema abordado?", opcoes: ["Esquadro", "Maço", "Compasso", "Nível"], respostaCorreta: 1 },
+    ];
 
     // Initial suggested list (filtered by degree later)
     const todosTrabalhos = [
@@ -71,27 +80,28 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Degree Navigation (Top Level) */}
-            <div className="flex gap-4 mb-6 border-b border-white/5 pb-4">
-                {[
-                    { id: 1, label: 'Aprendiz' },
-                    { id: 2, label: 'Companheiro' },
-                    { id: 3, label: 'Mestre' }
-                ].map(g => (
-                    <button
-                        key={g.id}
-                        onClick={() => setGrauAtivo(g.id)}
-                        className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
-                            grauAtivo === g.id 
-                            ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500' 
-                            : 'bg-white/5 border-white/5 text-gray-500 hover:text-gray-300'
-                        } ${!canSeeDegree(g.id) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`}
-                    >
-                        {!canSeeDegree(g.id) && <span className="mr-2">🔒</span>}
-                        {g.label}
-                    </button>
-                ))}
-            </div>
+            {/* Degree Navigation (Somente Diretoria) */}
+            {isDiretoria && (
+                <div className="flex gap-4 mb-6 border-b border-white/5 pb-4">
+                    {[
+                        { id: 1, label: 'Aprendiz' },
+                        { id: 2, label: 'Companheiro' },
+                        { id: 3, label: 'Mestre' }
+                    ].map(g => (
+                        <button
+                            key={g.id}
+                            onClick={() => setGrauAtivo(g.id)}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
+                                grauAtivo === g.id 
+                                ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500' 
+                                : 'bg-white/5 border-white/5 text-gray-500 hover:text-gray-300'
+                            }`}
+                        >
+                            {g.label}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Sub-Tabs (Works / Prelections) */}
             <div className="flex border-b border-white/5 bg-black/10 -mx-6 md:-mx-8 mb-6">
@@ -164,6 +174,9 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                         setItemEmEstudo(item);
                                         if (!isDiretoria) {
                                             setVideoConcluido(false);
+                                            setQuizAtivo(false);
+                                            setQuizConcluido(false);
+                                            setRespostasQuiz([]);
                                             lastTimeRef.current = 0;
                                         }
                                     }}
@@ -186,8 +199,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
-                    <span className="text-4xl mb-4 opacity-20">🗝️</span>
-                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Conteúdo não disponível para este grau</p>
+                    <span className="text-4xl mb-4 opacity-20">🚧</span>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Conteúdo em desenvolvimento</p>
                 </div>
             )}
 
@@ -243,23 +256,101 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
                                 <div className="space-y-4">
                                     <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Verificação de Conhecimento</h4>
-                                    <div className={`p-6 rounded-2xl border transition-all ${
-                                        videoConcluido 
-                                        ? 'bg-emerald-500/5 border-emerald-500/20' 
-                                        : 'bg-white/[0.01] border-white/5 opacity-50 grayscale'
-                                    }`}>
-                                        <p className="text-[11px] text-gray-400 mb-4 leading-relaxed">
-                                            {videoConcluido 
-                                                ? 'Parabéns por completar o estudo! Responda ao quiz abaixo para liberar o envio do seu trabalho.'
-                                                : 'Assista o vídeo até o final para liberar o questionário de verificação.'}
-                                        </p>
-                                        <button 
-                                            disabled={!videoConcluido}
-                                            className="w-full py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-20 disabled:grayscale-0"
-                                        >
-                                            Iniciar Quiz
-                                        </button>
-                                    </div>
+                                    
+                                    {!quizAtivo && !quizConcluido && (
+                                        <div className={`p-6 rounded-2xl border transition-all ${
+                                            videoConcluido 
+                                            ? 'bg-emerald-500/5 border-emerald-500/20' 
+                                            : 'bg-white/[0.01] border-white/5 opacity-50 grayscale'
+                                        }`}>
+                                            <p className="text-[11px] text-gray-400 mb-4 leading-relaxed">
+                                                {videoConcluido 
+                                                    ? 'Parabéns por completar o estudo! Responda ao quiz abaixo para liberar a conclusão.'
+                                                    : 'Assista o vídeo até o final para liberar o questionário de verificação.'}
+                                            </p>
+                                            <button 
+                                                disabled={!videoConcluido}
+                                                onClick={() => setQuizAtivo(true)}
+                                                className="w-full py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-20 disabled:grayscale-0"
+                                            >
+                                                Iniciar Quiz
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {quizAtivo && !quizConcluido && (
+                                        <div className="p-6 rounded-2xl border bg-emerald-500/5 border-emerald-500/20 space-y-6">
+                                            {perguntasMock.map((perg, i) => (
+                                                <div key={perg.id} className="space-y-3">
+                                                    <p className="text-[11px] font-medium text-white">{i+1}. {perg.texto}</p>
+                                                    <div className="space-y-2">
+                                                        {perg.opcoes.map((opcao, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                onClick={() => {
+                                                                    const newResp = [...respostasQuiz];
+                                                                    newResp[i] = idx;
+                                                                    setRespostasQuiz(newResp);
+                                                                }}
+                                                                className={`w-full text-left px-4 py-2 rounded-lg text-[10px] border transition-all ${
+                                                                    respostasQuiz[i] === idx 
+                                                                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' 
+                                                                    : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                                                                }`}
+                                                            >
+                                                                {opcao}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <button 
+                                                onClick={() => {
+                                                    // In a real scenario, check if all questions are answered correctly
+                                                    if (respostasQuiz.length === perguntasMock.length) {
+                                                        setQuizConcluido(true);
+                                                        setQuizAtivo(false);
+                                                    } else {
+                                                        alert("Responda todas as perguntas.");
+                                                    }
+                                                }}
+                                                className="w-full py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all mt-4"
+                                            >
+                                                Finalizar Quiz
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {quizConcluido && (
+                                        <div className="p-6 rounded-2xl border bg-emerald-500/10 border-emerald-500/30 flex flex-col items-center justify-center text-center space-y-4">
+                                            <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-2xl mb-2">
+                                                ✅
+                                            </div>
+                                            <div>
+                                                <h5 className="text-[12px] font-bold text-emerald-400 uppercase tracking-widest">Aprovado no Quiz!</h5>
+                                                <p className="text-[10px] text-gray-400 mt-1">Você concluiu a etapa de estudo com sucesso.</p>
+                                            </div>
+                                            
+                                            {itemEmEstudo.tipo === 'trabalho' ? (
+                                                <button 
+                                                    onClick={() => setUploadTrabalhoModal(true)}
+                                                    className="w-full py-3 bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-yellow-400 transition-all mt-2"
+                                                >
+                                                    Fazer Upload do Trabalho
+                                                </button>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => {
+                                                        alert("Preleção marcada como concluída!");
+                                                        setItemEmEstudo(null);
+                                                    }}
+                                                    className="w-full py-3 bg-blue-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-blue-400 transition-all mt-2"
+                                                >
+                                                    Concluir Preleção
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -337,7 +428,12 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
                                 {/* Right: Member Progress List */}
                                 <div className="lg:col-span-2 space-y-6">
-                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-l-2 border-blue-500 pl-3">Acompanhamento de Membros</h4>
+                                    <div className="flex justify-between items-center border-l-2 border-blue-500 pl-3">
+                                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Acompanhamento de Membros</h4>
+                                        <button className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded border border-white/10 text-[8px] uppercase tracking-widest text-gray-300 transition-all">
+                                            📅 Agendar Apresentação
+                                        </button>
+                                    </div>
                                     
                                     <div className="bg-black/40 border border-white/5 rounded-2xl overflow-hidden">
                                         <table className="w-full text-left">
@@ -369,6 +465,33 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal Upload de Trabalho */}
+            {uploadTrabalhoModal && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setUploadTrabalhoModal(false)}></div>
+                    <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl w-full max-w-md relative z-10 p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-[14px] font-bold text-white uppercase tracking-wider">Upload de Arquivo</h3>
+                            <button onClick={() => setUploadTrabalhoModal(false)} className="text-gray-500 hover:text-white">✕</button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Selecione o Arquivo</label>
+                                <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-white/[0.02] hover:border-yellow-500/50 transition-all cursor-pointer">
+                                    <span className="text-3xl mb-2 text-yellow-500/50">📄</span>
+                                    <p className="text-[11px] text-gray-400">Clique ou arraste seu PDF/DOCX aqui</p>
+                                    <p className="text-[9px] text-gray-600 mt-1">Tamanho máximo: 10MB</p>
+                                </div>
+                            </div>
+                            
+                            <button className="w-full py-3 bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-yellow-400 transition-all">
+                                Enviar Trabalho
+                            </button>
                         </div>
                     </div>
                 </div>
