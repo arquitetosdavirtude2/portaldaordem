@@ -173,3 +173,57 @@ class ExtratoMensal(Base):
     loja = relationship("Loja")
     caixa = relationship("Caixa")
 
+
+class Trabalho(Base):
+    __tablename__ = "trabalhos"
+    id = Column(Integer, primary_key=True, index=True)
+    loja_id = Column(Integer, ForeignKey("lojas.id"))
+    pessoa_id = Column(Integer, ForeignKey("pessoas.id"))
+    titulo = Column(String(200))
+    tipo = Column(String(50)) # 'trabalho', 'prelecao'
+    grau = Column(Integer, default=1) # 1=Aprendiz, 2=Companheiro, 3=Mestre
+    arquivo_url = Column(String(255), nullable=True)
+    status = Column(String(50), default="pendente") # 'pendente', 'aprovado', 'revisar'
+    data_upload = Column(String(30), nullable=True)
+    feedback_mestre = Column(String(2000), nullable=True)
+
+    loja = relationship("Loja")
+    pessoa = relationship("Pessoa")
+
+class MaterialEstudo(Base):
+    __tablename__ = "materiais_estudo"
+    id = Column(Integer, primary_key=True, index=True)
+    loja_id = Column(Integer, ForeignKey("lojas.id"))
+    titulo = Column(String(200))
+    tipo = Column(String(50)) # 'video', 'doc'
+    url = Column(String(500))
+    trabalho_id = Column(Integer, nullable=True) # Vinculado a um trabalho específico (opcional)
+    prelecao_id = Column(Integer, nullable=True) # Vinculado a uma preleção específica (opcional)
+    data_upload = Column(String(30), nullable=True)
+    ordem = Column(Integer, default=0) # Ordem de apresentação definida pela diretoria
+    data_apresentacao = Column(String(20), nullable=True) # YYYY-MM-DD
+
+    loja = relationship("Loja")
+
+class ProgressoEstudo(Base):
+    __tablename__ = "progresso_estudo"
+    id = Column(Integer, primary_key=True, index=True)
+    pessoa_id = Column(Integer, ForeignKey("pessoas.id"))
+    material_id = Column(Integer, ForeignKey("materiais_estudo.id"))
+    status = Column(String(50), default="em_andamento") # 'em_andamento', 'concluido'
+    data_conclusao = Column(String(30), nullable=True)
+    quiz_score = Column(Integer, nullable=True)
+
+    pessoa = relationship("Pessoa")
+    material = relationship("MaterialEstudo")
+
+class Quiz(Base):
+    __tablename__ = "quizzes"
+    id = Column(Integer, primary_key=True, index=True)
+    material_id = Column(Integer, ForeignKey("materiais_estudo.id"))
+    pergunta = Column(String(500))
+    opcoes_json = Column(String(2000)) # JSON string with options
+    resposta_correta = Column(Integer) # Index of the correct option
+
+    material = relationship("MaterialEstudo")
+
