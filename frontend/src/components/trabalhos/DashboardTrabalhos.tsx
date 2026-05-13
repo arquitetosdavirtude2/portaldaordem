@@ -67,6 +67,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     }, [itemEmEstudo]);
 
     const userGrau = 1; // Temporário, viria do acesso.status
+    const canSeeDegree = (id: number) => isDiretoria || id <= userGrau;
 
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -80,13 +81,13 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     <button
                         key={g.id}
                         onClick={() => setGrauAtivo(g.id)}
-                        disabled={!isDiretoria && g.id > userGrau}
                         className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
                             grauAtivo === g.id 
                             ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500' 
                             : 'bg-white/5 border-white/5 text-gray-500 hover:text-gray-300'
-                        } disabled:opacity-20 disabled:cursor-not-allowed`}
+                        } ${!canSeeDegree(g.id) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`}
                     >
+                        {!canSeeDegree(g.id) && <span className="mr-2">🔒</span>}
                         {g.label}
                     </button>
                 ))}
@@ -116,7 +117,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                 </button>
             </div>
 
-            {/* Compact Progress Indicators */}
+            {/* Compact Progress Indicators (For Brothers Only) */}
             {!isDiretoria && grauAtivo === userGrau && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <div className="bg-white/[0.02] border border-white/5 px-4 py-3 rounded-xl flex items-center justify-between gap-4">
@@ -132,7 +133,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             )}
 
             {/* List Section */}
-            {itensFiltrados.length > 0 ? (
+            {(isDiretoria || itensFiltrados.length > 0) ? (
                 <div className="grid grid-cols-1 gap-2">
                     {itensFiltrados.map((item) => (
                         <div 
@@ -147,7 +148,9 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     <h4 className="text-[12px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
                                         {item.titulo}
                                     </h4>
-                                    <p className="text-[8px] text-gray-600 uppercase tracking-widest font-bold">Aprendiz</p>
+                                    <p className="text-[8px] text-gray-600 uppercase tracking-widest font-bold">
+                                        {grauAtivo === 1 ? 'Aprendiz' : grauAtivo === 2 ? 'Companheiro' : 'Mestre'}
+                                    </p>
                                 </div>
                             </div>
 
@@ -159,16 +162,27 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                 <button 
                                     onClick={() => {
                                         setItemEmEstudo(item);
-                                        setVideoConcluido(false);
-                                        lastTimeRef.current = 0;
+                                        if (!isDiretoria) {
+                                            setVideoConcluido(false);
+                                            lastTimeRef.current = 0;
+                                        }
                                     }}
                                     className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-[9px] font-bold uppercase tracking-[0.15em] rounded-md border border-white/10 transition-all text-gray-400 hover:text-white"
                                 >
-                                    {isDiretoria ? 'Ver Inscritos' : 'Iniciar Estudo'}
+                                    {isDiretoria ? 'Gerenciar' : 'Iniciar Estudo'}
                                 </button>
                             </div>
                         </div>
                     ))}
+                    
+                    {isDiretoria && itensFiltrados.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-10 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
+                             <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Nenhum conteúdo cadastrado para este grau</p>
+                             <button className="mt-4 px-6 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-yellow-500/20 transition-all">
+                                 + Adicionar {tabAtiva === 'trabalhos' ? 'Trabalho' : 'Preleção'}
+                             </button>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
@@ -177,8 +191,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                 </div>
             )}
 
-            {/* Study Modal Overlay */}
-            {itemEmEstudo && (
+            {/* Study Modal Overlay (Brother View) */}
+            {itemEmEstudo && !isDiretoria && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
                     <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemEmEstudo(null)}></div>
                     
@@ -215,7 +229,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                 )}
                             </div>
 
-                            {/* Quiz / Action Section */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                     <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Documentação de Apoio</h4>
@@ -253,6 +266,116 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     </div>
                 </div>
             )}
+
+            {/* Management Modal (Officer View) */}
+            {itemEmEstudo && isDiretoria && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemEmEstudo(null)}></div>
+                    
+                    <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl relative z-10 flex flex-col">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-xl">⚙️</div>
+                                <div>
+                                    <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Gestão de Conteúdo • {itemEmEstudo.titulo}</span>
+                                    <h3 className="text-lg font-medium text-white uppercase tracking-tight">Painel de Controle do Instrutor</h3>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setItemEmEstudo(null)}
+                                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-red-500/20 hover:text-red-500 transition-all"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                            {/* Stats Summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                {[
+                                    { label: 'Inscritos', val: '42', color: 'text-gray-400' },
+                                    { label: 'Concluídos', val: '12', color: 'text-emerald-400' },
+                                    { label: 'Pendentes', val: '30', color: 'text-yellow-500' },
+                                    { label: 'Média Quiz', val: '8.5', color: 'text-blue-400' }
+                                ].map((stat, i) => (
+                                    <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-xl">
+                                        <span className="text-[8px] uppercase font-bold text-gray-600 tracking-widest block mb-1">{stat.label}</span>
+                                        <span className={`text-2xl font-serif ${stat.color}`}>{stat.val}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Left: Content Management */}
+                                <div className="lg:col-span-1 space-y-6">
+                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-l-2 border-yellow-500 pl-3">Configurações</h4>
+                                    
+                                    <div className="space-y-3">
+                                        <button className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                            <span className="text-lg">🎥</span>
+                                            <div className="text-left">
+                                                <p className="text-[10px] font-bold text-white uppercase">Trocar Vídeo</p>
+                                                <p className="text-[8px] text-gray-500">MP4, WebM (Max 500MB)</p>
+                                            </div>
+                                        </button>
+                                        <button className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                            <span className="text-lg">📄</span>
+                                            <div className="text-left">
+                                                <p className="text-[10px] font-bold text-white uppercase">Material de Apoio</p>
+                                                <p className="text-[8px] text-gray-500">PDF, DOCX (Max 10MB)</p>
+                                            </div>
+                                        </button>
+                                        <button className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                            <span className="text-lg">❓</span>
+                                            <div className="text-left">
+                                                <p className="text-[10px] font-bold text-white uppercase">Configurar Quiz</p>
+                                                <p className="text-[8px] text-gray-500">Definir perguntas e respostas</p>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Right: Member Progress List */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-l-2 border-blue-500 pl-3">Acompanhamento de Membros</h4>
+                                    
+                                    <div className="bg-black/40 border border-white/5 rounded-2xl overflow-hidden">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-white/[0.02] text-[8px] uppercase font-bold text-gray-500 tracking-[0.2em]">
+                                                <tr>
+                                                    <th className="px-6 py-4">Irmão</th>
+                                                    <th className="px-6 py-4">Status</th>
+                                                    <th className="px-6 py-4">Nota</th>
+                                                    <th className="px-6 py-4">Ação</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {[
+                                                    { nome: 'Michel Rezende', status: 'Concluído', nota: '10', color: 'text-emerald-400' },
+                                                    { nome: 'Fulano de Tal', status: 'Em Estudo', nota: '-', color: 'text-yellow-500' },
+                                                    { nome: 'Ciclano Maçom', status: 'Pendente', nota: '-', color: 'text-gray-600' }
+                                                ].map((mbr, i) => (
+                                                    <tr key={i} className="hover:bg-white/[0.01] transition-all">
+                                                        <td className="px-6 py-4 text-[11px] font-medium text-gray-300">{mbr.nome}</td>
+                                                        <td className={`px-6 py-4 text-[9px] font-bold uppercase tracking-tight ${mbr.color}`}>{mbr.status}</td>
+                                                        <td className="px-6 py-4 text-[11px] font-serif text-blue-400">{mbr.nota}</td>
+                                                        <td className="px-6 py-4">
+                                                            <button className="text-[8px] font-bold uppercase text-gray-500 hover:text-white transition-colors">Detalhes</button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
         </div>
     );
 }
