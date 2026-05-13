@@ -231,6 +231,7 @@ export default function DashboardFinanceiro({
                             onChange={(e) => setMesAtivo(Number(e.target.value))}
                             className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-[11px] font-medium text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-all uppercase tracking-wider cursor-pointer hover:bg-black/60"
                         >
+                            <option value={0} className="bg-[#0a0a0a]">Todos (Sem Filtro)</option>
                             {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
                                 <option key={m} value={i + 1} className="bg-[#0a0a0a]">{m}</option>
                             ))}
