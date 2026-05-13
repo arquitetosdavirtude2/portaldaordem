@@ -376,6 +376,3 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
         </div>
     );
 }
-        </div>
-    );
-}
