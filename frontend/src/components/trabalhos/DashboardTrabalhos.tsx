@@ -1,131 +1,123 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface DashboardTrabalhosProps {
     acesso: any;
+    isDiretoria?: boolean;
 }
 
-export default function DashboardTrabalhos({ acesso }: DashboardTrabalhosProps) {
+export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTrabalhosProps) {
     const [tabAtiva, setTabAtivo] = useState<'trabalhos' | 'prelecoes'>('trabalhos');
     
-    // Lista inicial sugerida baseada no áudio (será refinada com a lista oficial)
+    // Initial suggested list
     const trabalhosAprendiz = [
-        { id: 0, titulo: "Minha Iniciação", obrigatorio: true },
-        { id: 1, titulo: "Dualidade do Grau", obrigatorio: true },
-        { id: 2, titulo: "Avental Maçônico", obrigatorio: true },
-        { id: 3, titulo: "Colunas", obrigatorio: true },
-        { id: 4, titulo: "Luvas", obrigatorio: true },
-        { id: 5, titulo: "Trabalho 6", obrigatorio: true },
-        { id: 6, titulo: "Trabalho 7", obrigatorio: true },
-        { id: 7, titulo: "Trabalho 8", obrigatorio: true },
-        { id: 8, titulo: "Trabalho 9", obrigatorio: true },
-        { id: 9, titulo: "Trabalho 10", obrigatorio: true },
-        { id: 10, titulo: "Trabalho 11", obrigatorio: true },
-        { id: 11, titulo: "Trabalho 12", obrigatorio: true },
-        { id: 12, titulo: "Trabalho 13", obrigatorio: true },
+        { id: 0, titulo: "Minha Iniciação", status: "pendente" },
+        { id: 1, titulo: "Dualidade do Grau", status: "pendente" },
+        { id: 2, titulo: "Avental Maçônico", status: "pendente" },
+        { id: 3, titulo: "Colunas", status: "pendente" },
+        { id: 4, titulo: "Luvas", status: "pendente" },
+        { id: 5, titulo: "Trabalho 6", status: "pendente" },
+        { id: 6, titulo: "Trabalho 7", status: "pendente" },
+        { id: 7, titulo: "Trabalho 8", status: "pendente" },
+        { id: 8, titulo: "Trabalho 9", status: "pendente" },
+        { id: 9, titulo: "Trabalho 10", status: "pendente" },
+        { id: 10, titulo: "Trabalho 11", status: "pendente" },
+        { id: 11, titulo: "Trabalho 12", status: "pendente" },
+        { id: 12, titulo: "Trabalho 13", status: "pendente" },
     ];
 
     const prelecoesAprendiz = Array.from({ length: 7 }, (_, i) => ({
         id: i + 1,
         titulo: `${i + 1}ª Sessão da 1ª Preleção`,
-        obrigatorio: true
+        status: "pendente"
     }));
 
-    const progressWorks = 0; // Temporário
+    const progressWorks = 0;
     const totalWorks = trabalhosAprendiz.length;
-    const progressPrelect = 0; // Temporário
+    const progressPrelect = 0;
     const totalPrelect = prelecoesAprendiz.length;
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-150">
-            {/* Progression Bar Header */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-2xl flex flex-col gap-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Progresso de Trabalhos</h3>
-                        <span className="text-sm font-medium text-yellow-500">{progressWorks} / {totalWorks}</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 transition-all duration-1000"
-                            style={{ width: `${(progressWorks / totalWorks) * 100}%` }}
-                        ></div>
-                    </div>
-                </div>
-
-                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-2xl flex flex-col gap-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Progresso de Preleções</h3>
-                        <span className="text-sm font-medium text-blue-400">{progressPrelect} / {totalPrelect}</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-1000"
-                            style={{ width: `${(progressPrelect / totalPrelect) * 100}%` }}
-                        ></div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Tabs */}
-            <div className="flex gap-1 p-1 bg-white/[0.02] border border-white/5 rounded-xl w-fit">
+        <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Navigation Tabs (Top Aligned like Treasury) */}
+            <div className="flex border-b border-white/5 bg-black/10 -mx-6 md:-mx-8 mb-6">
                 <button
                     onClick={() => setTabAtivo('trabalhos')}
-                    className={`px-8 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border-b-2 ${
                         tabAtiva === 'trabalhos' 
-                        ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' 
-                        : 'text-gray-500 hover:text-white hover:bg-white/5'
+                        ? 'border-yellow-500 text-yellow-500 bg-yellow-500/5' 
+                        : 'border-transparent text-gray-500 hover:text-gray-300'
                     }`}
                 >
                     📜 Trabalhos
                 </button>
                 <button
                     onClick={() => setTabAtivo('prelecoes')}
-                    className={`px-8 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border-b-2 ${
                         tabAtiva === 'prelecoes' 
-                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' 
-                        : 'text-gray-500 hover:text-white hover:bg-white/5'
+                        ? 'border-blue-500 text-blue-500 bg-blue-500/5' 
+                        : 'border-transparent text-gray-500 hover:text-gray-300'
                     }`}
                 >
                     📖 Preleções
                 </button>
             </div>
 
-            {/* List Section */}
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 min-h-[400px]">
-                <div className="grid grid-cols-1 gap-4">
-                    {(tabAtiva === 'trabalhos' ? trabalhosAprendiz : prelecoesAprendiz).map((item) => (
-                        <div 
-                            key={item.id}
-                            className="group flex flex-col md:flex-row justify-between items-center gap-4 p-4 bg-black/40 border border-white/5 rounded-xl hover:border-yellow-500/30 transition-all cursor-pointer"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                                    tabAtiva === 'trabalhos' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-blue-500/10 text-blue-400'
-                                }`}>
-                                    {tabAtiva === 'trabalhos' ? '📜' : '📖'}
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-medium text-white group-hover:text-yellow-500 transition-colors">
-                                        {item.titulo}
-                                    </h4>
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Grau de Aprendiz</p>
-                                </div>
-                            </div>
+            {/* Compact Progress Indicators */}
+            {!isDiretoria && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div className="bg-white/[0.02] border border-white/5 px-4 py-3 rounded-xl flex items-center justify-between gap-4">
+                        <div className="flex flex-col">
+                            <span className="text-[8px] uppercase font-bold text-gray-500 tracking-widest">Progresso Trabalhos</span>
+                            <span className="text-[11px] font-medium text-yellow-500/80">{progressWorks}/{totalWorks}</span>
+                        </div>
+                        <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[120px]">
+                            <div className="h-full bg-yellow-500/50" style={{ width: `${(progressWorks/totalWorks)*100}%` }}></div>
+                        </div>
+                    </div>
+                    <div className="bg-white/[0.02] border border-white/5 px-4 py-3 rounded-xl flex items-center justify-between gap-4">
+                        <div className="flex flex-col">
+                            <span className="text-[8px] uppercase font-bold text-gray-500 tracking-widest">Progresso Preleções</span>
+                            <span className="text-[11px] font-medium text-blue-400/80">{progressPrelect}/{totalPrelect}</span>
+                        </div>
+                        <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[120px]">
+                            <div className="h-full bg-blue-500/50" style={{ width: `${(progressPrelect/totalPrelect)*100}%` }}></div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                            <div className="flex items-center gap-6">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[9px] text-gray-600 uppercase tracking-widest font-bold">Status</span>
-                                    <span className="text-[10px] text-red-500/70 font-medium uppercase tracking-tighter">Pendente</span>
-                                </div>
-                                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-[9px] font-bold uppercase tracking-widest rounded-lg border border-white/10 transition-all">
-                                    Iniciar Estudo
-                                </button>
+            {/* List Section */}
+            <div className="grid grid-cols-1 gap-2">
+                {(tabAtiva === 'trabalhos' ? trabalhosAprendiz : prelecoesAprendiz).map((item) => (
+                    <div 
+                        key={item.id}
+                        className="group flex items-center justify-between p-3 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-lg transition-all"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className={`text-sm ${tabAtiva === 'trabalhos' ? 'text-yellow-500/40' : 'text-blue-500/40'}`}>
+                                {tabAtiva === 'trabalhos' ? '📜' : '📖'}
+                            </div>
+                            <div>
+                                <h4 className="text-[12px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
+                                    {item.titulo}
+                                </h4>
+                                <p className="text-[8px] text-gray-600 uppercase tracking-widest font-bold">Aprendiz</p>
                             </div>
                         </div>
-                    ))}
-                </div>
+
+                        <div className="flex items-center gap-6">
+                            <div className="hidden md:flex flex-col items-end">
+                                <span className="text-[8px] text-gray-600 uppercase tracking-[0.2em] font-bold opacity-50">Status</span>
+                                <span className="text-[9px] text-red-500/50 font-bold uppercase tracking-tight">Pendente</span>
+                            </div>
+                            <button className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-[9px] font-bold uppercase tracking-[0.15em] rounded-md border border-white/10 transition-all text-gray-400 hover:text-white">
+                                {isDiretoria ? 'Ver Inscritos' : 'Iniciar'}
+                            </button>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
