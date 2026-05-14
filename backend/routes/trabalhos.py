@@ -72,6 +72,42 @@ def criar_conteudo(
     db.refresh(novo)
     return novo
 
+@router.put("/conteudo/{conteudo_id}")
+def editar_conteudo(
+    conteudo_id: int,
+    titulo: str = Form(None),
+    tipo: str = Form(None),
+    grau: int = Form(None),
+    ordem: int = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Diretoria edita os dados gerais de um Trabalho ou Preleção."""
+    conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == conteudo_id).first()
+    if not conteudo:
+        raise HTTPException(status_code=404, detail="Conteúdo não encontrado")
+    
+    if titulo is not None: conteudo.titulo = titulo
+    if tipo is not None: conteudo.tipo = tipo
+    if grau is not None: conteudo.grau = grau
+    if ordem is not None: conteudo.ordem = ordem
+    
+    db.commit()
+    db.refresh(conteudo)
+    return conteudo
+
+@router.delete("/conteudo/{conteudo_id}")
+def excluir_conteudo(
+    conteudo_id: int,
+    db: Session = Depends(get_db)
+):
+    """Diretoria exclui um Trabalho ou Preleção e todos os seus materiais e quizzes em cascata."""
+    conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == conteudo_id).first()
+    if not conteudo:
+        raise HTTPException(status_code=404, detail="Conteúdo não encontrado")
+    
+    db.delete(conteudo)
+    db.commit()
+    return {"message": "Conteúdo excluído com sucesso"}
 @router.post("/material/upload")
 async def upload_material(
     conteudo_id: int = Form(...),

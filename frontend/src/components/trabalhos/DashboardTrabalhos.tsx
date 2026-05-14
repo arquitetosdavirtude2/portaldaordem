@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import ModalNovoConteudo from './ModalNovoConteudo';
 import ModalUploadMaterial from './ModalUploadMaterial';
 import ModalQuiz from './ModalQuiz';
+import ModalEditarConteudo from './ModalEditarConteudo';
 
 interface DashboardTrabalhosProps {
     acesso: any;
@@ -31,6 +32,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [conteudos, setConteudos] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [novoConteudoModal, setNovoConteudoModal] = useState(false);
+    const [conteudoEditando, setConteudoEditando] = useState<any>(null);
     const [uploadMaterialModal, setUploadMaterialModal] = useState<{ativo: boolean, tipo: 'video'|'pdf'}>({ativo: false, tipo: 'video'});
     const [quizModalAtivo, setQuizModalAtivo] = useState(false);
 
@@ -248,64 +250,63 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
             {/* List Section */}
             <div className="grid grid-cols-1 gap-2">
-                {(() => {
-                    const mockFallback = tabAtiva === 'trabalhos' ? [
-                        { id: 991, titulo: 'O Início da Jornada Maçônica', grau: grauAtivo, tipo: 'trabalho' },
-                        { id: 992, titulo: 'O Simbolismo das Ferramentas', grau: grauAtivo, tipo: 'trabalho' },
-                        { id: 993, titulo: 'A Importância do Silêncio', grau: grauAtivo, tipo: 'trabalho' },
-                        { id: 994, titulo: 'A Corda de 81 Nós', grau: grauAtivo, tipo: 'trabalho' },
-                    ] : [
-                        { id: 995, titulo: 'Instrução de Grau - Parte 1', grau: grauAtivo, tipo: 'prelecao' },
-                        { id: 996, titulo: 'O Painel da Loja', grau: grauAtivo, tipo: 'prelecao' },
-                        { id: 997, titulo: 'Comportamento em Loja', grau: grauAtivo, tipo: 'prelecao' },
-                        { id: 998, titulo: 'Significado dos Oficiais', grau: grauAtivo, tipo: 'prelecao' },
-                    ];
-                    
-                    const itensParaExibir = itensFiltrados.length > 0 ? itensFiltrados : mockFallback;
-                    
-                    return itensParaExibir.map((item) => (
-                        <div 
-                            key={item.id}
-                            onClick={() => {
-                                setItemEmEstudo(item);
-                                if (!isDiretoria) {
-                                    setVideoConcluido(false);
-                                    setQuizAtivo(false);
-                                    setQuizConcluido(false);
-                                    setRespostasQuiz([]);
-                                    lastTimeRef.current = 0;
-                                }
-                            }}
-                            className="group flex items-center justify-between p-4 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-lg transition-all cursor-pointer"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`text-xl ${tabAtiva === 'trabalhos' ? 'text-yellow-500/40' : 'text-blue-500/40'}`}>
-                                    {tabAtiva === 'trabalhos' ? '📜' : '📖'}
-                                </div>
-                                <div>
-                                    <h4 className="text-[14px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
-                                        {item.titulo}
-                                    </h4>
-                                    <p className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mt-0.5">
-                                        {grauAtivo === 1 ? 'Aprendiz' : grauAtivo === 2 ? 'Companheiro' : 'Mestre'}
-                                    </p>
-                                </div>
+                {itensFiltrados.map((item) => (
+                    <div 
+                        key={item.id}
+                        onClick={() => {
+                            setItemEmEstudo(item);
+                            if (!isDiretoria) {
+                                setVideoConcluido(false);
+                                setQuizAtivo(false);
+                                setQuizConcluido(false);
+                                setRespostasQuiz([]);
+                                lastTimeRef.current = 0;
+                            }
+                        }}
+                        className="group flex items-center justify-between p-4 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-lg transition-all cursor-pointer"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className={`text-xl ${tabAtiva === 'trabalhos' ? 'text-yellow-500/40' : 'text-blue-500/40'}`}>
+                                {tabAtiva === 'trabalhos' ? '📜' : '📖'}
                             </div>
-
-                            <div className="flex items-center gap-6">
-                                <div className="hidden md:flex flex-col items-end">
-                                    <span className="text-[8px] text-gray-600 uppercase tracking-[0.2em] font-bold opacity-50">Status</span>
-                                    <span className="text-[9px] text-red-500/50 font-bold uppercase tracking-tight">Pendente</span>
-                                </div>
-                                <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-yellow-500/20 flex items-center justify-center transition-all">
-                                    <span className="text-[10px] opacity-50 group-hover:opacity-100 group-hover:text-yellow-500">
-                                        {isDiretoria ? '⚙️' : '▶️'}
-                                    </span>
-                                </div>
+                            <div>
+                                <h4 className="text-[14px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
+                                    {item.titulo}
+                                </h4>
+                                <p className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mt-0.5">
+                                    {grauAtivo === 1 ? 'Aprendiz' : grauAtivo === 2 ? 'Companheiro' : 'Mestre'}
+                                </p>
                             </div>
                         </div>
-                    ));
-                })()}
+
+                        <div className="flex items-center gap-6">
+                            <div className="hidden md:flex flex-col items-end">
+                                <span className="text-[8px] text-gray-600 uppercase tracking-[0.2em] font-bold opacity-50">Status</span>
+                                <span className="text-[9px] text-red-500/50 font-bold uppercase tracking-tight">Pendente</span>
+                            </div>
+                            <div 
+                                onClick={(e) => {
+                                    if (isDiretoria) {
+                                        e.stopPropagation();
+                                        setConteudoEditando(item);
+                                    }
+                                }}
+                                className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-yellow-500/20 flex items-center justify-center transition-all"
+                            >
+                                <span className="text-[10px] opacity-50 group-hover:opacity-100 group-hover:text-yellow-500">
+                                    {isDiretoria ? '⚙️' : '▶️'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {itensFiltrados.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
+                        <span className="text-4xl mb-4 opacity-20">🚧</span>
+                        <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Nenhum conteúdo cadastrado para este grau</p>
+                    </div>
+                )}
             </div>
         </div>
 
@@ -510,13 +511,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-l-2 border-yellow-500 pl-3">Configurações</h4>
                                     
                                     <div className="space-y-3">
-                                        <button onClick={() => alert('Edição de dados gerais em desenvolvimento. Em breve você poderá alterar o título e o grau deste conteúdo.')} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
-                                            <span className="text-lg">✏️</span>
-                                            <div className="text-left">
-                                                <p className="text-[10px] font-bold text-white uppercase">Dados Gerais</p>
-                                                <p className="text-[8px] text-gray-500">Editar título e descrição</p>
-                                            </div>
-                                        </button>
                                         <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'video'})} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
                                             <span className="text-lg">🎥</span>
                                             <div className="text-left">
@@ -638,6 +632,16 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     onSuccess={carregarConteudos} 
                 />
             )}
+            
+            <ModalEditarConteudo 
+                isOpen={!!conteudoEditando} 
+                onClose={() => setConteudoEditando(null)} 
+                conteudo={conteudoEditando} 
+                onSuccess={() => {
+                    carregarConteudos();
+                    setConteudoEditando(null);
+                }} 
+            />
             </>,
             document.body
         )}
