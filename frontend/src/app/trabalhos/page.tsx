@@ -54,10 +54,10 @@ export default function TrabalhosPage() {
                                 {isDiretoria ? 'Painel de Gestão' : 'Escola de Mistérios'}
                             </div>
                             <h1 className="text-2xl md:text-3xl font-bold text-yellow-500 tracking-tight leading-tight uppercase drop-shadow-lg">
-                                {displayTitle}
+                                {isDiretoria ? 'Gestão de Trabalhos' : 'Minha Evolução'}
                             </h1>
                             <div className="text-[10px] text-gray-400 font-sans tracking-[0.2em] uppercase font-bold opacity-70">
-                                {acesso.status || 'Grau de Aprendiz'} • {acesso.loja_nome || 'Portal da Ordem'}
+                                {acesso.nome} • Grau de {acesso.status || 'Aprendiz'} • {acesso.loja_nome || 'Portal da Ordem'}
                             </div>
                         </div>
 

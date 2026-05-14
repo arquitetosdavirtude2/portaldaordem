@@ -144,17 +144,44 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                 </button>
             </div>
 
-            {/* Compact Progress Indicators (For Brothers Only) */}
+            {/* Beautiful Dashboard Cards for Brothers */}
             {!isDiretoria && grauAtivo === userGrau && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <div className="bg-white/[0.02] border border-white/5 px-4 py-3 rounded-xl flex items-center justify-between gap-4">
-                        <div className="flex flex-col">
-                            <span className="text-[8px] uppercase font-bold text-gray-500 tracking-widest">Progresso Trabalhos</span>
-                            <span className="text-[11px] font-medium text-yellow-500/80">{progressWorks}/{totalWorks}</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    {/* Progress Card */}
+                    <div className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">🏆</div>
+                        <span className="text-[9px] uppercase font-bold text-yellow-500 tracking-widest block mb-2">Seu Progresso</span>
+                        <div className="flex items-baseline gap-2 mb-3">
+                            <span className="text-3xl font-serif text-white">{progressWorks}</span>
+                            <span className="text-sm text-gray-400">/ {totalWorks}</span>
                         </div>
-                        <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[120px]">
-                            <div className="h-full bg-yellow-500/50" style={{ width: `${(progressWorks/totalWorks)*100}%` }}></div>
+                        <div className="h-1.5 bg-black/50 rounded-full overflow-hidden w-full">
+                            <div className="h-full bg-yellow-500 rounded-full transition-all duration-1000 relative" style={{ width: `${totalWorks > 0 ? (progressWorks/totalWorks)*100 : 0}%` }}>
+                                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                            </div>
                         </div>
+                    </div>
+
+                    {/* Pending Works Card */}
+                    <div className="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📚</div>
+                        <span className="text-[9px] uppercase font-bold text-blue-400 tracking-widest block mb-2">A Fazer</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-serif text-white">{totalWorks - progressWorks}</span>
+                            <span className="text-sm text-gray-400">pendentes</span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-3">Continue seus estudos para avançar.</p>
+                    </div>
+
+                    {/* Prelections Card */}
+                    <div className="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📖</div>
+                        <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-widest block mb-2">Preleções</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-serif text-white">{conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'prelecao').length}</span>
+                            <span className="text-sm text-gray-400">disponíveis</span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-3">Sessões de instrução da loja.</p>
                     </div>
                 </div>
             )}
@@ -420,6 +447,13 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-l-2 border-yellow-500 pl-3">Configurações</h4>
                                     
                                     <div className="space-y-3">
+                                        <button onClick={() => alert('Edição de dados gerais em desenvolvimento. Em breve você poderá alterar o título e o grau deste conteúdo.')} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                            <span className="text-lg">✏️</span>
+                                            <div className="text-left">
+                                                <p className="text-[10px] font-bold text-white uppercase">Dados Gerais</p>
+                                                <p className="text-[8px] text-gray-500">Editar título e descrição</p>
+                                            </div>
+                                        </button>
                                         <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'video'})} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
                                             <span className="text-lg">🎥</span>
                                             <div className="text-left">
