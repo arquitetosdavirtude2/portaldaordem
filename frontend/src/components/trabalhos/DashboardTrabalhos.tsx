@@ -6,6 +6,7 @@ import ModalNovoConteudo from './ModalNovoConteudo';
 import ModalUploadMaterial from './ModalUploadMaterial';
 import ModalQuiz from './ModalQuiz';
 import ModalEditarConteudo from './ModalEditarConteudo';
+import ModalJornada from './ModalJornada';
 
 interface DashboardTrabalhosProps {
     acesso: any;
@@ -13,7 +14,7 @@ interface DashboardTrabalhosProps {
 }
 
 export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTrabalhosProps) {
-    const [grauAtivo, setGrauAtivo] = useState<number>(1); // 1=Aprendiz, 2=Companheiro, 3=Mestre
+    const [grauAtivo, setGrauAtivo] = useState<number>(1); 
     const [tabAtiva, setTabAtivo] = useState<'trabalhos' | 'prelecoes'>('trabalhos');
     const [itemEmEstudo, setItemEmEstudo] = useState<any>(null);
     const [videoConcluido, setVideoConcluido] = useState(false);
@@ -22,8 +23,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [respostasQuiz, setRespostasQuiz] = useState<string[]>([]);
     const [uploadTrabalhoModal, setUploadTrabalhoModal] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [jornadaModal, setJornadaModal] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
-    const lastTimeRef = useRef(0);
 
     useEffect(() => {
         setIsMounted(true);
@@ -37,7 +38,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [uploadMaterialModal, setUploadMaterialModal] = useState<{ativo: boolean, tipo: 'video'|'pdf'}>({ativo: false, tipo: 'video'});
     const [quizModalAtivo, setQuizModalAtivo] = useState(false);
     const [previewModals, setPreviewModals] = useState<{video: boolean, pdf: boolean, url: string}>({video: false, pdf: false, url: ''});
-    const [modoSimulacao, setModoSimulacao] = useState(false);
 
     const carregarConteudos = async () => {
         setIsLoading(true);
@@ -62,8 +62,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             if (res.ok) {
                 setConteudoExcluir(null);
                 carregarConteudos();
-            } else {
-                alert('Erro ao excluir.');
             }
         } catch (e) {
             console.error(e);
@@ -76,127 +74,143 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
         }
     }, [acesso, isMounted]);
 
-    const itensFiltrados = conteudos.filter(item => item.grau === grauAtivo && item.tipo === (tabAtiva === 'trabalhos' ? 'trabalho' : 'prelecao'));
+    const getGrauFromStatus = (status: string) => {
+        const s = status?.toLowerCase() || '';
+        if (s.includes('mestre')) return 3;
+        if (s.includes('companheiro')) return 2;
+        return 1;
+    };
 
-    const progressWorks = conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'trabalho' && t.progresso?.status === 'concluido').length;
-    const totalWorks = conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'trabalho').length;
-    
-    // Video Progress Logic
+    const userGrau = acesso.grau || getGrauFromStatus(acesso.status || '');
+    const isLuz = isDiretoria || userGrau === 3;
+
     useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
+        if (!isDiretoria) {
+            setGrauAtivo(userGrau);
+        }
+    }, [userGrau, isDiretoria]);
 
-        const handleTimeUpdate = () => {
-            if (video.currentTime > lastTimeRef.current + 2) {
-                video.currentTime = lastTimeRef.current;
-            } else {
-                lastTimeRef.current = video.currentTime;
+    const itensFiltrados = conteudos.filter(item => 
+        (grauAtivo === 0 || item.grau === grauAtivo) && 
+        item.tipo === (tabAtiva === 'trabalhos' ? 'trabalho' : 'prelecao')
+    );
+
+    const progressWorks = conteudos.filter(t => t.tipo === 'trabalho' && t.grau === userGrau && t.progresso?.status === 'concluido').length;
+    const totalWorks = conteudos.filter(t => t.tipo === 'trabalho' && t.grau === userGrau).length;
+
+    const handleFinalizarEstudo = async () => {
+        if (!itemEmEstudo || !acesso.id) return;
+        try {
+            const res = await fetch('/api/trabalhos/progresso', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pessoa_id: acesso.id || acesso.pessoa_id,
+                    conteudo_id: itemEmEstudo.id,
+                    status: 'concluido',
+                    quiz_score: 10
+                })
+            });
+            if (res.ok) {
+                carregarConteudos();
+                setItemEmEstudo(null);
             }
-        };
-
-        const handleEnded = () => {
-            setVideoConcluido(true);
-        };
-
-        video.addEventListener('timeupdate', handleTimeUpdate);
-        video.addEventListener('ended', handleEnded);
-        
-        return () => {
-            video.removeEventListener('timeupdate', handleTimeUpdate);
-            video.removeEventListener('ended', handleEnded);
-        };
-    }, [itemEmEstudo]);
-
-    const userGrau = 1; // Temporário, viria do acesso.status
-    const canSeeDegree = (id: number) => isDiretoria || id <= userGrau;
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     return (
-        <>
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Degree Navigation (Somente Diretoria) */}
+            {/* Tabs e Header */}
+            <div className="mb-8">
+                <h2 className="text-3xl font-serif text-white uppercase tracking-tight mb-2">
+                    {isDiretoria ? 'Gestão de Trabalhos' : 'Minha Evolução'}
+                </h2>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+                    {acesso.nome} {!isLuz && `• GRAU DE ${acesso.status?.toUpperCase()}`} • {acesso.loja_nome || 'Arquitetos da Virtude'}
+                </p>
+            </div>
+
             {isDiretoria && (
-                <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-                    <div className="flex gap-4">
-                        {[
-                            { id: 1, label: 'Aprendiz' },
-                            { id: 2, label: 'Companheiro' },
-                            { id: 3, label: 'Mestre' }
-                        ].map(g => (
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                        {[0, 1, 2, 3].map((g) => (
                             <button
-                                key={g.id}
-                                onClick={() => setGrauAtivo(g.id)}
-                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
-                                    grauAtivo === g.id 
-                                    ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500' 
-                                    : 'bg-white/5 border-white/5 text-gray-500 hover:text-gray-300'
+                                key={g}
+                                onClick={() => setGrauAtivo(g)}
+                                className={`px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                                    grauAtivo === g ? 'bg-yellow-500 text-black' : 'text-gray-500 hover:text-white'
                                 }`}
                             >
-                                {g.label}
+                                {g === 0 ? 'Todos' : g === 1 ? 'Aprendiz' : g === 2 ? 'Companheiro' : 'Mestre'}
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => setNovoConteudoModal(true)} className="px-5 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-yellow-500/20 transition-all">
-                        + Adicionar {tabAtiva === 'trabalhos' ? 'Trabalho' : 'Preleção'}
+                    <button 
+                        onClick={() => setNovoConteudoModal(true)} 
+                        className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-yellow-500/20 transition-all cursor-pointer"
+                    >
+                        + Novo {tabAtiva === 'trabalhos' ? 'Trabalho' : 'Preleção'}
                     </button>
                 </div>
             )}
 
-            {/* Sub-Tabs (Works / Prelections) */}
-            <div className="flex border-b border-white/5 bg-black/10 -mx-6 md:-mx-8 mb-6">
+            <div className="flex border-b border-white/5 bg-black/10 -mx-8 mb-8">
                 <button
                     onClick={() => setTabAtivo('trabalhos')}
-                    className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border-b-2 ${
-                        tabAtiva === 'trabalhos' 
-                        ? 'border-yellow-500 text-yellow-500 bg-yellow-500/5' 
-                        : 'border-transparent text-gray-500 hover:text-gray-300'
+                    className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border-b-2 cursor-pointer ${
+                        tabAtiva === 'trabalhos' ? 'border-yellow-500 text-yellow-500 bg-yellow-500/5' : 'border-transparent text-gray-500 hover:text-gray-300'
                     }`}
                 >
                     📜 Trabalhos
                 </button>
                 <button
                     onClick={() => setTabAtivo('prelecoes')}
-                    className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border-b-2 ${
-                        tabAtiva === 'prelecoes' 
-                        ? 'border-blue-500 text-blue-500 bg-blue-500/5' 
-                        : 'border-transparent text-gray-500 hover:text-gray-300'
+                    className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border-b-2 cursor-pointer ${
+                        tabAtiva === 'prelecoes' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-500 hover:text-gray-300'
                     }`}
                 >
                     📖 Preleções
                 </button>
             </div>
 
-            {/* Beautiful Dashboard Cards for Brothers */}
+            {/* Dashboard Cards (Brother View) */}
             {!isDiretoria && grauAtivo === userGrau && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     {tabAtiva === 'trabalhos' ? (
                         <>
-                            {/* Progress Card */}
-                            <div className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                            {/* Progress Card with Timeline */}
+                            <div onClick={() => setJornadaModal(true)} className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 p-5 rounded-2xl relative overflow-hidden group cursor-pointer transition-all">
                                 <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">🏆</div>
-                                <span className="text-[9px] uppercase font-bold text-yellow-500 tracking-widest block mb-2">Seu Progresso</span>
-                                <div className="flex items-baseline gap-2 mb-3">
-                                    <span className="text-3xl font-serif text-white">{progressWorks}</span>
-                                    <span className="text-sm text-gray-400">/ {totalWorks || 4}</span>
-                                </div>
-                                <div className="h-1.5 bg-black/50 rounded-full overflow-hidden w-full">
-                                    <div className="h-full bg-yellow-500 rounded-full transition-all duration-1000 relative" style={{ width: `${(totalWorks || 4) > 0 ? (progressWorks/(totalWorks || 4))*100 : 0}%` }}>
-                                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                                <span className="text-[9px] uppercase font-bold text-yellow-500 tracking-widest block mb-4">Seu Progresso</span>
+                                
+                                <div className="relative mt-2">
+                                    <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
+                                        {[1, 2, 3].map((g) => {
+                                            const totalNoGrau = conteudos.filter(t => t.grau === g && t.tipo === 'trabalho').length;
+                                            const concluidosNoGrau = conteudos.filter(t => t.grau === g && t.tipo === 'trabalho' && t.progresso?.status === 'concluido').length;
+                                            const pct = g < userGrau ? 100 : (g === userGrau ? (totalNoGrau > 0 ? (concluidosNoGrau / totalNoGrau) * 100 : 0) : 0);
+                                            return <div key={g} className="flex-1 h-full bg-white/5 relative border-r border-black/20"><div className="h-full bg-yellow-500 transition-all duration-1000" style={{ width: `${pct}%` }} /></div>
+                                        })}
+                                    </div>
+                                    <div className="flex justify-between mt-2 px-0.5">
+                                        <span className={`text-[7px] font-bold uppercase tracking-wider ${userGrau >= 1 ? 'text-yellow-500' : 'text-gray-700'}`}>Aprendiz</span>
+                                        <span className={`text-[7px] font-bold uppercase tracking-wider ${userGrau >= 2 ? 'text-yellow-500' : 'text-gray-700'}`}>Companheiro</span>
+                                        <span className={`text-[7px] font-bold uppercase tracking-wider ${userGrau >= 3 ? 'text-yellow-500' : 'text-gray-700'}`}>Mestre</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Pending Works Card */}
                             <div className="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 p-5 rounded-2xl relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📚</div>
                                 <span className="text-[9px] uppercase font-bold text-blue-400 tracking-widest block mb-2">A Fazer</span>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">{(totalWorks || 4) - progressWorks}</span>
+                                    <span className="text-3xl font-serif text-white">{(totalWorks || 0) - progressWorks}</span>
                                     <span className="text-sm text-gray-400">pendentes</span>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-3">Continue seus estudos.</p>
                             </div>
                             
-                            {/* Average Score Card */}
                             <div className="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 p-5 rounded-2xl relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">🎯</div>
                                 <span className="text-[9px] uppercase font-bold text-purple-400 tracking-widest block mb-2">Aproveitamento</span>
@@ -204,634 +218,168 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     <span className="text-3xl font-serif text-white">9.5</span>
                                     <span className="text-sm text-gray-400">/ 10</span>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-3">Média de notas nos Quizzes.</p>
                             </div>
                             
-                            {/* Last Activity Card */}
                             <div className="bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 p-5 rounded-2xl relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">⏱️</div>
                                 <span className="text-[9px] uppercase font-bold text-rose-400 tracking-widest block mb-2">Última Atividade</span>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-3xl font-serif text-white">Hoje</span>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-3">Sua consistência está ótima.</p>
                             </div>
                         </>
                     ) : (
-                        <>
-                            {/* Prelections Card */}
-                            <div className="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📖</div>
-                                <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-widest block mb-2">Preleções</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">{conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'prelecao').length || 4}</span>
-                                    <span className="text-sm text-gray-400">disponíveis</span>
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-3">Sessões de instrução da loja.</p>
+                        <div className="col-span-1 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📖</div>
+                            <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-widest block mb-2">Preleções</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-serif text-white">{conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'prelecao').length}</span>
+                                <span className="text-sm text-gray-400">disponíveis</span>
                             </div>
-                            
-                            {/* Hours Watched */}
-                            <div className="bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">⌛</div>
-                                <span className="text-[9px] uppercase font-bold text-indigo-400 tracking-widest block mb-2">Tempo de Estudo</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">12</span>
-                                    <span className="text-sm text-gray-400">horas</span>
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-3">Total de vídeos assistidos.</p>
-                            </div>
-                            
-                            {/* Presence */}
-                            <div className="bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">🏛️</div>
-                                <span className="text-[9px] uppercase font-bold text-orange-400 tracking-widest block mb-2">Presença</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">100%</span>
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-3">Presença em instruções.</p>
-                            </div>
-                            
-                            {/* Next Session */}
-                            <div className="bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📅</div>
-                                <span className="text-[9px] uppercase font-bold text-cyan-400 tracking-widest block mb-2">Próxima Sessão</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">Breve</span>
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-3">Aguarde convite da Oratória.</p>
-                            </div>
-                        </>
+                        </div>
                     )}
                 </div>
             )}
 
-            {/* List Section */}
-            <div className="grid grid-cols-1 gap-2">
-                {itensFiltrados.map((item) => (
-                    <div 
-                        key={item.id}
-                        onClick={() => {
-                            setItemEmEstudo(item);
-                            if (!isDiretoria) {
-                                setVideoConcluido(false);
-                                setQuizAtivo(false);
-                                setQuizConcluido(false);
-                                setRespostasQuiz([]);
-                                lastTimeRef.current = 0;
-                            }
-                        }}
-                        className="group flex items-center justify-between p-4 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-lg transition-all cursor-pointer"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className={`text-xl ${tabAtiva === 'trabalhos' ? 'text-yellow-500/40' : 'text-blue-500/40'}`}>
-                                {tabAtiva === 'trabalhos' ? '📜' : '📖'}
-                            </div>
-                            <div>
-                                <h4 className="text-[14px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
-                                    {item.titulo}
-                                </h4>
-                                <p className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mt-0.5">
-                                    {grauAtivo === 1 ? 'Aprendiz' : grauAtivo === 2 ? 'Companheiro' : 'Mestre'}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-6">
-                            <div className="hidden md:flex flex-col items-end">
-                                <span className="text-[8px] text-gray-600 uppercase tracking-[0.2em] font-bold opacity-50">Status</span>
-                                <span className="text-[9px] text-red-500/50 font-bold uppercase tracking-tight">Pendente</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {isDiretoria && (
-                                    <div 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setConteudoExcluir(item);
-                                        }}
-                                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-all"
-                                    >
-                                        <span className="text-[10px] opacity-50 hover:opacity-100 text-red-500">
-                                            🗑️
-                                        </span>
-                                    </div>
-                                )}
-                                <div 
-                                    onClick={(e) => {
-                                        if (isDiretoria) {
-                                            e.stopPropagation();
-                                            setConteudoEditando(item);
-                                        }
-                                    }}
-                                    className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-yellow-500/20 flex items-center justify-center transition-all"
-                                >
-                                    <span className="text-[10px] opacity-50 group-hover:opacity-100 group-hover:text-yellow-500">
-                                        {isDiretoria ? '⚙️' : '▶️'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-
-                {itensFiltrados.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
-                        <span className="text-4xl mb-4 opacity-20">🚧</span>
-                        <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Nenhum conteúdo cadastrado para este grau</p>
-                    </div>
-                )}
+            {/* List Table */}
+            <div className="bg-black/20 border border-white/5 rounded-2xl overflow-hidden mb-12">
+                <table className="w-full text-left">
+                    <thead className="bg-white/[0.02] text-[8px] uppercase font-bold text-gray-500 border-b border-white/5">
+                        <tr>
+                            <th className="px-6 py-4">Ordem</th>
+                            <th className="px-6 py-4">Título</th>
+                            <th className="px-6 py-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {itensFiltrados.length === 0 ? (
+                            <tr><td colSpan={3} className="px-6 py-12 text-center text-gray-600 text-[10px] uppercase font-bold tracking-widest">Nenhum item encontrado.</td></tr>
+                        ) : (
+                            itensFiltrados.sort((a,b) => a.ordem - b.ordem).map((item) => {
+                                const isConcluido = item.progresso?.status === 'concluido';
+                                return (
+                                    <tr key={item.id} className="hover:bg-white/[0.01] transition-colors group">
+                                        <td className="px-6 py-4 text-[10px] font-mono text-gray-600">#{item.ordem}</td>
+                                        <td className="px-6 py-4 text-[11px] font-bold text-gray-200 uppercase">
+                                            {item.titulo} {isConcluido && <span className="text-emerald-500 ml-2">✅</span>}
+                                        </td>
+                                        <td className="px-6 py-4 text-right space-x-2">
+                                            {isDiretoria ? (
+                                                <>
+                                                    <button onClick={() => { setItemEmEstudo(item); setUploadMaterialModal({ativo: true, tipo: 'video'}); }} className="p-2 bg-white/5 rounded-lg cursor-pointer">📽️</button>
+                                                    <button onClick={() => { setItemEmEstudo(item); setUploadMaterialModal({ativo: true, tipo: 'pdf'}); }} className="p-2 bg-white/5 rounded-lg cursor-pointer">📄</button>
+                                                    <button onClick={() => { setItemEmEstudo(item); setQuizModalAtivo(true); }} className="p-2 bg-white/5 rounded-lg cursor-pointer">🧩</button>
+                                                    <button onClick={() => setConteudoEditando(item)} className="px-3 py-1.5 bg-white/5 rounded-lg text-[8px] font-bold uppercase text-gray-400 cursor-pointer">Editar</button>
+                                                    <button onClick={() => setConteudoExcluir(item)} className="px-3 py-1.5 bg-red-500/10 rounded-lg text-[8px] font-bold uppercase text-red-500 cursor-pointer">Excluir</button>
+                                                </>
+                                            ) : (
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => setItemEmEstudo(item)} className="px-3 py-1.5 bg-yellow-500 text-black text-[8px] font-bold uppercase tracking-widest rounded-lg cursor-pointer">Estudar</button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
             </div>
-        </div>
 
+            {/* Modals */}
             {isMounted && createPortal(
                 <>
-            {/* Study Modal Overlay (Brother View) */}
-            {itemEmEstudo && !isDiretoria && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemEmEstudo(null)}></div>
+                    {jornadaModal && (
+                        <ModalJornada 
+                            itens={conteudos} 
+                            tipo={tabAtiva === 'trabalhos' ? 'trabalho' : 'prelecao'} 
+                            onClose={() => setJornadaModal(false)} 
+                            onIniciarEstudo={(item) => {
+                                setJornadaModal(false);
+                                setItemEmEstudo(item);
+                                setVideoConcluido(false);
+                                setQuizAtivo(false);
+                            }}
+                        />
+                    )}
                     
-                    <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl relative z-10 flex flex-col">
-                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                            <div>
-                                <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Modo de Estudo • {itemEmEstudo.titulo}</span>
-                                <h3 className="text-lg font-medium text-white uppercase tracking-tight">Vídeo Aula & Conteúdo</h3>
-                            </div>
-                            <button 
-                                onClick={() => setItemEmEstudo(null)}
-                                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-red-500/20 hover:text-red-500 transition-all"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                            {/* Video Section */}
-                            <div className="aspect-video bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative group">
-                                <video 
-                                    ref={videoRef}
-                                    className="w-full h-full"
-                                    controls
-                                    controlsList="nodownload nofullscreen"
-                                    src="/sample-video.mp4" // Placeholder
-                                >
-                                    Seu navegador não suporta vídeos.
-                                </video>
-                                {!videoConcluido && (
-                                    <div className="absolute top-4 right-4 px-3 py-1 bg-yellow-500/20 border border-yellow-500/50 rounded-full backdrop-blur-md">
-                                        <span className="text-[8px] font-bold text-yellow-500 uppercase tracking-widest">Estudo em progresso - Não pule o vídeo</span>
+                    {itemEmEstudo && !isDiretoria && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
+                            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemEmEstudo(null)}></div>
+                            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl relative z-10 flex flex-col">
+                                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                                    <div>
+                                        <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Modo de Estudo • {itemEmEstudo.titulo}</span>
+                                        <h3 className="text-lg font-serif text-white uppercase">{itemEmEstudo.titulo}</h3>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Documentação de Apoio</h4>
-                                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center justify-between hover:bg-white/[0.05] transition-all cursor-pointer group">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xl">📄</span>
-                                            <span className="text-[11px] font-medium text-gray-300 group-hover:text-white transition-colors">Resumo_Sessao.pdf</span>
-                                        </div>
-                                        <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Abrir</span>
-                                    </div>
+                                    <button onClick={() => setItemEmEstudo(null)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 cursor-pointer">✕</button>
                                 </div>
-
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Verificação de Conhecimento</h4>
-                                    
-                                    {!quizAtivo && !quizConcluido && (
-                                        <div className={`p-6 rounded-2xl border transition-all ${
-                                            videoConcluido 
-                                            ? 'bg-emerald-500/5 border-emerald-500/20' 
-                                            : 'bg-white/[0.01] border-white/5 opacity-50 grayscale'
-                                        }`}>
-                                            <p className="text-[11px] text-gray-400 mb-4 leading-relaxed">
-                                                {videoConcluido 
-                                                    ? 'Parabéns por completar o estudo! Responda ao quiz abaixo para liberar a conclusão.'
-                                                    : 'Assista o vídeo até o final para liberar o questionário de verificação.'}
-                                            </p>
-                                            <button 
-                                                disabled={!videoConcluido}
-                                                onClick={() => setQuizAtivo(true)}
-                                                className="w-full py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-20 disabled:grayscale-0"
-                                            >
-                                                Iniciar Quiz
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {quizAtivo && !quizConcluido && (
-                                        <div className="p-6 rounded-2xl border bg-emerald-500/5 border-emerald-500/20 space-y-6 relative">
-                                            {modoSimulacao && (
-                                                <div className="absolute top-0 left-0 right-0 bg-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase tracking-widest text-center py-2 rounded-t-2xl border-b border-yellow-500/20">
-                                                    MODO SIMULAÇÃO: Suas respostas não serão salvas
-                                                </div>
-                                            )}
-                                            <div className={modoSimulacao ? "pt-8" : ""}>
-                                                {(itemEmEstudo?.quizzes || []).map((perg: any, i: number) => {
-                                                    let isLacuna = false;
-                                                    let textoBase = "";
-                                                    let lacunasIndices: number[] = [];
-
-                                                    try {
-                                                        const pData = JSON.parse(perg.opcoes_json || '{}');
-                                                        if (pData.tipo === 'lacunas') {
-                                                            isLacuna = true;
-                                                            textoBase = pData.texto;
-                                                            lacunasIndices = pData.lacunas || [];
-                                                        }
-                                                    } catch (e) {}
-
-                                                    return (
-                                                        <div key={perg.id || i} className="space-y-3 mb-6">
-                                                            <p className="text-[11px] font-medium text-white mb-2">
-                                                                <span className="text-emerald-500 font-bold mr-2">{i+1}.</span> 
-                                                                {isLacuna ? "Complete as lacunas no texto abaixo:" : perg.pergunta}
-                                                            </p>
-
-                                                            {isLacuna ? (
-                                                                <div className="p-4 bg-black/40 border border-white/5 rounded-xl text-sm text-gray-300 leading-loose">
-                                                                    {textoBase.split(' ').map((word, wordIndex) => {
-                                                                        if (lacunasIndices.includes(wordIndex)) {
-                                                                            return (
-                                                                                <input 
-                                                                                    key={wordIndex}
-                                                                                    type="text"
-                                                                                    className="inline-block w-24 mx-1 bg-white/10 border-b border-emerald-500/50 text-white text-center text-sm px-1 py-0.5 focus:outline-none focus:bg-white/20 transition-colors"
-                                                                                    onChange={(e) => {
-                                                                                        // For lacunas, respostasQuiz[i] can be an object with { wordIndex: value }
-                                                                                        const newResp = [...respostasQuiz] as any[];
-                                                                                        const currentObj = newResp[i] || {};
-                                                                                        currentObj[wordIndex] = e.target.value;
-                                                                                        newResp[i] = currentObj;
-                                                                                        setRespostasQuiz(newResp);
-                                                                                    }}
-                                                                                />
-                                                                            );
-                                                                        }
-                                                                        return <span key={wordIndex} className="mx-1">{word}</span>;
-                                                                    })}
+                                <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-12">
+                                    <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative">
+                                        {itemEmEstudo.materiais?.find((m: any) => m.tipo === 'video') ? (
+                                            <video ref={videoRef} src={itemEmEstudo.materiais.find((m: any) => m.tipo === 'video').url} className="w-full h-full" controls onEnded={() => setVideoConcluido(true)} />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-600">
+                                                <p className="text-[10px] uppercase font-bold tracking-widest">Vídeo indisponível</p>
+                                                <button onClick={() => setVideoConcluido(true)} className="mt-4 text-yellow-500 underline text-[9px] cursor-pointer">Pular para materiais</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {(videoConcluido || itemEmEstudo.progresso?.status === 'concluido') && (
+                                        <div className="space-y-10 animate-in fade-in slide-in-from-top-4 duration-700">
+                                            <div className="h-px bg-white/5" />
+                                            <div className="space-y-4">
+                                                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Material Digital de Apoio</h4>
+                                                {itemEmEstudo.materiais?.find((m: any) => m.tipo === 'pdf') ? (
+                                                    <div className="flex items-center justify-between p-6 bg-white/[0.03] border border-white/10 rounded-2xl">
+                                                        <p className="text-sm font-medium text-white">{itemEmEstudo.materiais.find((m: any) => m.tipo === 'pdf').nome}</p>
+                                                        <button onClick={() => setPreviewModals({video: false, pdf: true, url: itemEmEstudo.materiais.find((m: any) => m.tipo === 'pdf').url})} className="px-6 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase rounded-lg cursor-pointer">Visualizar</button>
+                                                    </div>
+                                                ) : <p className="text-[10px] text-gray-700 uppercase font-bold tracking-widest">Nenhum documento.</p>}
+                                            </div>
+                                            {itemEmEstudo.progresso?.status !== 'concluido' && (
+                                                <div className="flex flex-col items-center gap-6 pb-10">
+                                                    {!quizAtivo ? (
+                                                        <button onClick={() => setQuizAtivo(true)} className="px-10 py-4 bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-full hover:bg-yellow-400 transition-all cursor-pointer">Responder Quiz</button>
+                                                    ) : (
+                                                        <div className="w-full space-y-8">
+                                                            {itemEmEstudo.quizzes?.map((q: any, idx: number) => (
+                                                                <div key={q.id} className="bg-white/[0.02] border border-white/5 rounded-2xl p-8">
+                                                                    <p className="text-lg font-serif text-white mb-6 leading-relaxed text-center italic">"{q.pergunta}"</p>
+                                                                    <textarea className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-white focus:outline-none focus:border-yellow-500/30 transition-all min-h-[120px]" placeholder="Sua resposta..." onChange={(e) => { const novas = [...respostasQuiz]; novas[idx] = e.target.value; setRespostasQuiz(novas); }} />
                                                                 </div>
-                                                            ) : (
-                                                                <div className="space-y-2">
-                                                                    <textarea 
-                                                                        value={respostasQuiz[i] || ''}
-                                                                        onChange={(e) => {
-                                                                            const newResp = [...respostasQuiz] as any[];
-                                                                            newResp[i] = e.target.value;
-                                                                            setRespostasQuiz(newResp);
-                                                                        }}
-                                                                        placeholder="Digite sua resposta aqui..."
-                                                                        rows={3}
-                                                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors resize-none"
-                                                                    />
-                                                                </div>
-                                                            )}
+                                                            ))}
+                                                            <button onClick={handleFinalizarEstudo} className="w-full py-4 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all cursor-pointer">Concluir Estudo</button>
                                                         </div>
-                                                    );
-                                                })}
-                                                <button 
-                                                    onClick={() => {
-                                                        if (modoSimulacao) {
-                                                            setQuizConcluido(true);
-                                                            setQuizAtivo(false);
-                                                            return;
-                                                        }
-
-                                                        const quizzesLength = (itemEmEstudo?.quizzes || []).length;
-                                                        if (quizzesLength > 0 && respostasQuiz.filter(r => r !== undefined).length === quizzesLength) {
-                                                            setQuizConcluido(true);
-                                                            setQuizAtivo(false);
-                                                        } else {
-                                                            alert("Por favor, responda todas as perguntas antes de finalizar.");
-                                                        }
-                                                    }}
-                                                    className="w-full py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all mt-4"
-                                                >
-                                                    Finalizar Quiz
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {quizConcluido && (
-                                        <div className="p-6 rounded-2xl border bg-emerald-500/10 border-emerald-500/30 flex flex-col items-center justify-center text-center space-y-4">
-                                            <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-2xl mb-2">
-                                                ✅
-                                            </div>
-                                            <div>
-                                                <h5 className="text-[12px] font-bold text-emerald-400 uppercase tracking-widest">Aprovado no Quiz!</h5>
-                                                <p className="text-[10px] text-gray-400 mt-1">Você concluiu a etapa de estudo com sucesso.</p>
-                                            </div>
-                                            
-                                            {itemEmEstudo.tipo === 'trabalho' ? (
-                                                <button 
-                                                    onClick={() => setUploadTrabalhoModal(true)}
-                                                    className="w-full py-3 bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-yellow-400 transition-all mt-2"
-                                                >
-                                                    Fazer Upload do Trabalho
-                                                </button>
-                                            ) : (
-                                                <button 
-                                                    onClick={() => {
-                                                        alert("Preleção marcada como concluída!");
-                                                        setItemEmEstudo(null);
-                                                    }}
-                                                    className="w-full py-3 bg-blue-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-blue-400 transition-all mt-2"
-                                                >
-                                                    Concluir Preleção
-                                                </button>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
 
-            {/* Management Modal (Officer View) */}
-            {itemEmEstudo && isDiretoria && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemEmEstudo(null)}></div>
-                    
-                    <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl relative z-10 flex flex-col">
-                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-xl">⚙️</div>
-                                <div>
-                                    <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Painel do Instrutor</span>
-                                    <h3 className="text-xl font-bold text-white uppercase tracking-tight">{itemEmEstudo.titulo}</h3>
+                    {previewModals.pdf && (
+                        <div className="fixed inset-0 z-[250] flex items-center justify-center p-8 bg-black/95 backdrop-blur-md">
+                            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden w-full h-full flex flex-col relative">
+                                <div className="p-4 flex justify-between items-center bg-white/[0.03] border-b border-white/5">
+                                    <h4 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest ml-2">Leitor de Documentos</h4>
+                                    <button onClick={() => setPreviewModals({...previewModals, pdf: false})} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">✕</button>
                                 </div>
-                            </div>
-                            <button 
-                                onClick={() => setItemEmEstudo(null)}
-                                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-red-500/20 hover:text-red-500 transition-all"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                            {/* Stats Summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                {[
-                                    { label: 'Inscritos', val: '42', color: 'text-gray-400' },
-                                    { label: 'Concluídos', val: '12', color: 'text-emerald-400' },
-                                    { label: 'Pendentes', val: '30', color: 'text-yellow-500' },
-                                    { label: 'Média Quiz', val: '8.5', color: 'text-blue-400' }
-                                ].map((stat, i) => (
-                                    <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-xl">
-                                        <span className="text-[8px] uppercase font-bold text-gray-600 tracking-widest block mb-1">{stat.label}</span>
-                                        <span className={`text-2xl font-serif ${stat.color}`}>{stat.val}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                {/* Left: Content Management */}
-                                <div className="lg:col-span-1 space-y-6">
-                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-l-2 border-yellow-500 pl-3">Configurações</h4>
-                                    
-                                    <div className="space-y-3">
-                                        {/* Trocar Vídeo e Preview */}
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'video'})} className="flex-1 p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
-                                                <span className="text-lg">🎥</span>
-                                                <div className="text-left">
-                                                    <p className="text-[10px] font-bold text-white uppercase">Trocar Vídeo</p>
-                                                    <p className="text-[8px] text-gray-500">MP4, WebM (Max 500MB)</p>
-                                                </div>
-                                            </button>
-                                            {itemEmEstudo.materiais?.find((m: any) => m.tipo === 'video') && (
-                                                <button 
-                                                    onClick={() => setPreviewModals({
-                                                        ...previewModals, 
-                                                        video: true, 
-                                                        url: itemEmEstudo.materiais.find((m: any) => m.tipo === 'video').url
-                                                    })}
-                                                    className="w-16 h-full min-h-[64px] bg-white/[0.02] hover:bg-blue-500/20 border border-white/5 rounded-xl flex items-center justify-center transition-all group"
-                                                    title="Visualizar Vídeo"
-                                                >
-                                                    <span className="text-xl opacity-50 group-hover:opacity-100 group-hover:text-blue-400">▶️</span>
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Material de Apoio e Preview */}
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'pdf'})} className="flex-1 p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
-                                                <span className="text-lg">📄</span>
-                                                <div className="text-left">
-                                                    <p className="text-[10px] font-bold text-white uppercase">Material de Apoio</p>
-                                                    <p className="text-[8px] text-gray-500">PDF, DOCX (Max 10MB)</p>
-                                                </div>
-                                            </button>
-                                            {itemEmEstudo.materiais?.find((m: any) => m.tipo === 'pdf') && (
-                                                <button 
-                                                    onClick={() => setPreviewModals({
-                                                        ...previewModals, 
-                                                        pdf: true, 
-                                                        url: itemEmEstudo.materiais.find((m: any) => m.tipo === 'pdf').url
-                                                    })}
-                                                    className="w-16 h-full min-h-[64px] bg-white/[0.02] hover:bg-blue-500/20 border border-white/5 rounded-xl flex items-center justify-center transition-all group"
-                                                    title="Visualizar Documento"
-                                                >
-                                                    <span className="text-xl opacity-50 group-hover:opacity-100 group-hover:text-blue-400">📄</span>
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Quiz */}
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={() => setQuizModalAtivo(true)} className="flex-1 p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
-                                                <span className="text-lg">❓</span>
-                                                <div className="text-left">
-                                                    <p className="text-[10px] font-bold text-white uppercase">Configurar Quiz</p>
-                                                    <p className="text-[8px] text-gray-500">Definir perguntas e respostas</p>
-                                                </div>
-                                            </button>
-                                            {(itemEmEstudo.quizzes?.length > 0) && (
-                                                <button 
-                                                    onClick={() => {
-                                                        // Simula a experiência de estudo como um aluno
-                                                        setModoSimulacao(true);
-                                                        setQuizAtivo(true);
-                                                        setQuizConcluido(false);
-                                                        setRespostasQuiz([]);
-                                                    }}
-                                                    className="w-16 h-full min-h-[64px] bg-white/[0.02] hover:bg-emerald-500/20 border border-white/5 rounded-xl flex items-center justify-center transition-all group"
-                                                    title="Simular Quiz como Obreiro"
-                                                >
-                                                    <span className="text-xl opacity-50 group-hover:opacity-100 group-hover:text-emerald-400">🎮</span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Right: Member Progress List */}
-                                <div className="lg:col-span-2 space-y-6">
-                                    <div className="flex justify-between items-center border-l-2 border-blue-500 pl-3">
-                                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Acompanhamento de Membros</h4>
-                                        <button className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded border border-white/10 text-[8px] uppercase tracking-widest text-gray-300 transition-all">
-                                            📅 Agendar Apresentação
-                                        </button>
-                                    </div>
-                                    
-                                    <div className="bg-black/40 border border-white/5 rounded-2xl overflow-hidden">
-                                        <table className="w-full text-left">
-                                            <thead className="bg-white/[0.02] text-[8px] uppercase font-bold text-gray-500 tracking-[0.2em]">
-                                                <tr>
-                                                    <th className="px-6 py-4">Irmão</th>
-                                                    <th className="px-6 py-4">Status</th>
-                                                    <th className="px-6 py-4">Nota</th>
-                                                    <th className="px-6 py-4">Ação</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {[
-                                                    { nome: 'Michel Rezende', status: 'Concluído', nota: '10', color: 'text-emerald-400' },
-                                                    { nome: 'Fulano de Tal', status: 'Em Estudo', nota: '-', color: 'text-yellow-500' },
-                                                    { nome: 'Ciclano Maçom', status: 'Pendente', nota: '-', color: 'text-gray-600' }
-                                                ].map((mbr, i) => (
-                                                    <tr key={i} className="hover:bg-white/[0.01] transition-all">
-                                                        <td className="px-6 py-4 text-[11px] font-medium text-gray-300">{mbr.nome}</td>
-                                                        <td className={`px-6 py-4 text-[9px] font-bold uppercase tracking-tight ${mbr.color}`}>{mbr.status}</td>
-                                                        <td className="px-6 py-4 text-[11px] font-serif text-blue-400">{mbr.nota}</td>
-                                                        <td className="px-6 py-4">
-                                                            <button className="text-[8px] font-bold uppercase text-gray-500 hover:text-white transition-colors">Detalhes</button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                <iframe src={previewModals.url} className="flex-1 w-full border-none" />
                             </div>
                         </div>
-                    </div>
-                </div>
-            )}
-            {/* Modal Upload de Trabalho */}
-            {uploadTrabalhoModal && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setUploadTrabalhoModal(false)}></div>
-                    <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl w-full max-w-md relative z-10 p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-[14px] font-bold text-white uppercase tracking-wider">Upload de Arquivo</h3>
-                            <button onClick={() => setUploadTrabalhoModal(false)} className="text-gray-500 hover:text-white">✕</button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Selecione o Arquivo</label>
-                                <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-white/[0.02] hover:border-yellow-500/50 transition-all cursor-pointer">
-                                    <span className="text-3xl mb-2 text-yellow-500/50">📄</span>
-                                    <p className="text-[11px] text-gray-400">Clique ou arraste seu PDF/DOCX aqui</p>
-                                    <p className="text-[9px] text-gray-600 mt-1">Tamanho máximo: 10MB</p>
-                                </div>
-                            </div>
-                            
-                            <button className="w-full py-3 bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-yellow-400 transition-all">
-                                Enviar Trabalho
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            
-            {novoConteudoModal && (
-                <ModalNovoConteudo 
-                    lojaId={acesso.loja_id} 
-                    tabAtiva={tabAtiva} 
-                    onClose={() => setNovoConteudoModal(false)} 
-                    onSuccess={carregarConteudos} 
-                />
-            )}
-            
-            {uploadMaterialModal.ativo && itemEmEstudo && (
-                <ModalUploadMaterial 
-                    conteudoId={itemEmEstudo.id} 
-                    tipo={uploadMaterialModal.tipo} 
-                    onClose={() => setUploadMaterialModal({ativo: false, tipo: 'video'})} 
-                    onSuccess={carregarConteudos} 
-                />
-            )}
+                    )}
 
-            {quizModalAtivo && itemEmEstudo && (
-                <ModalQuiz 
-                    conteudoId={itemEmEstudo.id} 
-                    quizzesIniciais={itemEmEstudo.quizzes || []} 
-                    onClose={() => setQuizModalAtivo(false)} 
-                    onSuccess={carregarConteudos} 
-                />
+                    <ModalEditarConteudo isOpen={!!conteudoEditando} onClose={() => setConteudoEditando(null)} conteudo={conteudoEditando} onSuccess={() => { carregarConteudos(); setConteudoEditando(null); }} />
+                    {novoConteudoModal && <ModalNovoConteudo lojaId={acesso.loja_id} tabAtiva={tabAtiva} onClose={() => setNovoConteudoModal(false)} onSuccess={carregarConteudos} />}
+                    {uploadMaterialModal.ativo && itemEmEstudo && <ModalUploadMaterial conteudoId={itemEmEstudo.id} tipo={uploadMaterialModal.tipo} onClose={() => setUploadMaterialModal({ativo: false, tipo: 'video'})} onSuccess={carregarConteudos} />}
+                    {quizModalAtivo && itemEmEstudo && <ModalQuiz conteudoId={itemEmEstudo.id} quizzesIniciais={itemEmEstudo.quizzes || []} onClose={() => setQuizModalAtivo(false)} onSuccess={carregarConteudos} />}
+                </>,
+                document.body
             )}
-            {/* Delete Confirmation Modal */}
-            {conteudoExcluir && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-[#0f1219] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden p-8 text-center" onClick={e => e.stopPropagation()}>
-                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
-                            <span className="text-2xl">⚠️</span>
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-200 mb-2">Excluir Conteúdo?</h3>
-                        <p className="text-sm text-gray-400 mb-8">
-                            Tem certeza que deseja excluir "{conteudoExcluir.titulo}"? Esta ação não pode ser desfeita e apagará todos os vídeos, PDFs e perguntas associadas.
-                        </p>
-                        <div className="flex gap-4 justify-center">
-                            <button
-                                onClick={() => setConteudoExcluir(null)}
-                                className="px-6 py-3 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:bg-white/10 transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={() => handleExcluir(conteudoExcluir.id)}
-                                className="px-6 py-3 bg-red-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 transition-colors"
-                            >
-                                Sim, Excluir
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Preview Modals */}
-            {previewModals.video && (
-                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                    <div className="bg-black border border-white/10 rounded-xl overflow-hidden w-full max-w-4xl relative">
-                        <div className="p-4 flex justify-between items-center border-b border-white/10 bg-white/5">
-                            <h3 className="text-sm font-bold text-white tracking-widest uppercase">Visualizar Vídeo</h3>
-                            <button onClick={() => setPreviewModals({...previewModals, video: false})} className="text-gray-400 hover:text-white">✕</button>
-                        </div>
-                        <video src={previewModals.url} controls autoPlay className="w-full max-h-[80vh]" />
-                    </div>
-                </div>
-            )}
-
-            {previewModals.pdf && (
-                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                    <div className="bg-[#0f1219] border border-white/10 rounded-xl overflow-hidden w-full max-w-4xl h-[90vh] flex flex-col relative">
-                        <div className="p-4 flex justify-between items-center border-b border-white/10 bg-white/5">
-                            <h3 className="text-sm font-bold text-white tracking-widest uppercase">Visualizar Material</h3>
-                            <button onClick={() => setPreviewModals({...previewModals, pdf: false})} className="text-gray-400 hover:text-white">✕</button>
-                        </div>
-                        <iframe src={previewModals.url} className="w-full flex-1 bg-white" />
-                    </div>
-                </div>
-            )}
-            
-            <ModalEditarConteudo 
-                isOpen={!!conteudoEditando} 
-                onClose={() => setConteudoEditando(null)} 
-                conteudo={conteudoEditando} 
-                onSuccess={() => {
-                    carregarConteudos();
-                    setConteudoEditando(null);
-                }} 
-            />
-            </>,
-            document.body
-        )}
-        </>
+        </div>
     );
 }
