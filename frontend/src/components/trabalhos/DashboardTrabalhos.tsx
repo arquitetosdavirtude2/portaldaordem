@@ -33,8 +33,11 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [isLoading, setIsLoading] = useState(true);
     const [novoConteudoModal, setNovoConteudoModal] = useState(false);
     const [conteudoEditando, setConteudoEditando] = useState<any>(null);
+    const [conteudoExcluir, setConteudoExcluir] = useState<any>(null);
     const [uploadMaterialModal, setUploadMaterialModal] = useState<{ativo: boolean, tipo: 'video'|'pdf'}>({ativo: false, tipo: 'video'});
     const [quizModalAtivo, setQuizModalAtivo] = useState(false);
+    const [previewModals, setPreviewModals] = useState<{video: boolean, pdf: boolean, url: string}>({video: false, pdf: false, url: ''});
+    const [modoSimulacao, setModoSimulacao] = useState(false);
 
     const carregarConteudos = async () => {
         setIsLoading(true);
@@ -50,6 +53,20 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             console.error(e);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleExcluir = async (conteudoId: number) => {
+        try {
+            const res = await fetch(`/api/trabalhos/conteudo/${conteudoId}`, { method: 'DELETE' });
+            if (res.ok) {
+                setConteudoExcluir(null);
+                carregarConteudos();
+            } else {
+                alert('Erro ao excluir.');
+            }
+        } catch (e) {
+            console.error(e);
         }
     };
 
@@ -284,18 +301,33 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                 <span className="text-[8px] text-gray-600 uppercase tracking-[0.2em] font-bold opacity-50">Status</span>
                                 <span className="text-[9px] text-red-500/50 font-bold uppercase tracking-tight">Pendente</span>
                             </div>
-                            <div 
-                                onClick={(e) => {
-                                    if (isDiretoria) {
-                                        e.stopPropagation();
-                                        setConteudoEditando(item);
-                                    }
-                                }}
-                                className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-yellow-500/20 flex items-center justify-center transition-all"
-                            >
-                                <span className="text-[10px] opacity-50 group-hover:opacity-100 group-hover:text-yellow-500">
-                                    {isDiretoria ? '⚙️' : '▶️'}
-                                </span>
+                            <div className="flex items-center gap-2">
+                                {isDiretoria && (
+                                    <div 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setConteudoExcluir(item);
+                                        }}
+                                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-all"
+                                    >
+                                        <span className="text-[10px] opacity-50 hover:opacity-100 text-red-500">
+                                            🗑️
+                                        </span>
+                                    </div>
+                                )}
+                                <div 
+                                    onClick={(e) => {
+                                        if (isDiretoria) {
+                                            e.stopPropagation();
+                                            setConteudoEditando(item);
+                                        }
+                                    }}
+                                    className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-yellow-500/20 flex items-center justify-center transition-all"
+                                >
+                                    <span className="text-[10px] opacity-50 group-hover:opacity-100 group-hover:text-yellow-500">
+                                        {isDiretoria ? '⚙️' : '▶️'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -387,40 +419,96 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     )}
 
                                     {quizAtivo && !quizConcluido && (
-                                        <div className="p-6 rounded-2xl border bg-emerald-500/5 border-emerald-500/20 space-y-6">
-                                            {(itemEmEstudo?.quizzes || []).map((perg: any, i: number) => (
-                                                <div key={perg.id || i} className="space-y-3">
-                                                    <p className="text-[11px] font-medium text-white">{i+1}. {perg.pergunta}</p>
-                                                    <div className="space-y-2">
-                                                        <textarea 
-                                                            value={respostasQuiz[i] || ''}
-                                                            onChange={(e) => {
-                                                                const newResp = [...respostasQuiz];
-                                                                newResp[i] = e.target.value;
-                                                                setRespostasQuiz(newResp);
-                                                            }}
-                                                            placeholder="Digite sua resposta aqui..."
-                                                            rows={3}
-                                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors resize-none"
-                                                        />
-                                                    </div>
+                                        <div className="p-6 rounded-2xl border bg-emerald-500/5 border-emerald-500/20 space-y-6 relative">
+                                            {modoSimulacao && (
+                                                <div className="absolute top-0 left-0 right-0 bg-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase tracking-widest text-center py-2 rounded-t-2xl border-b border-yellow-500/20">
+                                                    MODO SIMULAÇÃO: Suas respostas não serão salvas
                                                 </div>
-                                            ))}
-                                            <button 
-                                                onClick={() => {
-                                                    const quizzesLength = (itemEmEstudo?.quizzes || []).length;
-                                                    if (quizzesLength > 0 && respostasQuiz.filter(r => r && r.trim() !== '').length === quizzesLength) {
-                                                        // O envio real das respostas aconteceria aqui
-                                                        setQuizConcluido(true);
-                                                        setQuizAtivo(false);
-                                                    } else {
-                                                        alert("Por favor, responda todas as perguntas antes de finalizar.");
-                                                    }
-                                                }}
-                                                className="w-full py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all mt-4"
-                                            >
-                                                Finalizar Quiz
-                                            </button>
+                                            )}
+                                            <div className={modoSimulacao ? "pt-8" : ""}>
+                                                {(itemEmEstudo?.quizzes || []).map((perg: any, i: number) => {
+                                                    let isLacuna = false;
+                                                    let textoBase = "";
+                                                    let lacunasIndices: number[] = [];
+
+                                                    try {
+                                                        const pData = JSON.parse(perg.opcoes_json || '{}');
+                                                        if (pData.tipo === 'lacunas') {
+                                                            isLacuna = true;
+                                                            textoBase = pData.texto;
+                                                            lacunasIndices = pData.lacunas || [];
+                                                        }
+                                                    } catch (e) {}
+
+                                                    return (
+                                                        <div key={perg.id || i} className="space-y-3 mb-6">
+                                                            <p className="text-[11px] font-medium text-white mb-2">
+                                                                <span className="text-emerald-500 font-bold mr-2">{i+1}.</span> 
+                                                                {isLacuna ? "Complete as lacunas no texto abaixo:" : perg.pergunta}
+                                                            </p>
+
+                                                            {isLacuna ? (
+                                                                <div className="p-4 bg-black/40 border border-white/5 rounded-xl text-sm text-gray-300 leading-loose">
+                                                                    {textoBase.split(' ').map((word, wordIndex) => {
+                                                                        if (lacunasIndices.includes(wordIndex)) {
+                                                                            return (
+                                                                                <input 
+                                                                                    key={wordIndex}
+                                                                                    type="text"
+                                                                                    className="inline-block w-24 mx-1 bg-white/10 border-b border-emerald-500/50 text-white text-center text-sm px-1 py-0.5 focus:outline-none focus:bg-white/20 transition-colors"
+                                                                                    onChange={(e) => {
+                                                                                        // For lacunas, respostasQuiz[i] can be an object with { wordIndex: value }
+                                                                                        const newResp = [...respostasQuiz] as any[];
+                                                                                        const currentObj = newResp[i] || {};
+                                                                                        currentObj[wordIndex] = e.target.value;
+                                                                                        newResp[i] = currentObj;
+                                                                                        setRespostasQuiz(newResp);
+                                                                                    }}
+                                                                                />
+                                                                            );
+                                                                        }
+                                                                        return <span key={wordIndex} className="mx-1">{word}</span>;
+                                                                    })}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="space-y-2">
+                                                                    <textarea 
+                                                                        value={respostasQuiz[i] || ''}
+                                                                        onChange={(e) => {
+                                                                            const newResp = [...respostasQuiz] as any[];
+                                                                            newResp[i] = e.target.value;
+                                                                            setRespostasQuiz(newResp);
+                                                                        }}
+                                                                        placeholder="Digite sua resposta aqui..."
+                                                                        rows={3}
+                                                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors resize-none"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                                <button 
+                                                    onClick={() => {
+                                                        if (modoSimulacao) {
+                                                            setQuizConcluido(true);
+                                                            setQuizAtivo(false);
+                                                            return;
+                                                        }
+
+                                                        const quizzesLength = (itemEmEstudo?.quizzes || []).length;
+                                                        if (quizzesLength > 0 && respostasQuiz.filter(r => r !== undefined).length === quizzesLength) {
+                                                            setQuizConcluido(true);
+                                                            setQuizAtivo(false);
+                                                        } else {
+                                                            alert("Por favor, responda todas as perguntas antes de finalizar.");
+                                                        }
+                                                    }}
+                                                    className="w-full py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all mt-4"
+                                                >
+                                                    Finalizar Quiz
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
@@ -505,27 +593,79 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-l-2 border-yellow-500 pl-3">Configurações</h4>
                                     
                                     <div className="space-y-3">
-                                        <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'video'})} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
-                                            <span className="text-lg">🎥</span>
-                                            <div className="text-left">
-                                                <p className="text-[10px] font-bold text-white uppercase">Trocar Vídeo</p>
-                                                <p className="text-[8px] text-gray-500">MP4, WebM (Max 500MB)</p>
-                                            </div>
-                                        </button>
-                                        <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'pdf'})} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
-                                            <span className="text-lg">📄</span>
-                                            <div className="text-left">
-                                                <p className="text-[10px] font-bold text-white uppercase">Material de Apoio</p>
-                                                <p className="text-[8px] text-gray-500">PDF, DOCX (Max 10MB)</p>
-                                            </div>
-                                        </button>
-                                        <button onClick={() => setQuizModalAtivo(true)} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
-                                            <span className="text-lg">❓</span>
-                                            <div className="text-left">
-                                                <p className="text-[10px] font-bold text-white uppercase">Configurar Quiz</p>
-                                                <p className="text-[8px] text-gray-500">Definir perguntas e respostas</p>
-                                            </div>
-                                        </button>
+                                        {/* Trocar Vídeo e Preview */}
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'video'})} className="flex-1 p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                                <span className="text-lg">🎥</span>
+                                                <div className="text-left">
+                                                    <p className="text-[10px] font-bold text-white uppercase">Trocar Vídeo</p>
+                                                    <p className="text-[8px] text-gray-500">MP4, WebM (Max 500MB)</p>
+                                                </div>
+                                            </button>
+                                            {itemEmEstudo.materiais?.find((m: any) => m.tipo === 'video') && (
+                                                <button 
+                                                    onClick={() => setPreviewModals({
+                                                        ...previewModals, 
+                                                        video: true, 
+                                                        url: itemEmEstudo.materiais.find((m: any) => m.tipo === 'video').url
+                                                    })}
+                                                    className="w-16 h-full min-h-[64px] bg-white/[0.02] hover:bg-blue-500/20 border border-white/5 rounded-xl flex items-center justify-center transition-all group"
+                                                    title="Visualizar Vídeo"
+                                                >
+                                                    <span className="text-xl opacity-50 group-hover:opacity-100 group-hover:text-blue-400">▶️</span>
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Material de Apoio e Preview */}
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'pdf'})} className="flex-1 p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                                <span className="text-lg">📄</span>
+                                                <div className="text-left">
+                                                    <p className="text-[10px] font-bold text-white uppercase">Material de Apoio</p>
+                                                    <p className="text-[8px] text-gray-500">PDF, DOCX (Max 10MB)</p>
+                                                </div>
+                                            </button>
+                                            {itemEmEstudo.materiais?.find((m: any) => m.tipo === 'pdf') && (
+                                                <button 
+                                                    onClick={() => setPreviewModals({
+                                                        ...previewModals, 
+                                                        pdf: true, 
+                                                        url: itemEmEstudo.materiais.find((m: any) => m.tipo === 'pdf').url
+                                                    })}
+                                                    className="w-16 h-full min-h-[64px] bg-white/[0.02] hover:bg-blue-500/20 border border-white/5 rounded-xl flex items-center justify-center transition-all group"
+                                                    title="Visualizar Documento"
+                                                >
+                                                    <span className="text-xl opacity-50 group-hover:opacity-100 group-hover:text-blue-400">📄</span>
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Quiz */}
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => setQuizModalAtivo(true)} className="flex-1 p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                                <span className="text-lg">❓</span>
+                                                <div className="text-left">
+                                                    <p className="text-[10px] font-bold text-white uppercase">Configurar Quiz</p>
+                                                    <p className="text-[8px] text-gray-500">Definir perguntas e respostas</p>
+                                                </div>
+                                            </button>
+                                            {(itemEmEstudo.quizzes?.length > 0) && (
+                                                <button 
+                                                    onClick={() => {
+                                                        // Simula a experiência de estudo como um aluno
+                                                        setModoSimulacao(true);
+                                                        setQuizAtivo(true);
+                                                        setQuizConcluido(false);
+                                                        setRespostasQuiz([]);
+                                                    }}
+                                                    className="w-16 h-full min-h-[64px] bg-white/[0.02] hover:bg-emerald-500/20 border border-white/5 rounded-xl flex items-center justify-center transition-all group"
+                                                    title="Simular Quiz como Obreiro"
+                                                >
+                                                    <span className="text-xl opacity-50 group-hover:opacity-100 group-hover:text-emerald-400">🎮</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -625,6 +765,59 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     onClose={() => setQuizModalAtivo(false)} 
                     onSuccess={carregarConteudos} 
                 />
+            )}
+            {/* Delete Confirmation Modal */}
+            {conteudoExcluir && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-[#0f1219] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden p-8 text-center" onClick={e => e.stopPropagation()}>
+                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                            <span className="text-2xl">⚠️</span>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-200 mb-2">Excluir Conteúdo?</h3>
+                        <p className="text-sm text-gray-400 mb-8">
+                            Tem certeza que deseja excluir "{conteudoExcluir.titulo}"? Esta ação não pode ser desfeita e apagará todos os vídeos, PDFs e perguntas associadas.
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                            <button
+                                onClick={() => setConteudoExcluir(null)}
+                                className="px-6 py-3 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:bg-white/10 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => handleExcluir(conteudoExcluir.id)}
+                                className="px-6 py-3 bg-red-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 transition-colors"
+                            >
+                                Sim, Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Preview Modals */}
+            {previewModals.video && (
+                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                    <div className="bg-black border border-white/10 rounded-xl overflow-hidden w-full max-w-4xl relative">
+                        <div className="p-4 flex justify-between items-center border-b border-white/10 bg-white/5">
+                            <h3 className="text-sm font-bold text-white tracking-widest uppercase">Visualizar Vídeo</h3>
+                            <button onClick={() => setPreviewModals({...previewModals, video: false})} className="text-gray-400 hover:text-white">✕</button>
+                        </div>
+                        <video src={previewModals.url} controls autoPlay className="w-full max-h-[80vh]" />
+                    </div>
+                </div>
+            )}
+
+            {previewModals.pdf && (
+                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                    <div className="bg-[#0f1219] border border-white/10 rounded-xl overflow-hidden w-full max-w-4xl h-[90vh] flex flex-col relative">
+                        <div className="p-4 flex justify-between items-center border-b border-white/10 bg-white/5">
+                            <h3 className="text-sm font-bold text-white tracking-widest uppercase">Visualizar Material</h3>
+                            <button onClick={() => setPreviewModals({...previewModals, pdf: false})} className="text-gray-400 hover:text-white">✕</button>
+                        </div>
+                        <iframe src={previewModals.url} className="w-full flex-1 bg-white" />
+                    </div>
+                </div>
             )}
             
             <ModalEditarConteudo 

@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Pergunta {
+    tipo: 'livre' | 'lacunas';
     pergunta: string;
+    texto: string;
+    lacunas: number[];
 }
 
 interface ModalQuizProps {
@@ -12,28 +15,56 @@ interface ModalQuizProps {
 }
 
 export default function ModalQuiz({ conteudoId, quizzesIniciais, onClose, onSuccess }: ModalQuizProps) {
-    const [perguntas, setPerguntas] = useState<Pergunta[]>(
-        quizzesIniciais && quizzesIniciais.length > 0 
-        ? quizzesIniciais.map(q => ({
-            pergunta: q.pergunta
-        }))
-        : [{ pergunta: "" }]
-    );
+    const [perguntas, setPerguntas] = useState<Pergunta[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const updatePergunta = (index: number, valor: string) => {
+    useEffect(() => {
+        if (quizzesIniciais && quizzesIniciais.length > 0) {
+            const parsed = quizzesIniciais.map(q => {
+                let pData: any = {};
+                try {
+                    pData = JSON.parse(q.opcoes_json || '{}');
+                } catch(e) {}
+                
+                return {
+                    tipo: pData.tipo === 'lacunas' ? 'lacunas' : 'livre',
+                    pergunta: q.pergunta || "",
+                    texto: pData.texto || "",
+                    lacunas: pData.lacunas || []
+                } as Pergunta;
+            });
+            setPerguntas(parsed);
+        } else {
+            setPerguntas([{ tipo: 'livre', pergunta: "", texto: "", lacunas: [] }]);
+        }
+    }, [quizzesIniciais]);
+
+    const updatePergunta = (index: number, campo: keyof Pergunta, valor: any) => {
         const novas = [...perguntas];
-        novas[index] = { pergunta: valor };
+        novas[index] = { ...novas[index], [campo]: valor };
+        if (campo === 'texto' && novas[index].tipo === 'lacunas') {
+            novas[index].lacunas = []; // reseta as lacunas ao mudar o texto
+        }
+        setPerguntas(novas);
+    };
+
+    const toggleLacuna = (pIndex: number, wordIndex: number) => {
+        const novas = [...perguntas];
+        const p = novas[pIndex];
+        if (p.lacunas.includes(wordIndex)) {
+            p.lacunas = p.lacunas.filter(i => i !== wordIndex);
+        } else {
+            p.lacunas = [...p.lacunas, wordIndex];
+        }
         setPerguntas(novas);
     };
 
     const handleSubmit = async () => {
         setLoading(true);
         try {
-            // Adaptando o payload para o formato aceito pelo backend, enviando opções vazias
             const payload = perguntas.map(p => ({
                 pergunta: p.pergunta,
-                opcoes: [],
+                opcoes: p.tipo === 'lacunas' ? { tipo: 'lacunas', texto: p.texto, lacunas: p.lacunas } : { tipo: 'livre' },
                 resposta_correta: 0
             }));
 
@@ -61,48 +92,105 @@ export default function ModalQuiz({ conteudoId, quizzesIniciais, onClose, onSucc
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose}></div>
-            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative z-10">
-                <div className="p-6 border-b border-white/5 flex justify-between items-center">
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative z-10">
+                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                     <h3 className="text-xl font-bold text-white uppercase tracking-widest">
-                        Configurar Perguntas (Resposta Livre)
+                        Configuração de Quiz
                     </h3>
                     <button onClick={onClose} className="text-gray-500 hover:text-white">✕</button>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {perguntas.map((p, pIndex) => (
-                        <div key={pIndex} className="bg-white/5 border border-white/10 rounded-xl p-4 relative group">
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">Pergunta {pIndex + 1}</label>
+                        <div key={pIndex} className="bg-white/5 border border-white/10 rounded-xl p-6 relative group">
+                            <div className="flex justify-between items-center mb-6">
+                                <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">
+                                    Pergunta {pIndex + 1}
+                                </label>
                                 {perguntas.length > 1 && (
                                     <button 
                                         onClick={() => setPerguntas(perguntas.filter((_, i) => i !== pIndex))}
-                                        className="text-[9px] text-red-500 uppercase font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="text-[9px] text-red-500 uppercase font-bold opacity-50 hover:opacity-100 transition-opacity"
                                     >Remover</button>
                                 )}
                             </div>
+
+                            <div className="flex gap-4 mb-4">
+                                <button 
+                                    onClick={() => updatePergunta(pIndex, 'tipo', 'livre')}
+                                    className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${p.tipo === 'livre' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-500' : 'bg-transparent border-white/10 text-gray-500 hover:text-white'}`}
+                                >
+                                    Resposta Livre
+                                </button>
+                                <button 
+                                    onClick={() => updatePergunta(pIndex, 'tipo', 'lacunas')}
+                                    className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${p.tipo === 'lacunas' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-500' : 'bg-transparent border-white/10 text-gray-500 hover:text-white'}`}
+                                >
+                                    Completar Lacunas
+                                </button>
+                            </div>
                             
                             <textarea 
-                                placeholder="Digite a pergunta para o irmão responder livremente..."
+                                placeholder={p.tipo === 'livre' ? "Digite a pergunta para o irmão responder livremente..." : "Descreva a instrução. Ex: 'Preencha as palavras ocultas no texto abaixo:'"}
                                 value={p.pergunta}
-                                onChange={e => updatePergunta(pIndex, e.target.value)}
-                                rows={3}
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-yellow-500 transition-colors resize-none"
+                                onChange={e => updatePergunta(pIndex, 'pergunta', e.target.value)}
+                                rows={p.tipo === 'livre' ? 3 : 2}
+                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-yellow-500 transition-colors resize-none mb-4"
                             />
+
+                            {p.tipo === 'lacunas' && (
+                                <div className="space-y-4 border-t border-white/5 pt-4">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Texto Base</label>
+                                        <textarea 
+                                            placeholder="Cole aqui o texto completo. Em seguida, clique nas palavras abaixo para criar as lacunas."
+                                            value={p.texto}
+                                            onChange={e => updatePergunta(pIndex, 'texto', e.target.value)}
+                                            rows={4}
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors resize-none"
+                                        />
+                                    </div>
+
+                                    {p.texto.trim() && (
+                                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                                            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-3">Selecione as palavras a ocultar:</p>
+                                            <div className="leading-loose">
+                                                {p.texto.split(' ').map((word, wordIndex) => {
+                                                    if (!word.trim()) return <span key={wordIndex}> </span>;
+                                                    const isSelected = p.lacunas.includes(wordIndex);
+                                                    return (
+                                                        <span 
+                                                            key={wordIndex}
+                                                            onClick={() => toggleLacuna(pIndex, wordIndex)}
+                                                            className={`cursor-pointer inline-block mx-0.5 px-1 rounded transition-colors ${
+                                                                isSelected 
+                                                                ? 'bg-emerald-500 text-black font-bold' 
+                                                                : 'hover:bg-white/10 text-gray-300'
+                                                            }`}
+                                                        >
+                                                            {word}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ))}
                     
                     <button 
-                        onClick={() => setPerguntas([...perguntas, { pergunta: "" }])}
-                        className="w-full py-4 mt-4 border border-dashed border-white/20 rounded-xl text-gray-400 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 hover:text-white hover:border-white/40 transition-all"
+                        onClick={() => setPerguntas([...perguntas, { tipo: 'livre', pergunta: "", texto: "", lacunas: [] }])}
+                        className="w-full py-4 border border-dashed border-white/20 rounded-xl text-gray-400 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 hover:text-white hover:border-white/40 transition-all"
                     >
                         + Adicionar Nova Pergunta
                     </button>
                 </div>
 
-                <div className="p-6 border-t border-white/5 flex gap-4">
+                <div className="p-6 border-t border-white/5 flex gap-4 bg-white/[0.02]">
                     <button onClick={onClose} className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all text-gray-300">
                         Cancelar
                     </button>
