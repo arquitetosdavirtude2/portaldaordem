@@ -19,43 +19,63 @@ os.makedirs(VIDEO_DIR, exist_ok=True)
 @router.get("/")
 def listar_conteudos(loja_id: int, pessoa_id: Optional[int] = None, grau: Optional[int] = None, db: Session = Depends(get_db)):
     """Lista todos os conteúdos disponíveis para a loja, filtrando por grau se aplicável."""
-    query = db.query(ConteudoEstudo).filter(ConteudoEstudo.loja_id == loja_id)
-    if grau:
-        query = query.filter(ConteudoEstudo.grau == grau)
-    
-    conteudos = query.order_by(ConteudoEstudo.ordem).all()
-    
-    resultados = []
-    for c in conteudos:
-        c_dict = {
-            "id": c.id,
-            "titulo": c.titulo,
-            "tipo": c.tipo,
-            "grau": c.grau,
-            "ordem": c.ordem,
-            "materiais": [{"id": m.id, "tipo": m.tipo, "url": m.url, "nome": m.nome_arquivo} for m in db.query(MaterialEstudo).filter(MaterialEstudo.conteudo_id == c.id).all()],
-            "quizzes": [{"id": q.id, "pergunta": q.pergunta, "opcoes": json.loads(q.opcoes_json) if q.opcoes_json else [], "resposta_correta": q.resposta_correta} for q in db.query(Quiz).filter(Quiz.conteudo_id == c.id).all()]
-        }
+    try:
+        query = db.query(ConteudoEstudo).filter(ConteudoEstudo.loja_id == loja_id)
+        if grau and grau > 0:
+            query = query.filter(ConteudoEstudo.grau == grau)
         
-        if pessoa_id:
-            prog = db.query(ProgressoEstudo).filter(ProgressoEstudo.pessoa_id == pessoa_id, ProgressoEstudo.conteudo_id == c.id).first()
-            entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.pessoa_id == pessoa_id, EntregaTrabalho.conteudo_id == c.id).first()
+        conteudos = query.order_by(ConteudoEstudo.ordem).all()
+        
+        resultados = []
+        for c in conteudos:
+            c_dict = {
+                "id": c.id,
+                "titulo": c.titulo,
+                "tipo": c.tipo,
+                "grau": c.grau,
+                "ordem": c.ordem,
+                "descricao_jornada": getattr(c, 'descricao_jornada', None),
+                "imagem_jornada_url": getattr(c, 'imagem_jornada_url', None),
+                "materiais": [],
+                "quizzes": [],
+                "progresso": {"status": "pendente", "quiz_score": None, "data_conclusao": None, "data_agendamento": None},
+                "entrega": {"status": "pendente", "url": None, "feedback": None}
+            }
             
-            c_dict["progresso"] = {
-                "status": prog.status if prog else "pendente",
-                "quiz_score": prog.quiz_score if prog else None,
-                "data_conclusao": prog.data_conclusao if prog else None,
-                "data_agendamento": prog.data_agendamento if prog else None
-            }
-            c_dict["entrega"] = {
-                "status": entrega.status if entrega else "pendente",
-                "url": entrega.arquivo_url if entrega else None,
-                "feedback": entrega.feedback if entrega else None
-            }
-        
-        resultados.append(c_dict)
-        
-    return resultados
+            # Buscar materiais
+            materiais = db.query(MaterialEstudo).filter(MaterialEstudo.conteudo_id == c.id).all()
+            c_dict["materiais"] = [{"id": m.id, "tipo": m.tipo, "url": m.url, "nome": m.nome_arquivo} for m in materiais]
+            
+            # Buscar quizzes
+            quizzes = db.query(Quiz).filter(Quiz.conteudo_id == c.id).all()
+            c_dict["quizzes"] = [{"id": q.id, "pergunta": q.pergunta, "opcoes_json": q.opcoes_json, "resposta_correta": q.resposta_correta} for q in quizzes]
+            
+            if pessoa_id:
+                prog = db.query(ProgressoEstudo).filter(ProgressoEstudo.pessoa_id == pessoa_id, ProgressoEstudo.conteudo_id == c.id).first()
+                entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.pessoa_id == pessoa_id, EntregaTrabalho.conteudo_id == c.id).first()
+                
+                if prog:
+                    c_dict["progresso"] = {
+                        "status": prog.status or "pendente",
+                        "quiz_score": prog.quiz_score,
+                        "data_conclusao": prog.data_conclusao,
+                        "data_agendamento": prog.data_agendamento
+                    }
+                if entrega:
+                    c_dict["entrega"] = {
+                        "status": entrega.status or "pendente",
+                        "url": entrega.arquivo_url,
+                        "feedback": entrega.feedback
+                    }
+            
+            resultados.append(c_dict)
+            
+        return resultados
+    except Exception as e:
+        import traceback
+        error_msg = f"Erro no backend: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @router.post("/conteudo")
 def criar_conteudo(
