@@ -119,15 +119,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Simple Header */}
-            <div className="mb-6">
-                <h2 className="text-xl font-light text-white uppercase tracking-tight mb-1">
-                    {isDiretoria ? 'Gestão de Trabalhos' : 'Minha Jornada'}
-                </h2>
-                <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">
-                    {acesso.nome} {!isLuz && `• GRAU DE ${acesso.status?.toUpperCase()}`} • {acesso.loja_nome || 'Arquitetos da Virtude'}
-                </p>
-            </div>
 
             {isDiretoria && (
                 <div className="flex justify-between items-center mb-6">
