@@ -27,12 +27,13 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     // Initial suggested list (filtered by degree later)
     const todosTrabalhos = [
         { id: 0, titulo: "Minha Iniciação", status: "pendente", grau: 1, tipo: 'trabalho' },
-        { id: 1, titulo: "Dualidade do Grau", status: "pendente", grau: 1, tipo: 'trabalho' },
-        { id: 2, titulo: "Avental Maçônico", status: "pendente", grau: 1, tipo: 'trabalho' },
-        { id: 3, titulo: "Colunas", status: "pendente", grau: 1, tipo: 'trabalho' },
-        { id: 4, titulo: "Luvas", status: "pendente", grau: 1, tipo: 'trabalho' },
-        { id: 5, titulo: "Trabalho 6", status: "pendente", grau: 1, tipo: 'trabalho' },
-        // ... more for grau 2 and 3 would go here
+        ...Array.from({ length: 13 }, (_, i) => ({
+            id: i + 1,
+            titulo: `Trabalho ${i + 1}`,
+            status: "pendente",
+            grau: 1,
+            tipo: 'trabalho'
+        }))
     ];
 
     const todasPrelecoes = Array.from({ length: 7 }, (_, i) => ({
@@ -148,17 +149,27 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     {itensFiltrados.map((item) => (
                         <div 
                             key={item.id}
-                            className="group flex items-center justify-between p-3 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-lg transition-all"
+                            onClick={() => {
+                                setItemEmEstudo(item);
+                                if (!isDiretoria) {
+                                    setVideoConcluido(false);
+                                    setQuizAtivo(false);
+                                    setQuizConcluido(false);
+                                    setRespostasQuiz([]);
+                                    lastTimeRef.current = 0;
+                                }
+                            }}
+                            className="group flex items-center justify-between p-4 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-lg transition-all cursor-pointer"
                         >
                             <div className="flex items-center gap-4">
-                                <div className={`text-sm ${tabAtiva === 'trabalhos' ? 'text-yellow-500/40' : 'text-blue-500/40'}`}>
+                                <div className={`text-xl ${tabAtiva === 'trabalhos' ? 'text-yellow-500/40' : 'text-blue-500/40'}`}>
                                     {tabAtiva === 'trabalhos' ? '📜' : '📖'}
                                 </div>
                                 <div>
-                                    <h4 className="text-[12px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
+                                    <h4 className="text-[14px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
                                         {item.titulo}
                                     </h4>
-                                    <p className="text-[8px] text-gray-600 uppercase tracking-widest font-bold">
+                                    <p className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mt-0.5">
                                         {grauAtivo === 1 ? 'Aprendiz' : grauAtivo === 2 ? 'Companheiro' : 'Mestre'}
                                     </p>
                                 </div>
@@ -169,21 +180,11 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     <span className="text-[8px] text-gray-600 uppercase tracking-[0.2em] font-bold opacity-50">Status</span>
                                     <span className="text-[9px] text-red-500/50 font-bold uppercase tracking-tight">Pendente</span>
                                 </div>
-                                <button 
-                                    onClick={() => {
-                                        setItemEmEstudo(item);
-                                        if (!isDiretoria) {
-                                            setVideoConcluido(false);
-                                            setQuizAtivo(false);
-                                            setQuizConcluido(false);
-                                            setRespostasQuiz([]);
-                                            lastTimeRef.current = 0;
-                                        }
-                                    }}
-                                    className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-[9px] font-bold uppercase tracking-[0.15em] rounded-md border border-white/10 transition-all text-gray-400 hover:text-white"
-                                >
-                                    {isDiretoria ? 'Gerenciar' : 'Iniciar Estudo'}
-                                </button>
+                                <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-yellow-500/20 flex items-center justify-center transition-all">
+                                    <span className="text-[10px] opacity-50 group-hover:opacity-100 group-hover:text-yellow-500">
+                                        {isDiretoria ? '⚙️' : '▶️'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     ))}

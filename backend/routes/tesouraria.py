@@ -1355,8 +1355,6 @@ def criar_excecao(
 ):
     """Registra uma exceção para um mês de mensalidade (ignorar cobrança)."""
     try:
-        from sqlalchemy import text
-        from datetime import datetime
         # Evitar duplicatas
         exists = db_treasury.execute(text(
             "SELECT id FROM mensalidade_excecoes WHERE pessoa_id = :pid AND mes_ref = :mr"
@@ -1382,7 +1380,7 @@ def criar_excecao(
         db_treasury.rollback()
         import traceback
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Erro ao registrar exceção: {str(e)}")
 
 @router.delete("/excecoes/{excecao_id}")
 def remover_excecao(
