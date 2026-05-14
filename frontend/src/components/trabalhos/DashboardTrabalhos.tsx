@@ -90,24 +90,29 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Degree Navigation (Somente Diretoria) */}
             {isDiretoria && (
-                <div className="flex gap-4 mb-6 border-b border-white/5 pb-4">
-                    {[
-                        { id: 1, label: 'Aprendiz' },
-                        { id: 2, label: 'Companheiro' },
-                        { id: 3, label: 'Mestre' }
-                    ].map(g => (
-                        <button
-                            key={g.id}
-                            onClick={() => setGrauAtivo(g.id)}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
-                                grauAtivo === g.id 
-                                ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500' 
-                                : 'bg-white/5 border-white/5 text-gray-500 hover:text-gray-300'
-                            }`}
-                        >
-                            {g.label}
-                        </button>
-                    ))}
+                <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                    <div className="flex gap-4">
+                        {[
+                            { id: 1, label: 'Aprendiz' },
+                            { id: 2, label: 'Companheiro' },
+                            { id: 3, label: 'Mestre' }
+                        ].map(g => (
+                            <button
+                                key={g.id}
+                                onClick={() => setGrauAtivo(g.id)}
+                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
+                                    grauAtivo === g.id 
+                                    ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500' 
+                                    : 'bg-white/5 border-white/5 text-gray-500 hover:text-gray-300'
+                                }`}
+                            >
+                                {g.label}
+                            </button>
+                        ))}
+                    </div>
+                    <button className="px-5 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-yellow-500/20 transition-all">
+                        + Adicionar {tabAtiva === 'trabalhos' ? 'Trabalho' : 'Preleção'}
+                    </button>
                 </div>
             )}
 
@@ -199,9 +204,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     {isDiretoria && itensFiltrados.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-10 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
                              <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Nenhum conteúdo cadastrado para este grau</p>
-                             <button className="mt-4 px-6 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-yellow-500/20 transition-all">
-                                 + Adicionar {tabAtiva === 'trabalhos' ? 'Trabalho' : 'Preleção'}
-                             </button>
                         </div>
                     )}
                 </div>
