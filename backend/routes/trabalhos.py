@@ -33,8 +33,8 @@ def listar_conteudos(loja_id: int, pessoa_id: Optional[int] = None, grau: Option
             "tipo": c.tipo,
             "grau": c.grau,
             "ordem": c.ordem,
-            "materiais": [{"id": m.id, "tipo": m.tipo, "url": m.url, "nome": m.nome_arquivo} for m in c.materiais_rel],
-            "quizzes": [{"id": q.id, "pergunta": q.pergunta} for q in c.quizzes_rel]
+            "materiais": [{"id": m.id, "tipo": m.tipo, "url": m.url, "nome": m.nome_arquivo} for m in db.query(MaterialEstudo).filter(MaterialEstudo.conteudo_id == c.id).all()],
+            "quizzes": [{"id": q.id, "pergunta": q.pergunta, "opcoes": json.loads(q.opcoes_json) if q.opcoes_json else [], "resposta_correta": q.resposta_correta} for q in db.query(Quiz).filter(Quiz.conteudo_id == c.id).all()]
         }
         
         if pessoa_id:

@@ -2,6 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import ModalNovoConteudo from './ModalNovoConteudo';
+import ModalUploadMaterial from './ModalUploadMaterial';
+import ModalQuiz from './ModalQuiz';
 
 interface DashboardTrabalhosProps {
     acesso: any;
@@ -25,36 +28,37 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
         setIsMounted(true);
     }, []);
 
-    const perguntasMock = [
-        { id: 1, texto: "Qual o significado simbólico principal deste trabalho?", opcoes: ["O Tempo", "A Força de Vontade", "A Sabedoria", "A Beleza"], respostaCorreta: 0 },
-        { id: 2, texto: "Qual ferramenta é mais associada ao tema abordado?", opcoes: ["Esquadro", "Maço", "Compasso", "Nível"], respostaCorreta: 1 },
-    ];
+    const [conteudos, setConteudos] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [novoConteudoModal, setNovoConteudoModal] = useState(false);
+    const [uploadMaterialModal, setUploadMaterialModal] = useState<{ativo: boolean, tipo: 'video'|'pdf'}>({ativo: false, tipo: 'video'});
+    const [quizModalAtivo, setQuizModalAtivo] = useState(false);
 
-    // Initial suggested list (filtered by degree later)
-    const todosTrabalhos = [
-        { id: 0, titulo: "Minha Iniciação", status: "pendente", grau: 1, tipo: 'trabalho' },
-        ...Array.from({ length: 13 }, (_, i) => ({
-            id: i + 1,
-            titulo: `Trabalho ${i + 1}`,
-            status: "pendente",
-            grau: 1,
-            tipo: 'trabalho'
-        }))
-    ];
+    const carregarConteudos = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch(`/api/trabalhos/?loja_id=${acesso.loja_id}&pessoa_id=${acesso.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setConteudos(data);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    const todasPrelecoes = Array.from({ length: 7 }, (_, i) => ({
-        id: i + 1,
-        titulo: `${i + 1}ª Sessão da 1ª Preleção`,
-        status: "pendente",
-        grau: 1,
-        tipo: 'prelecao'
-    }));
+    useEffect(() => {
+        if (acesso && isMounted) {
+            carregarConteudos();
+        }
+    }, [acesso, isMounted]);
 
-    const itensFiltrados = (tabAtiva === 'trabalhos' ? todosTrabalhos : todasPrelecoes)
-        .filter(item => item.grau === grauAtivo);
+    const itensFiltrados = conteudos.filter(item => item.grau === grauAtivo && item.tipo === (tabAtiva === 'trabalhos' ? 'trabalho' : 'prelecao'));
 
-    const progressWorks = 0;
-    const totalWorks = todosTrabalhos.filter(t => t.grau === grauAtivo).length;
+    const progressWorks = conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'trabalho' && t.progresso?.status === 'concluido').length;
+    const totalWorks = conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'trabalho').length;
     
     // Video Progress Logic
     useEffect(() => {
@@ -110,7 +114,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                             </button>
                         ))}
                     </div>
-                    <button className="px-5 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-yellow-500/20 transition-all">
+                    <button onClick={() => setNovoConteudoModal(true)} className="px-5 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-yellow-500/20 transition-all">
                         + Adicionar {tabAtiva === 'trabalhos' ? 'Trabalho' : 'Preleção'}
                     </button>
                 </div>
@@ -293,11 +297,11 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
                                     {quizAtivo && !quizConcluido && (
                                         <div className="p-6 rounded-2xl border bg-emerald-500/5 border-emerald-500/20 space-y-6">
-                                            {perguntasMock.map((perg, i) => (
-                                                <div key={perg.id} className="space-y-3">
-                                                    <p className="text-[11px] font-medium text-white">{i+1}. {perg.texto}</p>
+                                            {(itemEmEstudo?.quizzes || []).map((perg: any, i: number) => (
+                                                <div key={perg.id || i} className="space-y-3">
+                                                    <p className="text-[11px] font-medium text-white">{i+1}. {perg.pergunta}</p>
                                                     <div className="space-y-2">
-                                                        {perg.opcoes.map((opcao, idx) => (
+                                                        {perg.opcoes.map((opcao: string, idx: number) => (
                                                             <button
                                                                 key={idx}
                                                                 onClick={() => {
@@ -319,8 +323,9 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                             ))}
                                             <button 
                                                 onClick={() => {
-                                                    // In a real scenario, check if all questions are answered correctly
-                                                    if (respostasQuiz.length === perguntasMock.length) {
+                                                    const quizzesLength = (itemEmEstudo?.quizzes || []).length;
+                                                    if (quizzesLength > 0 && respostasQuiz.filter(r => r !== undefined).length === quizzesLength) {
+                                                        // Validar respostas se necessário (aqui seria enviar para backend)
                                                         setQuizConcluido(true);
                                                         setQuizAtivo(false);
                                                     } else {
@@ -415,21 +420,21 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-l-2 border-yellow-500 pl-3">Configurações</h4>
                                     
                                     <div className="space-y-3">
-                                        <button className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                        <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'video'})} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
                                             <span className="text-lg">🎥</span>
                                             <div className="text-left">
                                                 <p className="text-[10px] font-bold text-white uppercase">Trocar Vídeo</p>
                                                 <p className="text-[8px] text-gray-500">MP4, WebM (Max 500MB)</p>
                                             </div>
                                         </button>
-                                        <button className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                        <button onClick={() => setUploadMaterialModal({ativo: true, tipo: 'pdf'})} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
                                             <span className="text-lg">📄</span>
                                             <div className="text-left">
                                                 <p className="text-[10px] font-bold text-white uppercase">Material de Apoio</p>
                                                 <p className="text-[8px] text-gray-500">PDF, DOCX (Max 10MB)</p>
                                             </div>
                                         </button>
-                                        <button className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
+                                        <button onClick={() => setQuizModalAtivo(true)} className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-3 hover:bg-white/[0.05] transition-all">
                                             <span className="text-lg">❓</span>
                                             <div className="text-left">
                                                 <p className="text-[10px] font-bold text-white uppercase">Configurar Quiz</p>
@@ -508,6 +513,33 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                         </div>
                     </div>
                 </div>
+            )}
+            
+            {novoConteudoModal && (
+                <ModalNovoConteudo 
+                    lojaId={acesso.loja_id} 
+                    tabAtiva={tabAtiva} 
+                    onClose={() => setNovoConteudoModal(false)} 
+                    onSuccess={carregarConteudos} 
+                />
+            )}
+            
+            {uploadMaterialModal.ativo && itemEmEstudo && (
+                <ModalUploadMaterial 
+                    conteudoId={itemEmEstudo.id} 
+                    tipo={uploadMaterialModal.tipo} 
+                    onClose={() => setUploadMaterialModal({ativo: false, tipo: 'video'})} 
+                    onSuccess={carregarConteudos} 
+                />
+            )}
+
+            {quizModalAtivo && itemEmEstudo && (
+                <ModalQuiz 
+                    conteudoId={itemEmEstudo.id} 
+                    quizzesIniciais={itemEmEstudo.quizzes || []} 
+                    onClose={() => setQuizModalAtivo(false)} 
+                    onSuccess={carregarConteudos} 
+                />
             )}
             </>,
             document.body
