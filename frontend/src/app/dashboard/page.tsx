@@ -204,21 +204,22 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {rawRole === 'loja' && (
+                    {/* Liberado para todos os usuários (Obreiros e Diretoria) */}
+                    {true && (
                         <div 
                             onClick={() => router.push('/trabalhos')}
                             className="group relative bg-black/20 backdrop-blur-sm rounded-xl p-8 border border-white/5 hover:border-yellow-500/50 cursor-pointer transition-all duration-500 transform hover:-translate-y-2 hover:shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <div className="w-14 h-14 bg-white/5 rounded-lg flex items-center justify-center mb-8 text-3xl border border-white/10 group-hover:border-yellow-500/50 group-hover:bg-yellow-600/20 text-yellow-500">
-                                🏗️
+                                🏛️
                             </div>
 
                             <h3 className="text-xl font-bold text-gray-100 group-hover:text-yellow-500 mb-3 uppercase tracking-widest font-serif">
-                                Trabalhos
+                                Escola de Mistérios
                             </h3>
                             <p className="text-sm text-gray-400 group-hover:text-gray-200 leading-relaxed font-light">
-                                Registro detalhado de pranchas, arquitetura e controle de presenças em Loja.
+                                Acesse trabalhos, preleções e avance em sua jornada maçônica de acordo com seu grau.
                             </p>
 
                             <div className="mt-8 flex items-center text-yellow-500 text-xs font-bold uppercase tracking-[0.2em] opacity-60 group-hover:opacity-100">

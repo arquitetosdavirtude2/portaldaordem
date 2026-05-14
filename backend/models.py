@@ -174,56 +174,61 @@ class ExtratoMensal(Base):
     caixa = relationship("Caixa")
 
 
-class Trabalho(Base):
-    __tablename__ = "trabalhos"
+class ConteudoEstudo(Base):
+    __tablename__ = "conteudos_estudo"
     id = Column(Integer, primary_key=True, index=True)
     loja_id = Column(Integer, ForeignKey("lojas.id"))
-    pessoa_id = Column(Integer, ForeignKey("pessoas.id"))
-    titulo = Column(String(200))
-    tipo = Column(String(50)) # 'trabalho', 'prelecao'
+    titulo = Column(String(200), nullable=False)
+    tipo = Column(String(50), nullable=False) # 'trabalho' ou 'prelecao'
     grau = Column(Integer, default=1) # 1=Aprendiz, 2=Companheiro, 3=Mestre
-    arquivo_url = Column(String(255), nullable=True)
-    status = Column(String(50), default="pendente") # 'pendente', 'aprovado', 'revisar'
-    data_upload = Column(String(30), nullable=True)
-    feedback_mestre = Column(String(2000), nullable=True)
+    ordem = Column(Integer, default=0)
 
     loja = relationship("Loja")
-    pessoa = relationship("Pessoa")
 
 class MaterialEstudo(Base):
     __tablename__ = "materiais_estudo"
     id = Column(Integer, primary_key=True, index=True)
-    loja_id = Column(Integer, ForeignKey("lojas.id"))
-    titulo = Column(String(200))
-    tipo = Column(String(50)) # 'video', 'doc'
+    conteudo_id = Column(Integer, ForeignKey("conteudos_estudo.id"))
+    tipo = Column(String(50)) # 'video', 'pdf', 'docx'
+    nome_arquivo = Column(String(200))
     url = Column(String(500))
-    trabalho_id = Column(Integer, nullable=True) # Vinculado a um trabalho específico (opcional)
-    prelecao_id = Column(Integer, nullable=True) # Vinculado a uma preleção específica (opcional)
     data_upload = Column(String(30), nullable=True)
-    ordem = Column(Integer, default=0) # Ordem de apresentação definida pela diretoria
-    data_apresentacao = Column(String(20), nullable=True) # YYYY-MM-DD
 
-    loja = relationship("Loja")
+    conteudo = relationship("ConteudoEstudo")
+
+class Quiz(Base):
+    __tablename__ = "quizzes"
+    id = Column(Integer, primary_key=True, index=True)
+    conteudo_id = Column(Integer, ForeignKey("conteudos_estudo.id"))
+    pergunta = Column(String(500))
+    opcoes_json = Column(String(2000)) # JSON string with options
+    resposta_correta = Column(Integer) # Index of the correct option
+
+    conteudo = relationship("ConteudoEstudo")
 
 class ProgressoEstudo(Base):
     __tablename__ = "progresso_estudo"
     id = Column(Integer, primary_key=True, index=True)
     pessoa_id = Column(Integer, ForeignKey("pessoas.id"))
-    material_id = Column(Integer, ForeignKey("materiais_estudo.id"))
-    status = Column(String(50), default="em_andamento") # 'em_andamento', 'concluido'
-    data_conclusao = Column(String(30), nullable=True)
+    conteudo_id = Column(Integer, ForeignKey("conteudos_estudo.id"))
+    status = Column(String(50), default="pendente") # 'pendente', 'em_estudo', 'concluido'
     quiz_score = Column(Integer, nullable=True)
+    data_conclusao = Column(String(30), nullable=True)
+    data_agendamento = Column(String(20), nullable=True) # YYYY-MM-DD
 
     pessoa = relationship("Pessoa")
-    material = relationship("MaterialEstudo")
+    conteudo = relationship("ConteudoEstudo")
 
-class Quiz(Base):
-    __tablename__ = "quizzes"
+class EntregaTrabalho(Base):
+    __tablename__ = "entregas_trabalho"
     id = Column(Integer, primary_key=True, index=True)
-    material_id = Column(Integer, ForeignKey("materiais_estudo.id"))
-    pergunta = Column(String(500))
-    opcoes_json = Column(String(2000)) # JSON string with options
-    resposta_correta = Column(Integer) # Index of the correct option
+    pessoa_id = Column(Integer, ForeignKey("pessoas.id"))
+    conteudo_id = Column(Integer, ForeignKey("conteudos_estudo.id"))
+    arquivo_url = Column(String(255), nullable=True)
+    status = Column(String(50), default="pendente") # 'pendente', 'aprovado', 'revisar'
+    feedback = Column(String(2000), nullable=True)
+    data_upload = Column(String(30), nullable=True)
 
-    material = relationship("MaterialEstudo")
+    pessoa = relationship("Pessoa")
+    conteudo = relationship("ConteudoEstudo")
 
