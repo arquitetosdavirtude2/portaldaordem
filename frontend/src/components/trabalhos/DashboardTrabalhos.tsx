@@ -19,7 +19,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [videoConcluido, setVideoConcluido] = useState(false);
     const [quizAtivo, setQuizAtivo] = useState(false);
     const [quizConcluido, setQuizConcluido] = useState(false);
-    const [respostasQuiz, setRespostasQuiz] = useState<number[]>([]);
+    const [respostasQuiz, setRespostasQuiz] = useState<string[]>([]);
     const [uploadTrabalhoModal, setUploadTrabalhoModal] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -392,35 +392,29 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                 <div key={perg.id || i} className="space-y-3">
                                                     <p className="text-[11px] font-medium text-white">{i+1}. {perg.pergunta}</p>
                                                     <div className="space-y-2">
-                                                        {perg.opcoes.map((opcao: string, idx: number) => (
-                                                            <button
-                                                                key={idx}
-                                                                onClick={() => {
-                                                                    const newResp = [...respostasQuiz];
-                                                                    newResp[i] = idx;
-                                                                    setRespostasQuiz(newResp);
-                                                                }}
-                                                                className={`w-full text-left px-4 py-2 rounded-lg text-[10px] border transition-all ${
-                                                                    respostasQuiz[i] === idx 
-                                                                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' 
-                                                                    : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                                                                }`}
-                                                            >
-                                                                {opcao}
-                                                            </button>
-                                                        ))}
+                                                        <textarea 
+                                                            value={respostasQuiz[i] || ''}
+                                                            onChange={(e) => {
+                                                                const newResp = [...respostasQuiz];
+                                                                newResp[i] = e.target.value;
+                                                                setRespostasQuiz(newResp);
+                                                            }}
+                                                            placeholder="Digite sua resposta aqui..."
+                                                            rows={3}
+                                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors resize-none"
+                                                        />
                                                     </div>
                                                 </div>
                                             ))}
                                             <button 
                                                 onClick={() => {
                                                     const quizzesLength = (itemEmEstudo?.quizzes || []).length;
-                                                    if (quizzesLength > 0 && respostasQuiz.filter(r => r !== undefined).length === quizzesLength) {
-                                                        // Validar respostas se necessário (aqui seria enviar para backend)
+                                                    if (quizzesLength > 0 && respostasQuiz.filter(r => r && r.trim() !== '').length === quizzesLength) {
+                                                        // O envio real das respostas aconteceria aqui
                                                         setQuizConcluido(true);
                                                         setQuizAtivo(false);
                                                     } else {
-                                                        alert("Responda todas as perguntas.");
+                                                        alert("Por favor, responda todas as perguntas antes de finalizar.");
                                                     }
                                                 }}
                                                 className="w-full py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 transition-all mt-4"
