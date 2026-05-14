@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface DashboardTrabalhosProps {
     acesso: any;
@@ -16,8 +17,13 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [quizConcluido, setQuizConcluido] = useState(false);
     const [respostasQuiz, setRespostasQuiz] = useState<number[]>([]);
     const [uploadTrabalhoModal, setUploadTrabalhoModal] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const lastTimeRef = useRef(0);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const perguntasMock = [
         { id: 1, texto: "Qual o significado simbólico principal deste trabalho?", opcoes: ["O Tempo", "A Força de Vontade", "A Sabedoria", "A Beleza"], respostaCorreta: 0 },
@@ -207,6 +213,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             )}
         </div>
 
+            {isMounted && createPortal(
+                <>
             {/* Study Modal Overlay (Brother View) */}
             {itemEmEstudo && !isDiretoria && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
@@ -371,8 +379,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-xl">⚙️</div>
                                 <div>
-                                    <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Gestão de Conteúdo • {itemEmEstudo.titulo}</span>
-                                    <h3 className="text-lg font-medium text-white uppercase tracking-tight">Painel de Controle do Instrutor</h3>
+                                    <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Painel do Instrutor</span>
+                                    <h3 className="text-xl font-bold text-white uppercase tracking-tight">{itemEmEstudo.titulo}</h3>
                                 </div>
                             </div>
                             <button 
@@ -499,6 +507,9 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     </div>
                 </div>
             )}
+            </>,
+            document.body
+        )}
         </>
     );
 }
