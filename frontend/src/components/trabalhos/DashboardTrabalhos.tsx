@@ -37,7 +37,9 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const carregarConteudos = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`/api/trabalhos/?loja_id=${acesso.loja_id}&pessoa_id=${acesso.id}`);
+            const pId = acesso.id || acesso.pessoa_id;
+            const url = `/api/trabalhos/?loja_id=${acesso.loja_id}${pId ? `&pessoa_id=${pId}` : ''}`;
+            const res = await fetch(url);
             if (res.ok) {
                 const data = await res.json();
                 setConteudos(data);
