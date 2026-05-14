@@ -6,7 +6,6 @@ import ModalNovoConteudo from './ModalNovoConteudo';
 import ModalUploadMaterial from './ModalUploadMaterial';
 import ModalQuiz from './ModalQuiz';
 import ModalEditarConteudo from './ModalEditarConteudo';
-import ModalJornada from './ModalJornada';
 
 interface DashboardTrabalhosProps {
     acesso: any;
@@ -22,7 +21,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [quizConcluido, setQuizConcluido] = useState(false);
     const [respostasQuiz, setRespostasQuiz] = useState<string[]>([]);
     const [isMounted, setIsMounted] = useState(false);
-    const [jornadaModal, setJornadaModal] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -121,6 +119,16 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Simple Header */}
+            <div className="mb-6">
+                <h2 className="text-xl font-light text-white uppercase tracking-tight mb-1">
+                    {isDiretoria ? 'Gestão de Trabalhos' : 'Minha Jornada'}
+                </h2>
+                <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">
+                    {acesso.nome} {!isLuz && `• GRAU DE ${acesso.status?.toUpperCase()}`} • {acesso.loja_nome || 'Arquitetos da Virtude'}
+                </p>
+            </div>
+
             {isDiretoria && (
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
@@ -164,91 +172,70 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                 </button>
             </div>
 
-            {/* Dashboard Cards (Brother View) */}
+            {/* Compact Dashboard Cards */}
             {!isDiretoria && grauAtivo === userGrau && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    {tabAtiva === 'trabalhos' ? (
-                        <>
-                            {/* Progress Card with Timeline */}
-                            <div onClick={() => setJornadaModal(true)} className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 p-5 rounded-2xl relative overflow-hidden group cursor-pointer transition-all">
-                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">🏆</div>
-                                <span className="text-[9px] uppercase font-bold text-yellow-500 tracking-widest block mb-4">Seu Progresso</span>
-                                
-                                <div className="relative mt-2">
-                                    <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
-                                        {[1, 2, 3].map((g) => {
-                                            const totalNoGrau = conteudos.filter(t => t.grau === g && t.tipo === 'trabalho').length;
-                                            const concluidosNoGrau = conteudos.filter(t => t.grau === g && t.tipo === 'trabalho' && t.progresso?.status === 'concluido').length;
-                                            const pct = g < userGrau ? 100 : (g === userGrau ? (totalNoGrau > 0 ? (concluidosNoGrau / totalNoGrau) * 100 : 0) : 0);
-                                            return <div key={g} className="flex-1 h-full bg-white/5 relative border-r border-black/20"><div className="h-full bg-yellow-500 transition-all duration-1000" style={{ width: `${pct}%` }} /></div>
-                                        })}
-                                    </div>
-                                    <div className="flex justify-between mt-2 px-0.5">
-                                        <span className={`text-[7px] font-bold uppercase tracking-wider ${userGrau >= 1 ? 'text-yellow-500' : 'text-gray-700'}`}>Aprendiz</span>
-                                        <span className={`text-[7px] font-bold uppercase tracking-wider ${userGrau >= 2 ? 'text-yellow-500' : 'text-gray-700'}`}>Companheiro</span>
-                                        <span className={`text-[7px] font-bold uppercase tracking-wider ${userGrau >= 3 ? 'text-yellow-500' : 'text-gray-700'}`}>Mestre</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📚</div>
-                                <span className="text-[9px] uppercase font-bold text-blue-400 tracking-widest block mb-2">A Fazer</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">{(totalWorks || 0) - progressWorks}</span>
-                                    <span className="text-sm text-gray-400">pendentes</span>
-                                </div>
-                            </div>
-                            
-                            <div className="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">🎯</div>
-                                <span className="text-[9px] uppercase font-bold text-purple-400 tracking-widest block mb-2">Aproveitamento</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">9.5</span>
-                                    <span className="text-sm text-gray-400">/ 10</span>
-                                </div>
-                            </div>
-                            
-                            <div className="bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">⏱️</div>
-                                <span className="text-[9px] uppercase font-bold text-rose-400 tracking-widest block mb-2">Próxima Entrega</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">Hoje</span>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="col-span-1 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📖</div>
-                            <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-widest block mb-2">Preleções</span>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-serif text-white">{conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'prelecao').length}</span>
-                                <span className="text-sm text-gray-400">disponíveis</span>
-                            </div>
+                    {/* Progress Card */}
+                    <div className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 p-4 rounded-xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-3 opacity-20 text-2xl">🏆</div>
+                        <span className="text-[8px] uppercase font-bold text-yellow-500 tracking-widest block mb-2">Seu Progresso</span>
+                        <div className="flex items-baseline gap-2 mb-2">
+                            <span className="text-xl font-bold text-white">{progressWorks}</span>
+                            <span className="text-xs text-gray-400">/ {totalWorks || 0}</span>
                         </div>
-                    )}
+                        <div className="h-1 bg-black/50 rounded-full overflow-hidden w-full">
+                            <div className="h-full bg-yellow-500 rounded-full transition-all duration-1000" style={{ width: `${(totalWorks || 0) > 0 ? (progressWorks/(totalWorks || 0))*100 : 0}%` }} />
+                        </div>
+                    </div>
+
+                    {/* Pending Card */}
+                    <div className="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 p-4 rounded-xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-3 opacity-20 text-2xl">📚</div>
+                        <span className="text-[8px] uppercase font-bold text-blue-400 tracking-widest block mb-2">A Fazer</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-bold text-white">{(totalWorks || 0) - progressWorks}</span>
+                            <span className="text-xs text-gray-400">pendentes</span>
+                        </div>
+                    </div>
+                    
+                    {/* Performance Card */}
+                    <div className="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 p-4 rounded-xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-3 opacity-20 text-2xl">🎯</div>
+                        <span className="text-[8px] uppercase font-bold text-purple-400 tracking-widest block mb-2">Aproveitamento</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-bold text-white">9.5</span>
+                            <span className="text-xs text-gray-400">/ 10</span>
+                        </div>
+                    </div>
+                    
+                    {/* Next Delivery Card */}
+                    <div className="bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 p-4 rounded-xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-3 opacity-20 text-2xl">⏱️</div>
+                        <span className="text-[8px] uppercase font-bold text-rose-400 tracking-widest block mb-2">Próxima Entrega</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-bold text-white">Hoje</span>
+                        </div>
+                    </div>
                 </div>
             )}
 
-            {/* List Table */}
+            {/* List Table - REVERTED TO SMOOTH STYLE */}
             <div className="bg-black/20 border border-white/5 rounded-2xl overflow-hidden mb-12">
                 <table className="w-full text-left">
                     <thead className="bg-white/[0.02] text-[8px] uppercase font-bold text-gray-500 border-b border-white/5">
                         <tr>
-                            <th className="px-6 py-4">Ordem</th>
                             <th className="px-6 py-4">Título</th>
                             <th className="px-6 py-4 text-right">Ações</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {itensFiltrados.length === 0 ? (
-                            <tr><td colSpan={3} className="px-6 py-12 text-center text-gray-600 text-[10px] uppercase font-bold tracking-widest">Nenhum item encontrado.</td></tr>
+                            <tr><td colSpan={2} className="px-6 py-12 text-center text-gray-600 text-[10px] uppercase font-bold tracking-widest">Nenhum item encontrado.</td></tr>
                         ) : (
                             itensFiltrados.sort((a,b) => a.ordem - b.ordem).map((item) => {
                                 const isConcluido = item.progresso?.status === 'concluido';
                                 return (
                                     <tr key={item.id} className="hover:bg-white/[0.01] transition-colors group">
-                                        <td className="px-6 py-4 text-[10px] font-mono text-gray-600">#{item.ordem}</td>
                                         <td className="px-6 py-4 text-[11px] font-bold text-gray-200 uppercase">
                                             {item.titulo} {isConcluido && <span className="text-emerald-500 ml-2">✅</span>}
                                         </td>
@@ -262,9 +249,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                     <button onClick={() => setConteudoExcluir(item)} className="px-3 py-1.5 bg-red-500/10 rounded-lg text-[8px] font-bold uppercase text-red-500 cursor-pointer">Excluir</button>
                                                 </>
                                             ) : (
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => setItemEmEstudo(item)} className="px-3 py-1.5 bg-yellow-500 text-black text-[8px] font-bold uppercase tracking-widest rounded-lg cursor-pointer">Estudar</button>
-                                                </div>
+                                                <button onClick={() => setItemEmEstudo(item)} className="px-3 py-1.5 bg-yellow-500 text-black text-[8px] font-bold uppercase tracking-widest rounded-lg cursor-pointer">Estudar</button>
                                             )}
                                         </td>
                                     </tr>
@@ -278,20 +263,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             {/* Modals */}
             {isMounted && createPortal(
                 <>
-                    {jornadaModal && (
-                        <ModalJornada 
-                            itens={conteudos} 
-                            tipo={tabAtiva === 'trabalhos' ? 'trabalho' : 'prelecao'} 
-                            onClose={() => setJornadaModal(false)} 
-                            onIniciarEstudo={(item) => {
-                                setJornadaModal(false);
-                                setItemEmEstudo(item);
-                                setVideoConcluido(false);
-                                setQuizAtivo(false);
-                            }}
-                        />
-                    )}
-                    
                     {itemEmEstudo && !isDiretoria && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
                             <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemEmEstudo(null)}></div>
