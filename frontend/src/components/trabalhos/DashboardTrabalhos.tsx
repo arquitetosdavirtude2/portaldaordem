@@ -80,6 +80,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const canSeeDegree = (id: number) => isDiretoria || id <= userGrau;
 
     return (
+        <>
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Degree Navigation (Somente Diretoria) */}
             {isDiretoria && (
@@ -204,6 +205,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Conteúdo em desenvolvimento</p>
                 </div>
             )}
+        </div>
 
             {/* Study Modal Overlay (Brother View) */}
             {itemEmEstudo && !isDiretoria && (
@@ -497,6 +499,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 }
