@@ -51,13 +51,15 @@ export default function TrabalhosPage() {
                 <div className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl overflow-hidden mb-6">
                     <div className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex flex-col md:flex-row items-center gap-6">
-                            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-yellow-500/30 overflow-hidden flex-shrink-0 bg-white/5 p-1 shadow-[0_0_20px_rgba(234,179,8,0.15)] transition-transform hover:scale-105 duration-500">
-                                <img src="/logo-gomb.png" alt="GOMB Logo" className="w-full h-full object-contain drop-shadow-lg rounded-full" />
+                            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-yellow-500/30 overflow-hidden flex-shrink-0 bg-white/5 p-1 shadow-[0_0_20px_rgba(234,179,8,0.15)] transition-transform hover:scale-105 duration-500 flex items-center justify-center">
+                                <img src="/logo-gomb.png" alt="GOMB Logo" className="w-full h-full object-cover drop-shadow-lg rounded-full" />
                             </div>
                             <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2">
-                                <div className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-[0.25em] border border-yellow-500/50 text-yellow-500 bg-yellow-500/10">
-                                    {isDiretoria ? 'Painel de Gestão' : 'Escola de Mistérios'}
-                                </div>
+                                {isDiretoria && (
+                                    <div className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-[0.25em] border border-yellow-500/50 text-yellow-500 bg-yellow-500/10 mb-1">
+                                        Painel de Gestão
+                                    </div>
+                                )}
                                 <h1 className="text-2xl md:text-3xl font-bold text-yellow-500 tracking-tight leading-tight uppercase drop-shadow-lg">
                                     {isDiretoria ? 'Gestão de Trabalhos' : 'Minha Evolução'}
                                 </h1>

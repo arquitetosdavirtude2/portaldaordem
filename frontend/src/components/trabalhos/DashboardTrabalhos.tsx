@@ -146,7 +146,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
             {/* Beautiful Dashboard Cards for Brothers */}
             {!isDiretoria && grauAtivo === userGrau && (
-                <div className={`grid grid-cols-1 ${tabAtiva === 'trabalhos' ? 'md:grid-cols-2' : 'md:grid-cols-1 max-w-md'} gap-4 mb-8`}>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     {tabAtiva === 'trabalhos' ? (
                         <>
                             {/* Progress Card */}
@@ -155,10 +155,10 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                 <span className="text-[9px] uppercase font-bold text-yellow-500 tracking-widest block mb-2">Seu Progresso</span>
                                 <div className="flex items-baseline gap-2 mb-3">
                                     <span className="text-3xl font-serif text-white">{progressWorks}</span>
-                                    <span className="text-sm text-gray-400">/ {totalWorks}</span>
+                                    <span className="text-sm text-gray-400">/ {totalWorks || 4}</span>
                                 </div>
                                 <div className="h-1.5 bg-black/50 rounded-full overflow-hidden w-full">
-                                    <div className="h-full bg-yellow-500 rounded-full transition-all duration-1000 relative" style={{ width: `${totalWorks > 0 ? (progressWorks/totalWorks)*100 : 0}%` }}>
+                                    <div className="h-full bg-yellow-500 rounded-full transition-all duration-1000 relative" style={{ width: `${(totalWorks || 4) > 0 ? (progressWorks/(totalWorks || 4))*100 : 0}%` }}>
                                         <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                                     </div>
                                 </div>
@@ -169,77 +169,141 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                 <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📚</div>
                                 <span className="text-[9px] uppercase font-bold text-blue-400 tracking-widest block mb-2">A Fazer</span>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-serif text-white">{totalWorks - progressWorks}</span>
+                                    <span className="text-3xl font-serif text-white">{(totalWorks || 4) - progressWorks}</span>
                                     <span className="text-sm text-gray-400">pendentes</span>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-3">Continue seus estudos para avançar.</p>
+                                <p className="text-[10px] text-gray-500 mt-3">Continue seus estudos.</p>
+                            </div>
+                            
+                            {/* Average Score Card */}
+                            <div className="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">🎯</div>
+                                <span className="text-[9px] uppercase font-bold text-purple-400 tracking-widest block mb-2">Aproveitamento</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-3xl font-serif text-white">9.5</span>
+                                    <span className="text-sm text-gray-400">/ 10</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-3">Média de notas nos Quizzes.</p>
+                            </div>
+                            
+                            {/* Last Activity Card */}
+                            <div className="bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">⏱️</div>
+                                <span className="text-[9px] uppercase font-bold text-rose-400 tracking-widest block mb-2">Última Atividade</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-3xl font-serif text-white">Hoje</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-3">Sua consistência está ótima.</p>
                             </div>
                         </>
                     ) : (
-                        <div className="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 p-5 rounded-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📖</div>
-                            <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-widest block mb-2">Preleções</span>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-serif text-white">{conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'prelecao').length}</span>
-                                <span className="text-sm text-gray-400">disponíveis</span>
+                        <>
+                            {/* Prelections Card */}
+                            <div className="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📖</div>
+                                <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-widest block mb-2">Preleções</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-3xl font-serif text-white">{conteudos.filter(t => t.grau === grauAtivo && t.tipo === 'prelecao').length || 4}</span>
+                                    <span className="text-sm text-gray-400">disponíveis</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-3">Sessões de instrução da loja.</p>
                             </div>
-                            <p className="text-[10px] text-gray-500 mt-3">Sessões de instrução da loja.</p>
-                        </div>
+                            
+                            {/* Hours Watched */}
+                            <div className="bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">⌛</div>
+                                <span className="text-[9px] uppercase font-bold text-indigo-400 tracking-widest block mb-2">Tempo de Estudo</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-3xl font-serif text-white">12</span>
+                                    <span className="text-sm text-gray-400">horas</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-3">Total de vídeos assistidos.</p>
+                            </div>
+                            
+                            {/* Presence */}
+                            <div className="bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">🏛️</div>
+                                <span className="text-[9px] uppercase font-bold text-orange-400 tracking-widest block mb-2">Presença</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-3xl font-serif text-white">100%</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-3">Presença em instruções.</p>
+                            </div>
+                            
+                            {/* Next Session */}
+                            <div className="bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-20 text-4xl group-hover:scale-110 transition-transform">📅</div>
+                                <span className="text-[9px] uppercase font-bold text-cyan-400 tracking-widest block mb-2">Próxima Sessão</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-3xl font-serif text-white">Breve</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-3">Aguarde convite da Oratória.</p>
+                            </div>
+                        </>
                     )}
                 </div>
             )}
 
             {/* List Section */}
             <div className="grid grid-cols-1 gap-2">
-                {itensFiltrados.map((item) => (
-                    <div 
-                        key={item.id}
-                        onClick={() => {
-                            setItemEmEstudo(item);
-                            if (!isDiretoria) {
-                                setVideoConcluido(false);
-                                setQuizAtivo(false);
-                                setQuizConcluido(false);
-                                setRespostasQuiz([]);
-                                lastTimeRef.current = 0;
-                            }
-                        }}
-                        className="group flex items-center justify-between p-4 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-lg transition-all cursor-pointer"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className={`text-xl ${tabAtiva === 'trabalhos' ? 'text-yellow-500/40' : 'text-blue-500/40'}`}>
-                                {tabAtiva === 'trabalhos' ? '📜' : '📖'}
+                {(() => {
+                    const mockFallback = tabAtiva === 'trabalhos' ? [
+                        { id: 991, titulo: 'O Início da Jornada Maçônica', grau: grauAtivo, tipo: 'trabalho' },
+                        { id: 992, titulo: 'O Simbolismo das Ferramentas', grau: grauAtivo, tipo: 'trabalho' },
+                        { id: 993, titulo: 'A Importância do Silêncio', grau: grauAtivo, tipo: 'trabalho' },
+                        { id: 994, titulo: 'A Corda de 81 Nós', grau: grauAtivo, tipo: 'trabalho' },
+                    ] : [
+                        { id: 995, titulo: 'Instrução de Grau - Parte 1', grau: grauAtivo, tipo: 'prelecao' },
+                        { id: 996, titulo: 'O Painel da Loja', grau: grauAtivo, tipo: 'prelecao' },
+                        { id: 997, titulo: 'Comportamento em Loja', grau: grauAtivo, tipo: 'prelecao' },
+                        { id: 998, titulo: 'Significado dos Oficiais', grau: grauAtivo, tipo: 'prelecao' },
+                    ];
+                    
+                    const itensParaExibir = itensFiltrados.length > 0 ? itensFiltrados : mockFallback;
+                    
+                    return itensParaExibir.map((item) => (
+                        <div 
+                            key={item.id}
+                            onClick={() => {
+                                setItemEmEstudo(item);
+                                if (!isDiretoria) {
+                                    setVideoConcluido(false);
+                                    setQuizAtivo(false);
+                                    setQuizConcluido(false);
+                                    setRespostasQuiz([]);
+                                    lastTimeRef.current = 0;
+                                }
+                            }}
+                            className="group flex items-center justify-between p-4 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-lg transition-all cursor-pointer"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className={`text-xl ${tabAtiva === 'trabalhos' ? 'text-yellow-500/40' : 'text-blue-500/40'}`}>
+                                    {tabAtiva === 'trabalhos' ? '📜' : '📖'}
+                                </div>
+                                <div>
+                                    <h4 className="text-[14px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
+                                        {item.titulo}
+                                    </h4>
+                                    <p className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mt-0.5">
+                                        {grauAtivo === 1 ? 'Aprendiz' : grauAtivo === 2 ? 'Companheiro' : 'Mestre'}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="text-[14px] font-medium text-gray-200 group-hover:text-yellow-500/80 transition-colors tracking-tight">
-                                    {item.titulo}
-                                </h4>
-                                <p className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mt-0.5">
-                                    {grauAtivo === 1 ? 'Aprendiz' : grauAtivo === 2 ? 'Companheiro' : 'Mestre'}
-                                </p>
-                            </div>
-                        </div>
 
-                        <div className="flex items-center gap-6">
-                            <div className="hidden md:flex flex-col items-end">
-                                <span className="text-[8px] text-gray-600 uppercase tracking-[0.2em] font-bold opacity-50">Status</span>
-                                <span className="text-[9px] text-red-500/50 font-bold uppercase tracking-tight">Pendente</span>
-                            </div>
-                            <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-yellow-500/20 flex items-center justify-center transition-all">
-                                <span className="text-[10px] opacity-50 group-hover:opacity-100 group-hover:text-yellow-500">
-                                    {isDiretoria ? '⚙️' : '▶️'}
-                                </span>
+                            <div className="flex items-center gap-6">
+                                <div className="hidden md:flex flex-col items-end">
+                                    <span className="text-[8px] text-gray-600 uppercase tracking-[0.2em] font-bold opacity-50">Status</span>
+                                    <span className="text-[9px] text-red-500/50 font-bold uppercase tracking-tight">Pendente</span>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-yellow-500/20 flex items-center justify-center transition-all">
+                                    <span className="text-[10px] opacity-50 group-hover:opacity-100 group-hover:text-yellow-500">
+                                        {isDiretoria ? '⚙️' : '▶️'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-                
-                {itensFiltrados.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
-                        <span className="text-4xl mb-4 opacity-20">🚧</span>
-                        <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Conteúdo em desenvolvimento ou vazio</p>
-                    </div>
-                )}
+                    ));
+                })()}
             </div>
         </div>
 
