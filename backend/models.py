@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Text
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -182,6 +182,7 @@ class ConteudoEstudo(Base):
     tipo = Column(String(50), nullable=False) # 'trabalho' ou 'prelecao'
     grau = Column(Integer, default=1) # 1=Aprendiz, 2=Companheiro, 3=Mestre
     ordem = Column(Integer, default=0)
+    descricao_jornada = Column(Text, nullable=True)
 
     loja = relationship("Loja")
 

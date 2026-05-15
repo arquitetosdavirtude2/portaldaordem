@@ -83,10 +83,11 @@ def criar_conteudo(
     titulo: str = Form(...),
     tipo: str = Form(...),
     grau: int = Form(1),
+    descricao_jornada: str = Form(None),
     db: Session = Depends(get_db)
 ):
     """Diretoria cria um novo Trabalho ou Preleção."""
-    novo = ConteudoEstudo(loja_id=loja_id, titulo=titulo, tipo=tipo, grau=grau)
+    novo = ConteudoEstudo(loja_id=loja_id, titulo=titulo, tipo=tipo, grau=grau, descricao_jornada=descricao_jornada)
     db.add(novo)
     db.commit()
     db.refresh(novo)
@@ -99,6 +100,7 @@ def editar_conteudo(
     tipo: str = Form(None),
     grau: int = Form(None),
     ordem: int = Form(None),
+    descricao_jornada: str = Form(None),
     db: Session = Depends(get_db)
 ):
     """Diretoria edita os dados gerais de um Trabalho ou Preleção."""
@@ -110,6 +112,7 @@ def editar_conteudo(
     if tipo is not None: conteudo.tipo = tipo
     if grau is not None: conteudo.grau = grau
     if ordem is not None: conteudo.ordem = ordem
+    if descricao_jornada is not None: conteudo.descricao_jornada = descricao_jornada
     
     db.commit()
     db.refresh(conteudo)

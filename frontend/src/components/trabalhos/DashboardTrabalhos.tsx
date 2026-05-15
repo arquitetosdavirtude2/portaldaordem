@@ -6,6 +6,7 @@ import ModalNovoConteudo from './ModalNovoConteudo';
 import ModalUploadMaterial from './ModalUploadMaterial';
 import ModalQuiz from './ModalQuiz';
 import ModalEditarConteudo from './ModalEditarConteudo';
+import ModalJornada from './ModalJornada';
 
 interface DashboardTrabalhosProps {
     acesso: any;
@@ -21,6 +22,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [quizConcluido, setQuizConcluido] = useState(false);
     const [respostasQuiz, setRespostasQuiz] = useState<string[]>([]);
     const [isMounted, setIsMounted] = useState(false);
+    const [jornadaModal, setJornadaModal] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -167,8 +169,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             {!isDiretoria && grauAtivo === userGrau && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     {/* Progress Card */}
-                    <div className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 p-4 rounded-xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-3 opacity-20 text-2xl">🏆</div>
+                    <div onClick={() => setJornadaModal(true)} className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 p-4 rounded-xl relative overflow-hidden group cursor-pointer hover:bg-yellow-500/5 transition-all">
+                        <div className="absolute top-0 right-0 p-3 opacity-20 text-2xl group-hover:scale-110 transition-transform">🏆</div>
                         <span className="text-[8px] uppercase font-bold text-yellow-500 tracking-widest block mb-2">Seu Progresso</span>
                         <div className="flex items-baseline gap-2 mb-2">
                             <span className="text-xl font-bold text-white">{progressWorks}</span>
@@ -254,6 +256,20 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             {/* Modals */}
             {isMounted && createPortal(
                 <>
+                    {jornadaModal && (
+                        <ModalJornada 
+                            itens={conteudos} 
+                            tipo={tabAtiva === 'trabalhos' ? 'trabalho' : 'prelecao'} 
+                            onClose={() => setJornadaModal(false)} 
+                            onIniciarEstudo={(item) => {
+                                setJornadaModal(false);
+                                setItemEmEstudo(item);
+                                setVideoConcluido(false);
+                                setQuizAtivo(false);
+                            }}
+                        />
+                    )}
+                    
                     {itemEmEstudo && !isDiretoria && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
                             <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setItemEmEstudo(null)}></div>
