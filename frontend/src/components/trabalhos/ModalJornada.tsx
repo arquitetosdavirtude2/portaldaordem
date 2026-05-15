@@ -54,150 +54,176 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
     };
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-500">
-            <div className="absolute inset-0 bg-black/98 backdrop-blur-3xl" onClick={onClose}></div>
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-700">
+            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={onClose}></div>
             
-            <div className="bg-[#050505] border border-white/10 rounded-[3rem] w-full max-w-6xl h-full max-h-[90vh] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] relative z-10 flex flex-col">
+            {/* Modal Container */}
+            <div className="bg-[#020205] border border-white/10 rounded-[2.5rem] w-full max-w-7xl h-full max-h-[92vh] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.9)] relative z-10 flex flex-col">
                 
-                {/* === HEADER === */}
-                <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-black via-white/[0.02] to-black">
-                    <div>
-                        <h2 className="text-2xl font-light text-white uppercase tracking-tighter mb-2">Jornada de Conhecimento</h2>
-                        <div className="flex items-center gap-4">
-                            <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
-                                <div className="h-full bg-yellow-500 transition-all duration-1000" style={{ width: `${progressoGlobal}%` }} />
-                            </div>
-                            <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">{concluidos} de {total} Etapas Descobertas</span>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-all cursor-pointer">✕</button>
+                {/* === Nebula Background Layer === */}
+                <div className="absolute inset-0 opacity-40 pointer-events-none overflow-hidden">
+                    <img 
+                        src="/nebula_bg.png" 
+                        alt="Nebula" 
+                        className="w-full h-full object-cover scale-110 animate-pulse duration-[10s]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#020205] via-transparent to-[#020205]" />
                 </div>
 
-                {/* === CONTENT (Timeline Scroll) === */}
+                {/* === HEADER === */}
+                <div className="p-8 pb-4 border-b border-white/5 flex justify-between items-center relative z-20">
+                    <div className="space-y-1">
+                        <h2 className="text-3xl font-light text-white uppercase tracking-[-0.05em] mb-1 flex items-center gap-3">
+                            <span className="text-yellow-500/50">✨</span> Minha Jornada Maçônica
+                        </h2>
+                        <div className="flex items-center gap-4">
+                            <div className="w-64 h-0.5 bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-200 transition-all duration-1000 shadow-[0_0_10px_rgba(234,179,8,0.5)]" style={{ width: `${progressoGlobal}%` }} />
+                            </div>
+                            <span className="text-[9px] text-gray-400 uppercase font-bold tracking-[0.3em]">{concluidos} / {total} Conhecimentos Revelados</span>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-all cursor-pointer group">
+                        <span className="group-hover:rotate-90 transition-transform duration-300">✕</span>
+                    </button>
+                </div>
+
+                {/* === SKILL TREE CONTENT === */}
                 <div 
                     ref={containerRef}
-                    className="flex-1 overflow-y-auto p-12 md:p-20 space-y-32 scrollbar-hide bg-[radial-gradient(circle_at_center,rgba(234,179,8,0.03)_0%,transparent_70%)]"
+                    className="flex-1 overflow-y-auto p-12 md:p-24 relative z-10 scrollbar-hide"
                 >
+                    {/* SVG Connections Layer */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
+                        <defs>
+                            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="rgba(234,179,8,0.3)" />
+                                <stop offset="100%" stopColor="rgba(234,179,8,0.05)" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+
                     {jornada.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
-                            <div className="w-20 h-20 rounded-full border border-white/5 flex items-center justify-center text-4xl opacity-20">📜</div>
-                            <h3 className="text-xl font-light text-gray-500 uppercase tracking-widest">Nenhuma etapa cadastrada</h3>
-                            <p className="text-[10px] text-gray-700 uppercase tracking-widest">Aguarde a diretoria definir o caminho da sua jornada.</p>
+                        <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
+                            <div className="w-24 h-24 rounded-full border border-yellow-500/10 flex items-center justify-center text-5xl opacity-20 animate-pulse">🌌</div>
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-light text-gray-400 uppercase tracking-widest">O Firmamento está Vazio</h3>
+                                <p className="text-[10px] text-gray-600 uppercase tracking-widest">Aguarde a diretoria traçar o seu caminho nas estrelas.</p>
+                            </div>
                         </div>
                     ) : (
-                        jornada.map((item, idx) => {
-                            const isConcluido = item.progresso?.status === 'concluido';
-                            const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
-                            const isAtual = !isConcluido && !isBloqueado;
-                            const imgUrl = getSymbolImage(item);
+                        <div className="flex flex-col gap-40 relative">
+                            {jornada.map((item, idx) => {
+                                const isConcluido = item.progresso?.status === 'concluido';
+                                const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
+                                const isAtual = !isConcluido && !isBloqueado;
+                                const imgUrl = getSymbolImage(item);
+                                const isLeft = idx % 2 === 0;
 
-                            return (
-                                <div 
-                                    key={item.id}
-                                    className={`relative flex flex-col items-center transition-all duration-1000 ${
-                                        isBloqueado ? 'opacity-30' : 'opacity-100'
-                                    }`}
-                                >
-                                    {/* Vertical Connector */}
-                                    {idx < jornada.length - 1 && (
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-[1px] h-32 bg-gradient-to-b from-white/10 to-transparent" />
-                                    )}
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative`}
+                                    >
+                                        {/* Connector Line to next node */}
+                                        {idx < jornada.length - 1 && (
+                                            <div 
+                                                className={`absolute top-[60%] w-[50%] h-[1px] bg-gradient-to-r from-yellow-500/20 to-transparent z-0
+                                                    ${isLeft ? 'left-[20%] rotate-[25deg]' : 'right-[20%] rotate-[-25deg]'}`}
+                                            />
+                                        )}
 
-                                    <div className="flex flex-col md:flex-row items-center gap-16 w-full max-w-5xl">
-                                        
-                                        {/* === SYMBOL SIDE === */}
-                                        <div className="w-[400px] h-[400px] flex-shrink-0 relative group">
-                                            {/* Outer glow rings */}
-                                            {isAtual && (
-                                                <>
-                                                    <div className="absolute inset-0 rounded-full border border-yellow-500/10 animate-ping opacity-20" />
-                                                    <div className="absolute -inset-8 rounded-full border border-yellow-500/5 animate-pulse" />
-                                                </>
-                                            )}
-
-                                            {/* Main Image Container */}
-                                            <div className={`w-full h-full relative z-10 overflow-hidden rounded-3xl border border-white/5 transition-all duration-1000 ${
-                                                isBloqueado ? 'grayscale brightness-[0.2] blur-[2px]' 
-                                                : isConcluido ? 'grayscale-0 brightness-100 shadow-[0_0_50px_rgba(234,179,8,0.2)]' 
-                                                : 'grayscale brightness-50'
-                                            }`}>
-                                                <img 
-                                                    src={imgUrl} 
-                                                    alt={item.titulo} 
-                                                    className={`w-full h-full object-cover transition-all duration-1000 ${
-                                                        isBloqueado ? 'opacity-50' : 'opacity-100'
-                                                    }`}
-                                                />
+                                        <div className={`flex items-center gap-12 max-w-3xl ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
+                                            
+                                            {/* === NODE (STAR / SYMBOL) === */}
+                                            <div className="relative group">
+                                                {/* Aura effects */}
+                                                <div className={`absolute -inset-10 rounded-full blur-3xl transition-all duration-1000 ${
+                                                    isConcluido ? 'bg-yellow-500/10' : isAtual ? 'bg-blue-500/5 animate-pulse' : 'bg-transparent'
+                                                }`} />
                                                 
-                                                {/* Silhouette Glow Effect (CSS Overlay) */}
-                                                {isBloqueado && (
-                                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                                        <div className="w-64 h-64 border-2 border-yellow-500/20 rounded-full animate-pulse shadow-[0_0_100px_rgba(234,179,8,0.1)]" />
-                                                    </div>
-                                                )}
+                                                {/* Node Circle */}
+                                                <div className={`relative z-10 w-48 h-48 md:w-56 md:h-56 rounded-full border p-1 transition-all duration-1000 ${
+                                                    isBloqueado ? 'border-white/5 grayscale brightness-[0.2] scale-90' 
+                                                    : isConcluido ? 'border-yellow-500/40 shadow-[0_0_40px_rgba(234,179,8,0.2)]' 
+                                                    : 'border-blue-400/30 shadow-[0_0_30px_rgba(59,130,246,0.1)]'
+                                                }`}>
+                                                    <div className="w-full h-full rounded-full overflow-hidden relative">
+                                                        <img 
+                                                            src={imgUrl} 
+                                                            alt={item.titulo} 
+                                                            className={`w-full h-full object-cover transition-all duration-1000 ${
+                                                                isBloqueado ? 'blur-sm' : 'blur-0'
+                                                            }`}
+                                                        />
+                                                        
+                                                        {/* Lock Overlay */}
+                                                        {isBloqueado && (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                                                <span className="text-2xl opacity-20">🔒</span>
+                                                            </div>
+                                                        )}
 
-                                                {/* Reveal Overlay Animation */}
-                                                {revealing === item.id && (
-                                                    <div className="absolute inset-0 bg-white animate-reveal-flash z-50" />
+                                                        {/* Reveal Animation Overlay */}
+                                                        {revealing === item.id && (
+                                                            <div className="absolute inset-0 bg-white animate-reveal-flash z-50" />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Status Pulse for Current */}
+                                                    {isAtual && (
+                                                        <div className="absolute -inset-2 rounded-full border border-blue-400/20 animate-ping" />
+                                                    )}
+                                                </div>
+
+                                                {/* Start Button for Current */}
+                                                {isAtual && (
+                                                    <button 
+                                                        onClick={() => onIniciarEstudo?.(item)}
+                                                        className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-yellow-500 text-black text-[9px] font-black uppercase tracking-widest rounded-full hover:scale-105 transition-all shadow-[0_0_25px_rgba(234,179,8,0.4)] cursor-pointer z-20"
+                                                    >
+                                                        Revelar Luz
+                                                    </button>
                                                 )}
                                             </div>
 
-                                            {/* Action Button for Current */}
-                                            {isAtual && (
-                                                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20">
-                                                    <button 
-                                                        onClick={() => onIniciarEstudo?.(item)}
-                                                        className="px-8 py-3 bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-[0_0_30px_rgba(234,179,8,0.5)] cursor-pointer"
-                                                    >
-                                                        Iniciar Trabalho
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* === TEXT SIDE === */}
-                                        <div className={`flex-1 transition-all duration-1000 ${isBloqueado ? 'opacity-20 translate-x-10' : 'opacity-100 translate-x-0'}`}>
-                                            <div className="space-y-6">
+                                            {/* === INFO SIDE === */}
+                                            <div className={`space-y-3 w-80 md:w-96 ${isLeft ? 'text-left' : 'text-right'}`}>
                                                 <div className="space-y-1">
-                                                    <span className={`text-[9px] font-bold uppercase tracking-[0.4em] ${isConcluido ? 'text-yellow-500' : 'text-gray-500'}`}>
-                                                        {GRAU_LABELS[item.grau]} • Etapa {idx + 1}
+                                                    <span className={`text-[8px] font-bold uppercase tracking-[0.4em] ${isConcluido ? 'text-yellow-500' : 'text-gray-500'}`}>
+                                                        {GRAU_LABELS[item.grau]} • Nível {idx + 1}
                                                     </span>
-                                                    <h3 className="text-4xl font-light text-white uppercase tracking-tighter leading-none">
-                                                        {isBloqueado ? 'Conhecimento Oculto' : item.titulo}
+                                                    <h3 className={`text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${
+                                                        isBloqueado ? 'text-gray-800' : 'text-white'
+                                                    }`}>
+                                                        {isBloqueado ? 'Oculto por Névoa' : item.titulo}
                                                     </h3>
                                                 </div>
 
                                                 {!isBloqueado && (
-                                                    <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-1000">
-                                                        <div className="w-12 h-[1px] bg-yellow-500/50" />
-                                                        <p className="text-gray-400 text-sm leading-relaxed font-light max-w-lg">
-                                                            {item.descricao_jornada || 'Nenhuma descrição detalhada disponível para esta etapa da jornada.'}
+                                                    <div className={`space-y-4 animate-in fade-in duration-1000 ${isLeft ? 'slide-in-from-left-4' : 'slide-in-from-right-4'}`}>
+                                                        <p className="text-gray-400 text-[11px] leading-relaxed font-light line-clamp-3 group-hover:line-clamp-none transition-all">
+                                                            {item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.'}
                                                         </p>
                                                         
                                                         {isConcluido && (
-                                                            <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-emerald-500">
-                                                                <span className="w-5 h-5 rounded-full border border-emerald-500/30 flex items-center justify-center text-[10px]">✓</span>
-                                                                Conhecimento Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
+                                                            <div className={`flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 ${isLeft ? '' : 'justify-end'}`}>
+                                                                <span className="w-4 h-4 rounded-full border border-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
+                                                                Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
                                                             </div>
                                                         )}
                                                     </div>
                                                 )}
-
-                                                {isBloqueado && (
-                                                    <p className="text-[10px] text-gray-700 uppercase tracking-widest italic">
-                                                        A luz ainda não tocou este caminho...
-                                                    </p>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })
+                                );
+                            })}
+                        </div>
                     )}
 
                     {/* End spacing */}
-                    <div className="h-20" />
+                    <div className="h-40" />
                 </div>
             </div>
 
@@ -211,6 +237,10 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     animation: reveal-flash 1.5s ease-out forwards;
                 }
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
+                @keyframes pulse-nebula {
+                    0%, 100% { opacity: 0.3; transform: scale(1.1); }
+                    50% { opacity: 0.5; transform: scale(1.15); }
+                }
             `}</style>
         </div>
     );
