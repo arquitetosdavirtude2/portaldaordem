@@ -64,7 +64,7 @@ export default function TrabalhosPage() {
                                     {isDiretoria ? 'Gestão de Trabalhos' : 'Minha Evolução'}
                                 </h1>
                                 <div className="text-[10px] text-gray-400 font-sans tracking-[0.2em] uppercase font-bold opacity-70">
-                                    {acesso.nome} • Grau de {acesso.status || 'Aprendiz'} • {acesso.loja_nome || 'Portal da Ordem'}
+                                    {acesso.nome} • Grau de {acesso.status || acesso.grau_nome || 'Aprendiz'} • {acesso.loja_nome || 'Arquitetos da Virtude'}
                                 </div>
                             </div>
                         </div>

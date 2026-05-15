@@ -85,14 +85,15 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
     useEffect(() => {
         if (!isDiretoria) {
-            setGrauAtivo(userGrau);
+            setGrauAtivo(userGrau || 1);
         }
     }, [userGrau, isDiretoria]);
 
-    const itensFiltrados = conteudos.filter(item => 
-        (grauAtivo === 0 || item.grau === grauAtivo) && 
-        item.tipo === (tabAtiva === 'trabalhos' ? 'trabalho' : 'prelecao')
-    );
+    const itensFiltrados = conteudos.filter(item => {
+        const matchesGrau = grauAtivo === 0 || item.grau === grauAtivo;
+        const matchesTipo = item.tipo?.toLowerCase().includes(tabAtiva.replace('s', ''));
+        return matchesGrau && matchesTipo;
+    });
 
     const progressWorks = conteudos.filter(t => t.tipo === 'trabalho' && t.grau === userGrau && t.progresso?.status === 'concluido').length;
     const totalWorks = conteudos.filter(t => t.tipo === 'trabalho' && t.grau === userGrau).length;
