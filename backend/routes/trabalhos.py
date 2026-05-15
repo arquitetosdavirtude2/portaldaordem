@@ -17,10 +17,13 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(VIDEO_DIR, exist_ok=True)
 
 @router.get("/")
-def listar_conteudos(loja_id: int, pessoa_id: Optional[int] = None, grau: Optional[int] = None, db: Session = Depends(get_db)):
-    """Lista todos os conteúdos disponíveis para a loja, filtrando por grau se aplicável."""
+def listar_conteudos(loja_id: Optional[int] = None, pessoa_id: Optional[int] = None, grau: Optional[int] = None, db: Session = Depends(get_db)):
+    """Lista todos os conteúdos disponíveis, filtrando por loja se fornecido."""
     try:
-        query = db.query(ConteudoEstudo).filter(ConteudoEstudo.loja_id == loja_id)
+        query = db.query(ConteudoEstudo)
+        if loja_id:
+            query = query.filter(ConteudoEstudo.loja_id == loja_id)
+        
         if grau and grau > 0:
             query = query.filter(ConteudoEstudo.grau == grau)
         
