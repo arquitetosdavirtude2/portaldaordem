@@ -65,9 +65,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     <img 
                         src="/nebula_bg.png" 
                         alt="Nebula" 
-                        className="w-full h-full object-cover scale-110 animate-pulse duration-[10s]"
+                        className="w-full h-full object-cover scale-105 animate-slow-glow"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-[#020205] via-transparent to-[#020205]" />
+                    <div className="absolute inset-0 bg-black/60" />
                 </div>
 
                 {/* === HEADER === */}
@@ -93,19 +93,11 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     ref={containerRef}
                     className="flex-1 overflow-y-auto p-12 md:p-24 relative z-10 scrollbar-hide"
                 >
-                    {/* SVG Connections Layer */}
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
-                        <defs>
-                            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="rgba(234,179,8,0.3)" />
-                                <stop offset="100%" stopColor="rgba(234,179,8,0.05)" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-
                     {jornada.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-                            <div className="w-24 h-24 rounded-full border border-yellow-500/10 flex items-center justify-center text-5xl opacity-20 animate-pulse">🌌</div>
+                            <div className="w-32 h-32 rounded-full border border-yellow-500/10 flex items-center justify-center p-6 opacity-20 animate-slow-glow">
+                                <img src="/logo-gomb.png" alt="Lodge Logo" className="w-full h-full object-contain grayscale invert" />
+                            </div>
                             <div className="space-y-2">
                                 <h3 className="text-2xl font-light text-gray-400 uppercase tracking-widest">O Firmamento está Vazio</h3>
                                 <p className="text-[10px] text-gray-600 uppercase tracking-widest">Aguarde a diretoria traçar o seu caminho nas estrelas.</p>
@@ -139,7 +131,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                             <div className="relative group">
                                                 {/* Aura effects */}
                                                 <div className={`absolute -inset-10 rounded-full blur-3xl transition-all duration-1000 ${
-                                                    isConcluido ? 'bg-yellow-500/10' : isAtual ? 'bg-blue-500/5 animate-pulse' : 'bg-transparent'
+                                                    isConcluido ? 'bg-yellow-500/10' : isAtual ? 'bg-blue-500/5 animate-slow-glow' : 'bg-transparent'
                                                 }`} />
                                                 
                                                 {/* Node Circle */}
@@ -172,7 +164,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                                                     {/* Status Pulse for Current */}
                                                     {isAtual && (
-                                                        <div className="absolute -inset-2 rounded-full border border-blue-400/20 animate-ping" />
+                                                        <div className="absolute -inset-2 rounded-full border border-blue-400/20 animate-ping opacity-30" />
                                                     )}
                                                 </div>
 
@@ -237,9 +229,13 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     animation: reveal-flash 1.5s ease-out forwards;
                 }
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
-                @keyframes pulse-nebula {
-                    0%, 100% { opacity: 0.3; transform: scale(1.1); }
-                    50% { opacity: 0.5; transform: scale(1.15); }
+                
+                @keyframes slow-glow {
+                    0%, 100% { opacity: 0.3; transform: scale(1.05); }
+                    50% { opacity: 0.5; transform: scale(1.08); }
+                }
+                .animate-slow-glow {
+                    animation: slow-glow 15s ease-in-out infinite;
                 }
             `}</style>
         </div>
