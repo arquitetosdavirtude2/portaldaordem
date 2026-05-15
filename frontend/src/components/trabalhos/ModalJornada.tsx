@@ -26,15 +26,16 @@ interface ModalJornadaProps {
 const GRAU_LABELS: Record<number, string> = { 1: 'Aprendiz', 2: 'Companheiro', 3: 'Mestre' };
 
 const IMAGE_MAP: Record<string, string> = {
-    'iniciação': '/initiation.png',
-    'aprendiz': '/apprentice.png',
-    'companheiro': '/fellowcraft.png',
-    'mestre': '/master.png'
+    'iniciação': '/initiation_light.png',
+    'aprendiz': '/rough_stone.png',
+    'companheiro': '/polished_stone.png',
+    'mestre': '/masonic_temple.png'
 };
 
 export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: ModalJornadaProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [revealing, setRevealing] = useState<number | null>(null);
+
+    if (!itens) return null;
 
     // Filtrar apenas itens do tipo correto e ordenar (Case-insensitive)
     const jornada = [...itens]
@@ -73,14 +74,15 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 {/* === HEADER === */}
                 <div className="p-8 pb-4 border-b border-white/5 flex justify-between items-center relative z-20">
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-light text-white uppercase tracking-[-0.05em] mb-1 flex items-center gap-3">
-                            <span className="text-yellow-500/50">✨</span> Minha Jornada Maçônica
+                        <h2 className="text-3xl font-light text-white uppercase tracking-[-0.05em] mb-1 flex items-center gap-4">
+                            <img src="/logo-gomb.png" alt="GOMB" className="w-10 h-10 object-contain opacity-80 brightness-200" />
+                            Minha Jornada Maçônica
                         </h2>
                         <div className="flex items-center gap-4">
                             <div className="w-64 h-0.5 bg-white/5 rounded-full overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-200 transition-all duration-1000 shadow-[0_0_10px_rgba(234,179,8,0.5)]" style={{ width: `${progressoGlobal}%` }} />
                             </div>
-                            <span className="text-[9px] text-gray-400 uppercase font-bold tracking-[0.3em]">{concluidos} / {total} Conhecimentos Revelados</span>
+                            <span className="text-[9px] text-gray-400 uppercase font-bold tracking-[0.3em]">{concluidos} / {total} Graus de Luz</span>
                         </div>
                     </div>
                     <button onClick={onClose} className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-all cursor-pointer group">
@@ -88,7 +90,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     </button>
                 </div>
 
-                {/* === SKILL TREE CONTENT === */}
+                {/* === STAR MAP CONTENT === */}
                 <div 
                     ref={containerRef}
                     className="flex-1 overflow-y-auto p-12 md:p-24 relative z-10 scrollbar-hide"
@@ -104,7 +106,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-40 relative">
+                        <div className="flex flex-col gap-56 relative">
                             {jornada.map((item, idx) => {
                                 const isConcluido = item.progresso?.status === 'concluido';
                                 const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
@@ -115,97 +117,78 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                 return (
                                     <div 
                                         key={item.id}
-                                        className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative`}
+                                        className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative group`}
                                     >
-                                        {/* Connector Line to next node */}
+                                        {/* Organic Connection Line */}
                                         {idx < jornada.length - 1 && (
                                             <div 
-                                                className={`absolute top-[60%] w-[50%] h-[1px] bg-gradient-to-r from-yellow-500/20 to-transparent z-0
-                                                    ${isLeft ? 'left-[20%] rotate-[25deg]' : 'right-[20%] rotate-[-25deg]'}`}
+                                                className={`absolute top-[80%] w-[60%] h-[2px] blur-[1px] bg-gradient-to-r from-yellow-500/10 via-white/5 to-transparent z-0
+                                                    ${isLeft ? 'left-[15%] rotate-[15deg]' : 'right-[15%] rotate-[-15deg]'}`}
                                             />
                                         )}
 
-                                        <div className={`flex items-center gap-12 max-w-3xl ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
+                                        <div className={`flex items-center gap-16 max-w-4xl ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
                                             
-                                            {/* === NODE (STAR / SYMBOL) === */}
-                                            <div className="relative group">
-                                                {/* Aura effects */}
-                                                <div className={`absolute -inset-10 rounded-full blur-3xl transition-all duration-1000 ${
-                                                    isConcluido ? 'bg-yellow-500/10' : isAtual ? 'bg-blue-500/5 animate-slow-glow' : 'bg-transparent'
+                                            {/* === COSMIC NODE (NO CIRCLES) === */}
+                                            <div className="relative">
+                                                {/* Ethereal Glow */}
+                                                <div className={`absolute -inset-20 rounded-full blur-[100px] transition-all duration-[2s] ${
+                                                    isConcluido ? 'bg-yellow-500/15' : isAtual ? 'bg-blue-500/10 animate-slow-glow' : 'bg-transparent'
                                                 }`} />
                                                 
-                                                {/* Node Circle */}
-                                                <div className={`relative z-10 w-48 h-48 md:w-56 md:h-56 rounded-full border p-1 transition-all duration-1000 ${
-                                                    isBloqueado ? 'border-white/5 grayscale brightness-[0.2] scale-90' 
-                                                    : isConcluido ? 'border-yellow-500/40 shadow-[0_0_40px_rgba(234,179,8,0.2)]' 
-                                                    : 'border-blue-400/30 shadow-[0_0_30px_rgba(59,130,246,0.1)]'
-                                                }`}>
-                                                    <div className="w-full h-full rounded-full overflow-hidden relative">
+                                                {/* Organic Shaped Image */}
+                                                <div className={`relative z-10 w-72 h-56 md:w-96 md:h-72 transition-all duration-[1.5s] ease-out overflow-visible
+                                                    ${isBloqueado || !isConcluido ? 'grayscale brightness-[0.05] opacity-30 scale-95' : 'grayscale-0 brightness-100 opacity-90 scale-100'}
+                                                `}>
+                                                    {/* Masked Image (Organic Shape) */}
+                                                    <div 
+                                                        className="w-full h-full relative"
+                                                        style={{
+                                                            maskImage: 'radial-gradient(ellipse at center, black 20%, transparent 70%)',
+                                                            WebkitMaskImage: 'radial-gradient(ellipse at center, black 20%, transparent 70%)'
+                                                        }}
+                                                    >
                                                         <img 
                                                             src={imgUrl} 
                                                             alt={item.titulo} 
-                                                            className={`w-full h-full object-cover transition-all duration-1000 ${
-                                                                isBloqueado ? 'blur-sm' : 'blur-0'
-                                                            }`}
+                                                            className="w-full h-full object-contain filter drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]"
                                                         />
-                                                        
-                                                        {/* Lock Overlay */}
-                                                        {isBloqueado && (
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                                                                <span className="text-2xl opacity-20">🔒</span>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Reveal Animation Overlay */}
-                                                        {revealing === item.id && (
-                                                            <div className="absolute inset-0 bg-white animate-reveal-flash z-50" />
-                                                        )}
                                                     </div>
 
-                                                    {/* Status Pulse for Current */}
-                                                    {isAtual && (
-                                                        <div className="absolute -inset-2 rounded-full border border-blue-400/20 animate-ping opacity-30" />
-                                                    )}
+                                                    {/* Floating Stars around the node */}
+                                                    <div className="absolute -top-4 -right-4 w-1 h-1 bg-white rounded-full animate-pulse shadow-[0_0_10px_white]" />
+                                                    <div className="absolute -bottom-8 -left-4 w-1 h-1 bg-yellow-500/50 rounded-full animate-ping shadow-[0_0_10px_yellow]" />
                                                 </div>
-
-                                                {/* Start Button for Current */}
-                                                {isAtual && (
-                                                    <button 
-                                                        onClick={() => onIniciarEstudo?.(item)}
-                                                        className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-yellow-500 text-black text-[9px] font-black uppercase tracking-widest rounded-full hover:scale-105 transition-all shadow-[0_0_25px_rgba(234,179,8,0.4)] cursor-pointer z-20"
-                                                    >
-                                                        Revelar Luz
-                                                    </button>
-                                                )}
                                             </div>
 
-                                            {/* === INFO SIDE === */}
-                                            <div className={`space-y-3 w-80 md:w-96 ${isLeft ? 'text-left' : 'text-right'}`}>
-                                                <div className="space-y-1">
-                                                    <span className={`text-[8px] font-bold uppercase tracking-[0.4em] ${isConcluido ? 'text-yellow-500' : 'text-gray-500'}`}>
-                                                        {GRAU_LABELS[item.grau]} • Nível {idx + 1}
-                                                    </span>
-                                                    <h3 className={`text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${
-                                                        isBloqueado ? 'text-gray-800' : 'text-white'
+                                            {/* === DISSEMINATED INFO SIDE === */}
+                                            <div className={`space-y-6 w-96 md:w-[28rem] ${isLeft ? 'text-left' : 'text-right'}`}>
+                                                <div className="space-y-2">
+                                                    <div className={`flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.5em] ${isConcluido ? 'text-yellow-500/60' : 'text-gray-600'} ${isLeft ? '' : 'flex-row-reverse'}`}>
+                                                        <span>{GRAU_LABELS[item.grau]}</span>
+                                                        <span className="w-8 h-[1px] bg-white/10" />
+                                                        <span>Estágio {idx + 1}</span>
+                                                    </div>
+                                                    <h3 className={`text-3xl md:text-5xl font-light uppercase tracking-[-0.08em] leading-none transition-all duration-1000 ${
+                                                        isBloqueado || !isConcluido ? 'text-gray-900' : 'text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]'
                                                     }`}>
-                                                        {isBloqueado ? 'Oculto por Névoa' : item.titulo}
+                                                        {item.titulo}
                                                     </h3>
                                                 </div>
 
-                                                {!isBloqueado && (
-                                                    <div className={`space-y-4 animate-in fade-in duration-1000 ${isLeft ? 'slide-in-from-left-4' : 'slide-in-from-right-4'}`}>
-                                                        <p className="text-gray-400 text-[11px] leading-relaxed font-light line-clamp-3 group-hover:line-clamp-none transition-all">
-                                                            {item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.'}
-                                                        </p>
-                                                        
-                                                        {isConcluido && (
-                                                            <div className={`flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 ${isLeft ? '' : 'justify-end'}`}>
-                                                                <span className="w-4 h-4 rounded-full border border-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
-                                                                Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                <div className="space-y-6">
+                                                    <div className={`h-[1px] w-32 bg-gradient-to-r from-yellow-500/20 to-transparent ${isLeft ? '' : 'ml-auto rotate-180'}`} />
+                                                    <p className={`text-gray-400 text-xs md:text-sm leading-relaxed font-light italic tracking-wide transition-all duration-1000 ${isBloqueado || !isConcluido ? 'opacity-20' : 'opacity-100'}`}>
+                                                        "{item.descricao_jornada || 'O caminho se revela àqueles que buscam a luz com persistência e silêncio.'}"
+                                                    </p>
+                                                    
+                                                    {isConcluido && (
+                                                        <div className={`flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-emerald-500/50 ${isLeft ? '' : 'justify-end'}`}>
+                                                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                                            Conhecimento Consolidado
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -215,27 +198,19 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     )}
 
                     {/* End spacing */}
-                    <div className="h-40" />
+                    <div className="h-64" />
                 </div>
             </div>
 
             <style>{`
-                @keyframes reveal-flash {
-                    0% { opacity: 0; }
-                    20% { opacity: 1; }
-                    100% { opacity: 0; }
-                }
-                .animate-reveal-flash {
-                    animation: reveal-flash 1.5s ease-out forwards;
-                }
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 
                 @keyframes slow-glow {
-                    0%, 100% { opacity: 0.3; transform: scale(1.05); }
-                    50% { opacity: 0.5; transform: scale(1.08); }
+                    0%, 100% { opacity: 0.3; transform: scale(1); filter: blur(80px); }
+                    50% { opacity: 0.6; transform: scale(1.1); filter: blur(100px); }
                 }
                 .animate-slow-glow {
-                    animation: slow-glow 15s ease-in-out infinite;
+                    animation: slow-glow 20s ease-in-out infinite;
                 }
             `}</style>
         </div>
