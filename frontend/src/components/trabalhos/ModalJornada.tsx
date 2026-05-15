@@ -36,10 +36,10 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealing, setRevealing] = useState<number | null>(null);
 
-    // Filtrar apenas itens do tipo correto e ordenar
+    // Filtrar apenas itens do tipo correto e ordenar (Case-insensitive)
     const jornada = [...itens]
-        .filter(i => i.tipo === tipo)
-        .sort((a, b) => a.ordem - b.ordem);
+        .filter(i => i.tipo?.toLowerCase().includes(tipo?.toLowerCase().replace('s', ''))) // Suporta 'trabalho' e 'trabalhos'
+        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 
     const concluidos = jornada.filter(j => j.progresso?.status === 'concluido').length;
     const total = jornada.length;
@@ -76,117 +76,125 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 {/* === CONTENT (Timeline Scroll) === */}
                 <div 
                     ref={containerRef}
-                    className="flex-1 overflow-y-auto p-12 md:p-20 space-y-32 scrollbar-hide"
+                    className="flex-1 overflow-y-auto p-12 md:p-20 space-y-32 scrollbar-hide bg-[radial-gradient(circle_at_center,rgba(234,179,8,0.03)_0%,transparent_70%)]"
                 >
-                    {jornada.map((item, idx) => {
-                        const isConcluido = item.progresso?.status === 'concluido';
-                        const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
-                        const isAtual = !isConcluido && !isBloqueado;
-                        const imgUrl = getSymbolImage(item);
+                    {jornada.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+                            <div className="w-20 h-20 rounded-full border border-white/5 flex items-center justify-center text-4xl opacity-20">📜</div>
+                            <h3 className="text-xl font-light text-gray-500 uppercase tracking-widest">Nenhuma etapa cadastrada</h3>
+                            <p className="text-[10px] text-gray-700 uppercase tracking-widest">Aguarde a diretoria definir o caminho da sua jornada.</p>
+                        </div>
+                    ) : (
+                        jornada.map((item, idx) => {
+                            const isConcluido = item.progresso?.status === 'concluido';
+                            const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
+                            const isAtual = !isConcluido && !isBloqueado;
+                            const imgUrl = getSymbolImage(item);
 
-                        return (
-                            <div 
-                                key={item.id}
-                                className={`relative flex flex-col items-center transition-all duration-1000 ${
-                                    isBloqueado ? 'opacity-30' : 'opacity-100'
-                                }`}
-                            >
-                                {/* Vertical Connector */}
-                                {idx < jornada.length - 1 && (
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-[1px] h-32 bg-gradient-to-b from-white/10 to-transparent" />
-                                )}
+                            return (
+                                <div 
+                                    key={item.id}
+                                    className={`relative flex flex-col items-center transition-all duration-1000 ${
+                                        isBloqueado ? 'opacity-30' : 'opacity-100'
+                                    }`}
+                                >
+                                    {/* Vertical Connector */}
+                                    {idx < jornada.length - 1 && (
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-[1px] h-32 bg-gradient-to-b from-white/10 to-transparent" />
+                                    )}
 
-                                <div className="flex flex-col md:flex-row items-center gap-16 w-full max-w-5xl">
-                                    
-                                    {/* === SYMBOL SIDE === */}
-                                    <div className="w-[400px] h-[400px] flex-shrink-0 relative group">
-                                        {/* Outer glow rings */}
-                                        {isAtual && (
-                                            <>
-                                                <div className="absolute inset-0 rounded-full border border-yellow-500/10 animate-ping opacity-20" />
-                                                <div className="absolute -inset-8 rounded-full border border-yellow-500/5 animate-pulse" />
-                                            </>
-                                        )}
-
-                                        {/* Main Image Container */}
-                                        <div className={`w-full h-full relative z-10 overflow-hidden rounded-3xl border border-white/5 transition-all duration-1000 ${
-                                            isBloqueado ? 'grayscale brightness-[0.2] blur-[2px]' 
-                                            : isConcluido ? 'grayscale-0 brightness-100 shadow-[0_0_50px_rgba(234,179,8,0.2)]' 
-                                            : 'grayscale brightness-50'
-                                        }`}>
-                                            <img 
-                                                src={imgUrl} 
-                                                alt={item.titulo} 
-                                                className={`w-full h-full object-cover transition-all duration-1000 ${
-                                                    isBloqueado ? 'opacity-50' : 'opacity-100'
-                                                }`}
-                                            />
-                                            
-                                            {/* Silhouette Glow Effect (CSS Overlay) */}
-                                            {isBloqueado && (
-                                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                                    <div className="w-64 h-64 border-2 border-yellow-500/20 rounded-full animate-pulse shadow-[0_0_100px_rgba(234,179,8,0.1)]" />
-                                                </div>
+                                    <div className="flex flex-col md:flex-row items-center gap-16 w-full max-w-5xl">
+                                        
+                                        {/* === SYMBOL SIDE === */}
+                                        <div className="w-[400px] h-[400px] flex-shrink-0 relative group">
+                                            {/* Outer glow rings */}
+                                            {isAtual && (
+                                                <>
+                                                    <div className="absolute inset-0 rounded-full border border-yellow-500/10 animate-ping opacity-20" />
+                                                    <div className="absolute -inset-8 rounded-full border border-yellow-500/5 animate-pulse" />
+                                                </>
                                             )}
 
-                                            {/* Reveal Overlay Animation */}
-                                            {revealing === item.id && (
-                                                <div className="absolute inset-0 bg-white animate-reveal-flash z-50" />
+                                            {/* Main Image Container */}
+                                            <div className={`w-full h-full relative z-10 overflow-hidden rounded-3xl border border-white/5 transition-all duration-1000 ${
+                                                isBloqueado ? 'grayscale brightness-[0.2] blur-[2px]' 
+                                                : isConcluido ? 'grayscale-0 brightness-100 shadow-[0_0_50px_rgba(234,179,8,0.2)]' 
+                                                : 'grayscale brightness-50'
+                                            }`}>
+                                                <img 
+                                                    src={imgUrl} 
+                                                    alt={item.titulo} 
+                                                    className={`w-full h-full object-cover transition-all duration-1000 ${
+                                                        isBloqueado ? 'opacity-50' : 'opacity-100'
+                                                    }`}
+                                                />
+                                                
+                                                {/* Silhouette Glow Effect (CSS Overlay) */}
+                                                {isBloqueado && (
+                                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                                        <div className="w-64 h-64 border-2 border-yellow-500/20 rounded-full animate-pulse shadow-[0_0_100px_rgba(234,179,8,0.1)]" />
+                                                    </div>
+                                                )}
+
+                                                {/* Reveal Overlay Animation */}
+                                                {revealing === item.id && (
+                                                    <div className="absolute inset-0 bg-white animate-reveal-flash z-50" />
+                                                )}
+                                            </div>
+
+                                            {/* Action Button for Current */}
+                                            {isAtual && (
+                                                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20">
+                                                    <button 
+                                                        onClick={() => onIniciarEstudo?.(item)}
+                                                        className="px-8 py-3 bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-[0_0_30px_rgba(234,179,8,0.5)] cursor-pointer"
+                                                    >
+                                                        Iniciar Trabalho
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
 
-                                        {/* Action Button for Current */}
-                                        {isAtual && (
-                                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20">
-                                                <button 
-                                                    onClick={() => onIniciarEstudo?.(item)}
-                                                    className="px-8 py-3 bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-[0_0_30px_rgba(234,179,8,0.5)] cursor-pointer"
-                                                >
-                                                    Iniciar Trabalho
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* === TEXT SIDE === */}
-                                    <div className={`flex-1 transition-all duration-1000 ${isBloqueado ? 'opacity-20 translate-x-10' : 'opacity-100 translate-x-0'}`}>
-                                        <div className="space-y-6">
-                                            <div className="space-y-1">
-                                                <span className={`text-[9px] font-bold uppercase tracking-[0.4em] ${isConcluido ? 'text-yellow-500' : 'text-gray-500'}`}>
-                                                    {GRAU_LABELS[item.grau]} • Etapa {idx + 1}
-                                                </span>
-                                                <h3 className="text-4xl font-light text-white uppercase tracking-tighter leading-none">
-                                                    {isBloqueado ? 'Conhecimento Oculto' : item.titulo}
-                                                </h3>
-                                            </div>
-
-                                            {!isBloqueado && (
-                                                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-1000">
-                                                    <div className="w-12 h-[1px] bg-yellow-500/50" />
-                                                    <p className="text-gray-400 text-sm leading-relaxed font-light max-w-lg">
-                                                        {item.descricao_jornada || 'Nenhuma descrição detalhada disponível para esta etapa da jornada.'}
-                                                    </p>
-                                                    
-                                                    {isConcluido && (
-                                                        <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-emerald-500">
-                                                            <span className="w-5 h-5 rounded-full border border-emerald-500/30 flex items-center justify-center text-[10px]">✓</span>
-                                                            Conhecimento Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
-                                                        </div>
-                                                    )}
+                                        {/* === TEXT SIDE === */}
+                                        <div className={`flex-1 transition-all duration-1000 ${isBloqueado ? 'opacity-20 translate-x-10' : 'opacity-100 translate-x-0'}`}>
+                                            <div className="space-y-6">
+                                                <div className="space-y-1">
+                                                    <span className={`text-[9px] font-bold uppercase tracking-[0.4em] ${isConcluido ? 'text-yellow-500' : 'text-gray-500'}`}>
+                                                        {GRAU_LABELS[item.grau]} • Etapa {idx + 1}
+                                                    </span>
+                                                    <h3 className="text-4xl font-light text-white uppercase tracking-tighter leading-none">
+                                                        {isBloqueado ? 'Conhecimento Oculto' : item.titulo}
+                                                    </h3>
                                                 </div>
-                                            )}
 
-                                            {isBloqueado && (
-                                                <p className="text-[10px] text-gray-700 uppercase tracking-widest italic">
-                                                    A luz ainda não tocou este caminho...
-                                                </p>
-                                            )}
+                                                {!isBloqueado && (
+                                                    <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-1000">
+                                                        <div className="w-12 h-[1px] bg-yellow-500/50" />
+                                                        <p className="text-gray-400 text-sm leading-relaxed font-light max-w-lg">
+                                                            {item.descricao_jornada || 'Nenhuma descrição detalhada disponível para esta etapa da jornada.'}
+                                                        </p>
+                                                        
+                                                        {isConcluido && (
+                                                            <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-emerald-500">
+                                                                <span className="w-5 h-5 rounded-full border border-emerald-500/30 flex items-center justify-center text-[10px]">✓</span>
+                                                                Conhecimento Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {isBloqueado && (
+                                                    <p className="text-[10px] text-gray-700 uppercase tracking-widest italic">
+                                                        A luz ainda não tocou este caminho...
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })
+                    )}
 
                     {/* End spacing */}
                     <div className="h-20" />
