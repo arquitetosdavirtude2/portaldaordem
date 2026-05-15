@@ -47,25 +47,6 @@ def health_check():
         "env_file": {"exists": env_exists, "readable": env_readable}
     }
 
-@app.get("/api/fix-db")
-def fix_db_route():
-    from database import engine
-    from sqlalchemy import text
-    try:
-        with engine.connect() as conn:
-            cols = [
-                ("descricao_jornada", "TEXT"),
-                ("imagem_jornada_url", "VARCHAR(255)")
-            ]
-            for col_name, col_type in cols:
-                res = conn.execute(text(f"SHOW COLUMNS FROM conteudos_estudo LIKE '{col_name}'"))
-                if not res.fetchone():
-                    conn.execute(text(f"ALTER TABLE conteudos_estudo ADD COLUMN {col_name} {col_type}"))
-            conn.execute(text("COMMIT"))
-        return {"status": "Database columns verified/added successfully"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
 @app.get("/api/ping-fastapi-sync")
 def ping_fastapi_sync():
     """Se esta rota der looping, o threadpool (anyio) do FastAPI está quebrado no cPanel."""
