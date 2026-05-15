@@ -61,13 +61,13 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
             <div className="bg-[#020205] border border-white/10 rounded-[2.5rem] w-full max-w-7xl h-full max-h-[92vh] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.9)] relative z-10 flex flex-col">
                 
                 {/* === Nebula Background Layer === */}
-                <div className="absolute inset-0 opacity-40 pointer-events-none overflow-hidden">
+                <div className="absolute inset-0 opacity-70 pointer-events-none overflow-hidden">
                     <img 
                         src="/nebula_bg.png" 
                         alt="Nebula" 
-                        className="w-full h-full object-cover scale-105 animate-slow-glow"
+                        className="w-full h-full object-cover scale-105 animate-slow-glow brightness-110 contrast-110"
                     />
-                    <div className="absolute inset-0 bg-black/60" />
+                    <div className="absolute inset-0 bg-black/40" />
                 </div>
 
                 {/* === HEADER === */}
