@@ -140,8 +140,8 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                         : 'drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] scale-95'
                                                     }`}>
                                                     <div className="w-full h-full relative" style={{
-                                                        maskImage: 'radial-gradient(ellipse at center, black 20%, transparent 75%)',
-                                                        WebkitMaskImage: 'radial-gradient(ellipse at center, black 20%, transparent 75%)'
+                                                        maskImage: 'radial-gradient(ellipse 80% 80% at center, black 60%, transparent 100%)',
+                                                        WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at center, black 60%, transparent 100%)'
                                                     }}>
                                                         <img
                                                             src={imgUrl}
