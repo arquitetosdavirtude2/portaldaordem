@@ -138,8 +138,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 
                                                 {/* Organic Node Image */}
                                                 <div className={`relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${
-                                                    isBloqueado ? 'grayscale brightness-[0.2] scale-90' 
-                                                    : isConcluido ? 'drop-shadow-[0_0_40px_rgba(234,179,8,0.2)] scale-100' 
+                                                    isConcluido ? 'drop-shadow-[0_0_40px_rgba(234,179,8,0.2)] scale-100' 
                                                     : 'drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] scale-95'
                                                 }`}>
                                                     <div className="w-full h-full relative" style={{
@@ -149,18 +148,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                         <img 
                                                             src={imgUrl} 
                                                             alt={item.titulo} 
-                                                            className={`w-full h-full object-contain transition-all duration-1000 ${
-                                                                isBloqueado ? 'blur-sm' : 'blur-0'
-                                                            }`}
+                                                            className={`w-full h-full object-contain transition-all duration-1000`}
                                                         />
                                                         
-                                                        {/* Lock Overlay */}
-                                                        {isBloqueado && (
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                                                                <span className="text-2xl opacity-20">🔒</span>
-                                                            </div>
-                                                        )}
-
                                                         {/* Reveal Animation Overlay */}
                                                         {revealing === item.id && (
                                                             <div className="absolute inset-0 bg-white animate-reveal-flash z-50" />
