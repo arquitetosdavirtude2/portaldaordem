@@ -135,10 +135,14 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 <div className={`absolute -inset-10 rounded-full blur-3xl transition-all duration-1000 ${isConcluido ? 'bg-yellow-500/10' : isAtual ? 'bg-blue-500/5 animate-slow-glow' : 'bg-transparent'
                                                     }`} />
 
-                                                {/* Organic Node Image */}
-                                                <div className={`relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${isConcluido ? 'drop-shadow-[0_0_40px_rgba(234,179,8,0.2)] scale-100'
-                                                        : 'drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] scale-95'
+                                                 {/* Organic Node Image */}
+                                                <div className={`relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${isConcluido ? 'drop-shadow-[0_0_40px_rgba(234,179,8,0.3)] scale-100'
+                                                        : 'drop-shadow-[0_0_60px_rgba(100,120,180,0.4)] scale-95'
                                                     }`}>
+                                                    {/* Subtle glow background so dark image is visible */}
+                                                    {!isConcluido && (
+                                                        <div className="absolute inset-0 rounded-full bg-blue-900/20 blur-2xl" />
+                                                    )}
                                                     <div className="w-full h-full relative" style={{
                                                         maskImage: 'radial-gradient(ellipse 80% 80% at center, black 60%, transparent 100%)',
                                                         WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at center, black 60%, transparent 100%)'
@@ -146,7 +150,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                         <img
                                                             src={imgUrl}
                                                             alt={item.titulo}
-                                                            className={`w-full h-full object-contain transition-all duration-1000`}
+                                                            className={`w-full h-full object-contain transition-all duration-1000 ${!isConcluido ? 'brightness-[1.8] contrast-[1.1]' : ''}`}
                                                         />
 
                                                         {/* Reveal Animation Overlay */}
