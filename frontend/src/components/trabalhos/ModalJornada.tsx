@@ -63,11 +63,11 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
             <div className="bg-[#020205] border border-white/10 rounded-[2.5rem] w-full max-w-7xl h-full max-h-[92vh] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.9)] relative z-10 flex flex-col">
 
                 {/* === Nebula Background Layer === */}
-                <div className="absolute inset-0 opacity-60 pointer-events-none overflow-hidden">
+                <div className="absolute inset-0 opacity-50 pointer-events-none overflow-hidden">
                     <img 
                         src="https://www.portaldaordem.com.br/nebula_bg.png" 
                         alt="Nebula" 
-                        className="w-full h-full object-cover scale-125 animate-slow-glow brightness-125 contrast-110"
+                        className="w-full h-full object-cover scale-110 animate-galaxy-expand brightness-110"
                     />
                     <div className="absolute inset-0 bg-black/20" />
                 </div>
@@ -119,10 +119,14 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                         key={item.id}
                                         className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative group`}
                                     >
-                                        {/* Connector Line to next node */}
+                                        {/* Connector Line (Skyrim Style) */}
                                         {idx < jornada.length - 1 && (
                                             <div
-                                                className={`absolute top-[60%] w-[50%] h-[1px] bg-gradient-to-r from-white/10 to-transparent z-0
+                                                className={`absolute top-[60%] w-[50%] h-[1px] z-0 transition-all duration-1000
+                                                    ${isConcluido 
+                                                        ? 'bg-gradient-to-r from-yellow-500/40 via-yellow-200/20 to-transparent shadow-[0_0_10px_rgba(234,179,8,0.2)]' 
+                                                        : 'bg-gradient-to-r from-white/5 to-transparent'
+                                                    }
                                                     ${isLeft ? 'left-[20%] rotate-[25deg]' : 'right-[20%] rotate-[-25deg]'}`}
                                             />
                                         )}
@@ -139,9 +143,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 <div className={`relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${isConcluido ? 'drop-shadow-[0_0_40px_rgba(255,255,255,0.1)] scale-100'
                                                         : 'drop-shadow-[0_0_60px_rgba(100,120,180,0.2)] scale-95'
                                                     }`}>
-                                                    {/* Subtle glow background so dark image is visible */}
+                                                    {/* Subtle glow background integrated with nebula color */}
                                                     {!isConcluido && (
-                                                        <div className="absolute inset-0 rounded-full bg-blue-900/20 blur-2xl" />
+                                                        <div className="absolute inset-0 rounded-full bg-[#0a0a1a]/60 blur-3xl" />
                                                     )}
                                                     <div className="w-full h-full relative" style={{
                                                         maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
@@ -214,11 +218,20 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 .animate-reveal-flash {
                     animation: reveal-flash 1.5s ease-out forwards;
                 }
+                @keyframes galaxy-expand {
+                    0% { transform: scale(1); opacity: 0.4; }
+                    50% { opacity: 0.6; }
+                    100% { transform: scale(1.15); opacity: 0.4; }
+                }
+                .animate-galaxy-expand {
+                    animation: galaxy-expand 40s linear infinite;
+                }
+                
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 
                 @keyframes slow-glow {
-                    0%, 100% { opacity: 0.3; transform: scale(1.05); }
-                    50% { opacity: 0.5; transform: scale(1.08); }
+                    0%, 100% { opacity: 0.3; transform: scale(1.02); }
+                    50% { opacity: 0.5; transform: scale(1.05); }
                 }
                 .animate-slow-glow {
                     animation: slow-glow 15s ease-in-out infinite;
