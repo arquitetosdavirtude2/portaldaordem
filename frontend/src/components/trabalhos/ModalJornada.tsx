@@ -26,10 +26,10 @@ interface ModalJornadaProps {
 const GRAU_LABELS: Record<number, string> = { 1: 'Aprendiz', 2: 'Companheiro', 3: 'Mestre' };
 
 const IMAGE_MAP: Record<string, string> = {
-    'iniciação': '/initiation_light.png',
-    'aprendiz': '/rough_stone.png',
-    'companheiro': '/polished_stone.png',
-    'mestre': '/masonic_temple.png'
+    'iniciação': 'https://www.portaldaordem.com.br/initiation_light.png',
+    'aprendiz': 'https://www.portaldaordem.com.br/rough_stone.png',
+    'companheiro': 'https://www.portaldaordem.com.br/polished_stone.png',
+    'mestre': 'https://www.portaldaordem.com.br/masonic_temple.png'
 };
 
 export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: ModalJornadaProps) {
@@ -49,7 +49,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
     const getSymbolImage = (item: JornadaItem, isConcluido?: boolean) => {
         const title = item.titulo.toLowerCase();
-        if (title.includes('iniciação')) return isConcluido ? IMAGE_MAP['iniciação'] : '/initiation_dark.png';
+        if (title.includes('iniciação')) return isConcluido ? IMAGE_MAP['iniciação'] : 'https://www.portaldaordem.com.br/initiation_dark.png';
         if (item.grau === 1) return IMAGE_MAP['aprendiz'];
         if (item.grau === 2) return IMAGE_MAP['companheiro'];
         return IMAGE_MAP['mestre'];
@@ -63,13 +63,13 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
             <div className="bg-[#020205] border border-white/10 rounded-[2.5rem] w-full max-w-7xl h-full max-h-[92vh] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.9)] relative z-10 flex flex-col">
 
                 {/* === Nebula Background Layer === */}
-                <div className="absolute inset-0 opacity-40 pointer-events-none overflow-hidden">
+                <div className="absolute inset-0 opacity-60 pointer-events-none overflow-hidden">
                     <img 
-                        src="/nebula_bg.png" 
+                        src="https://www.portaldaordem.com.br/nebula_bg.png" 
                         alt="Nebula" 
-                        className="w-full h-full object-cover scale-125 animate-slow-glow"
+                        className="w-full h-full object-cover scale-125 animate-slow-glow brightness-125 contrast-110"
                     />
-                    <div className="absolute inset-0 bg-black/30" />
+                    <div className="absolute inset-0 bg-black/20" />
                 </div>
 
                 {/* === HEADER === */}
@@ -98,7 +98,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     {jornada.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
                             <div className="w-32 h-32 rounded-full border border-yellow-500/10 flex items-center justify-center p-6 opacity-20 animate-slow-glow">
-                                <img src="/logo-gomb.png" alt="Lodge Logo" className="w-full h-full object-contain grayscale invert" />
+                                <img src="https://www.portaldaordem.com.br/logo-gomb.png" alt="Lodge Logo" className="w-full h-full object-contain grayscale invert" />
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-2xl font-light text-gray-400 uppercase tracking-widest">O Firmamento está Vazio</h3>
