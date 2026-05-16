@@ -47,9 +47,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
     const total = jornada.length;
     const progressoGlobal = total > 0 ? (concluidos / total) * 100 : 0;
 
-    const getSymbolImage = (item: JornadaItem) => {
+    const getSymbolImage = (item: JornadaItem, isConcluido?: boolean) => {
         const title = item.titulo.toLowerCase();
-        if (title.includes('iniciação')) return IMAGE_MAP['iniciação'];
+        if (title.includes('iniciação')) return isConcluido ? IMAGE_MAP['iniciação'] : '/initiation_dark.png';
         if (item.grau === 1) return IMAGE_MAP['aprendiz'];
         if (item.grau === 2) return IMAGE_MAP['companheiro'];
         return IMAGE_MAP['mestre'];
@@ -111,7 +111,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                 const isConcluido = item.progresso?.status === 'concluido';
                                 const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
                                 const isAtual = !isConcluido && !isBloqueado;
-                                const imgUrl = getSymbolImage(item);
+                                const imgUrl = getSymbolImage(item, isConcluido);
                                 const isLeft = idx % 2 === 0;
 
                                 return (
@@ -136,17 +136,20 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                     isConcluido ? 'bg-yellow-500/10' : isAtual ? 'bg-blue-500/5 animate-slow-glow' : 'bg-transparent'
                                                 }`} />
                                                 
-                                                {/* Node Circle */}
-                                                <div className={`relative z-10 w-48 h-48 md:w-56 md:h-56 rounded-full border p-1 transition-all duration-1000 ${
-                                                    isBloqueado ? 'border-white/5 grayscale brightness-[0.2] scale-90' 
-                                                    : isConcluido ? 'border-yellow-500/40 shadow-[0_0_40px_rgba(234,179,8,0.2)]' 
-                                                    : 'border-blue-400/30 shadow-[0_0_30px_rgba(59,130,246,0.1)]'
+                                                {/* Organic Node Image */}
+                                                <div className={`relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${
+                                                    isBloqueado ? 'grayscale brightness-[0.2] scale-90' 
+                                                    : isConcluido ? 'drop-shadow-[0_0_40px_rgba(234,179,8,0.2)] scale-100' 
+                                                    : 'drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] scale-95'
                                                 }`}>
-                                                    <div className="w-full h-full rounded-full overflow-hidden relative">
+                                                    <div className="w-full h-full relative" style={{
+                                                        maskImage: 'radial-gradient(ellipse at center, black 20%, transparent 75%)',
+                                                        WebkitMaskImage: 'radial-gradient(ellipse at center, black 20%, transparent 75%)'
+                                                    }}>
                                                         <img 
                                                             src={imgUrl} 
                                                             alt={item.titulo} 
-                                                            className={`w-full h-full object-cover transition-all duration-1000 ${
+                                                            className={`w-full h-full object-contain transition-all duration-1000 ${
                                                                 isBloqueado ? 'blur-sm' : 'blur-0'
                                                             }`}
                                                         />
@@ -166,19 +169,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                                                     {/* Status Pulse for Current */}
                                                     {isAtual && (
-                                                        <div className="absolute -inset-2 rounded-full border border-blue-400/20 animate-ping opacity-30" />
+                                                        <div className="absolute inset-10 rounded-full border border-blue-400/20 animate-ping opacity-30" />
                                                     )}
                                                 </div>
-
-                                                {/* Start Button for Current */}
-                                                {isAtual && (
-                                                    <button 
-                                                        onClick={() => onIniciarEstudo?.(item)}
-                                                        className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-yellow-500 text-black text-[9px] font-black uppercase tracking-widest rounded-full hover:scale-105 transition-all shadow-[0_0_25px_rgba(234,179,8,0.4)] cursor-pointer z-20"
-                                                    >
-                                                        Revelar Luz
-                                                    </button>
-                                                )}
                                             </div>
 
                                             {/* === INFO SIDE === */}
