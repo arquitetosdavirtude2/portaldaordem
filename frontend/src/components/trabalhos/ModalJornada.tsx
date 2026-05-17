@@ -134,7 +134,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 <div className="p-8 pb-4 border-b border-white/5 flex justify-between items-center relative z-20">
                     <div className="space-y-1">
                         <h2 className="text-3xl font-light text-white uppercase tracking-[-0.05em] mb-1 flex items-center gap-3">
-                            <span className="text-yellow-500/50">✨</span> Minha Jornada Maçônica
+                            <img src="/logo-gomb.png" alt="GOMB" className="journey-header-logo" /> Minha Jornada Maçônica
                         </h2>
                         <div className="flex items-center gap-4">
                             <div className="w-64 h-0.5 bg-white/5 rounded-full overflow-hidden">
@@ -402,6 +402,13 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 }
                 .animate-slow-glow {
                     animation: slow-glow 15s ease-in-out infinite;
+                }
+
+                .journey-header-logo {
+                    width: 28px;
+                    height: 28px;
+                    object-fit: contain;
+                    flex-shrink: 0;
                 }
 
                 /* Celestial Skyrim Star Nodes */
