@@ -438,14 +438,16 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 .work-kicker {
                     font-family: "Cinzel", serif;
                     font-size: 0.68rem;
-                    letter-spacing: 0.42em;
+                    letter-spacing: 0.38em;
                     text-transform: uppercase;
-                    color: rgba(220, 225, 240, 0.62);
+                    color: rgba(210, 215, 230, 0.52);
                 }
 
                 .work-title {
                     font-family: "Cinzel", serif;
                     margin-bottom: 1rem;
+                    color: rgba(248, 248, 252, 0.9);
+                    text-shadow: 0 0 14px rgba(255, 255, 255, 0.08);
                 }
 
                 /* Resumed/Recolhido with Fade Transition */
@@ -453,7 +455,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     position: relative;
                     overflow: hidden;
                     max-height: 4.8em;
-                    opacity: 0.72;
+                    opacity: 0.68;
                     transition:
                         max-height 0.9s cubic-bezier(0.25, 1, 0.5, 1),
                         opacity 0.65s ease,
@@ -464,7 +466,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 .is-focused .work-description-wrapper,
                 .group:hover .work-description-wrapper {
                     max-height: 600px;
-                    opacity: 1;
+                    opacity: 0.9;
                     filter: blur(0);
                 }
 
@@ -491,12 +493,14 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     opacity: 0;
                 }
 
-                /* Smooth vertical shift reveal */
+                /* Smooth vertical shift reveal and color transitions */
                 .work-description {
                     transform: translateY(4px);
                     transition:
-                        transform 0.7s cubic-bezier(0.25, 1, 0.5, 1),
-                        opacity 0.7s ease;
+                        color 0.55s ease,
+                        opacity 0.55s ease,
+                        max-height 0.85s ease,
+                        transform 0.65s ease;
                 }
 
                 .is-focused .work-description,
@@ -506,24 +510,67 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                 /* Cormorant & EB Garamond Liturgical paragraph details */
                 .work-description p {
-                    font-family: "Cormorant Garamond", "EB Garamond", serif;
-                    font-size: clamp(0.92rem, 0.85vw, 1.05rem);
-                    line-height: 1.65;
-                    letter-spacing: 0.015em;
-                    font-weight: 400;
-                    color: rgba(235, 238, 245, 0.72);
-                    margin: 0 0 0.95rem;
-                    transition: color 0.5s ease;
+                    font-family: "Cormorant Garamond", "EB Garamond", "Spectral", serif;
+                    font-size: clamp(0.9rem, 0.82vw, 1rem);
+                    line-height: 1.62;
+                    letter-spacing: 0.01em;
+                    font-weight: 300;
+                    color: rgba(220, 224, 235, 0.58);
+                    margin: 0 0 0.82rem;
+                    transition: color 0.55s ease, margin 0.6s ease;
                 }
 
                 .work-description p:last-child {
                     margin-bottom: 0;
                 }
 
-                /* Glow transition to active/white light text on focus or hover */
+                /* Glow transition to active/softer light text on focus or hover */
                 .is-focused .work-description p,
                 .group:hover .work-description p {
-                    color: rgba(255, 255, 255, 0.92);
+                    color: rgba(238, 240, 246, 0.76);
+                }
+
+                /* Opção B — Alinhamento Ritualístico/Curvilíneo */
+                .work-text.text-left .work-kicker {
+                    margin-left: 0;
+                    transition: margin-left 0.6s ease;
+                }
+                .work-text.text-left .work-title {
+                    margin-left: 10px;
+                    transition: margin-left 0.6s ease;
+                }
+                .work-text.text-left .work-description p:nth-child(1) {
+                    margin-left: 20px;
+                    transition: margin-left 0.6s ease;
+                }
+                .work-text.text-left .work-description p:nth-child(2) {
+                    margin-left: 10px;
+                    transition: margin-left 0.6s ease;
+                }
+                .work-text.text-left .work-description p:nth-child(3) {
+                    margin-left: 0;
+                    transition: margin-left 0.6s ease;
+                }
+
+                .work-text.text-right .work-kicker {
+                    margin-right: 0;
+                    transition: margin-right 0.6s ease;
+                }
+                .work-text.text-right .work-title {
+                    margin-right: 10px;
+                    transition: margin-right 0.6s ease;
+                }
+                .work-text.text-right .work-description p:nth-child(1) {
+                    margin-right: 20px;
+                    transition: margin-right 0.6s ease;
+                }
+                .work-text.text-right .work-description p:nth-child(2) {
+                    margin-right: 10px;
+                    transition: margin-right 0.6s ease;
+                }
+                .work-text.text-right .work-description p:nth-child(3) {
+                    margin-right: 0;
+                    transition: margin-right 0.6s ease;
                 }`}</style>
         </div>
     );
