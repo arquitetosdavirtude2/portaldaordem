@@ -35,6 +35,8 @@ const IMAGE_MAP: Record<string, string> = {
 export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: ModalJornadaProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [revealing, setRevealing] = useState<number | null>(null);
+    const [activeNodeIndex, setActiveNodeIndex] = useState<number>(0);
+    const [nodePositions, setNodePositions] = useState<Array<{ x: number; y: number }>>([]);
 
     if (!itens) return null;
 
@@ -57,6 +59,59 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
         if (item.grau === 2) return IMAGE_MAP['companheiro'];
         return IMAGE_MAP['mestre'];
     };
+
+    // Recalculate physical positions of the nodes relative to the scrollable container
+    const updatePositions = () => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+        const rect = container.getBoundingClientRect();
+        
+        const nodes = container.querySelectorAll('[data-jornada-node]');
+        const positions = Array.from(nodes).map(node => {
+            const nodeRect = node.getBoundingClientRect();
+            // Calculate relative coordinates inside scrollable pane
+            return {
+                x: nodeRect.left - rect.left + nodeRect.width / 2 + container.scrollLeft,
+                y: nodeRect.top - rect.top + nodeRect.height / 2 + container.scrollTop
+            };
+        });
+        setNodePositions(positions);
+    };
+
+    // Calculate node coordinates on render and on viewport dimensions changes
+    useEffect(() => {
+        updatePositions();
+        window.addEventListener('resize', updatePositions);
+        
+        // Setup observer to detect which node is currently centered in viewport
+        const container = containerRef.current;
+        if (!container) return;
+
+        const observerOptions = {
+            root: container,
+            rootMargin: '-35% 0px -35% 0px',
+            threshold: 0.2
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idxStr = entry.target.getAttribute('data-idx');
+                    if (idxStr !== null) {
+                        setActiveNodeIndex(parseInt(idxStr, 10));
+                    }
+                }
+            });
+        }, observerOptions);
+
+        const rows = container.querySelectorAll('[data-jornada-row]');
+        rows.forEach(row => observer.observe(row));
+
+        return () => {
+            window.removeEventListener('resize', updatePositions);
+            observer.disconnect();
+        };
+    }, [jornada.length]);
 
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-700">
@@ -96,6 +151,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 {/* === SKILL TREE CONTENT === */}
                 <div
                     ref={containerRef}
+                    onScroll={updatePositions}
                     className="flex-1 overflow-y-auto p-12 md:p-24 relative z-10 scrollbar-hide"
                 >
                     {jornada.length === 0 ? (
@@ -109,100 +165,199 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-40 relative">
-                            {jornada.map((item, idx) => {
-                                const isConcluido = item.progresso?.status === 'concluido';
-                                const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
-                                const isAtual = !isConcluido && !isBloqueado;
-                                const imgUrl = getSymbolImage(item, isConcluido);
-                                const isLeft = idx % 2 === 0;
+                        <div className="relative min-h-[500px]">
+                            
+                            {/* === CELESTIAL CONSTELLATION SVG LAYER === */}
+                            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible">
+                                {nodePositions.map((pos, idx) => {
+                                    if (idx >= nodePositions.length - 1) return null;
+                                    const nextPos = nodePositions[idx + 1];
+                                    const item = jornada[idx];
+                                    const nextItem = jornada[idx + 1];
+                                    
+                                    const isCurrentConcluido = item.progresso?.status === 'concluido';
+                                    const isNextConcluido = nextItem.progresso?.status === 'concluido';
+                                    const isFocused = activeNodeIndex === idx || activeNodeIndex === idx + 1;
+                                    
+                                    // Celestial line theme styling based on progress
+                                    let strokeColor = 'rgba(180, 200, 255, 0.08)'; // Bloqueada/Inativa
+                                    let strokeWidth = 1.0;
+                                    let filter = 'none';
 
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative group`}
-                                    >
-                                        {/* Connector Line (Skyrim Style) */}
-                                        {idx < jornada.length - 1 && (
-                                            <div
-                                                className={`absolute top-[60%] w-[50%] h-[1px] z-0 transition-all duration-1000
-                                                    ${isConcluido 
-                                                        ? 'bg-gradient-to-r from-yellow-500/40 via-yellow-200/20 to-transparent shadow-[0_0_10px_rgba(234,179,8,0.2)]' 
-                                                        : 'bg-gradient-to-r from-white/5 to-transparent'
-                                                    }
-                                                    ${isLeft ? 'left-[20%] rotate-[25deg]' : 'right-[20%] rotate-[-25deg]'}`}
+                                    if (isCurrentConcluido) {
+                                        if (isNextConcluido) {
+                                            // Concluída (Golden glow style)
+                                            strokeColor = 'rgba(255, 230, 170, 0.55)';
+                                            strokeWidth = 1.3;
+                                            filter = 'drop-shadow(0 0 8px rgba(255, 220, 160, 0.45))';
+                                        } else {
+                                            // Revelada/Ativa
+                                            strokeColor = 'rgba(255, 255, 230, 0.35)';
+                                            strokeWidth = 1.1;
+                                            filter = 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.2))';
+                                        }
+                                    }
+
+                                    // Spline control points for an organic celestial constellation route
+                                    const midX = (pos.x + nextPos.x) / 2;
+                                    const midY = (pos.y + nextPos.y) / 2;
+                                    
+                                    const q1X = (pos.x + midX) / 2 + (idx % 2 === 0 ? 30 : -30);
+                                    const q1Y = (pos.y + midY) / 2 - 15;
+                                    
+                                    const q2X = (midX + nextPos.x) / 2 + (idx % 2 === 0 ? -30 : 30);
+                                    const q2Y = (midY + nextPos.y) / 2 + 15;
+
+                                    return (
+                                        <g key={`path-${idx}`}>
+                                            {/* Main Constellation Line */}
+                                            <path
+                                                d={`M ${pos.x} ${pos.y} Q ${q1X} ${q1Y}, ${midX} ${midY} T ${nextPos.x} ${nextPos.y}`}
+                                                fill="none"
+                                                stroke={strokeColor}
+                                                strokeWidth={strokeWidth}
+                                                style={{
+                                                    filter,
+                                                    transition: 'all 0.8s ease'
+                                                }}
                                             />
-                                        )}
+                                            
+                                            {/* Intermediate small stars mapping natural patterns */}
+                                            <circle
+                                                cx={q1X}
+                                                cy={q1Y}
+                                                r={1.2}
+                                                fill={isCurrentConcluido ? 'rgba(255, 236, 190, 0.8)' : 'rgba(180, 200, 255, 0.2)'}
+                                                style={{ transition: 'all 0.8s ease' }}
+                                            />
+                                            <circle
+                                                cx={midX}
+                                                cy={midY}
+                                                r={1.8}
+                                                fill={isCurrentConcluido ? 'rgba(255, 230, 170, 0.9)' : 'rgba(180, 200, 255, 0.3)'}
+                                                style={{ transition: 'all 0.8s ease' }}
+                                            />
+                                            <circle
+                                                cx={q2X}
+                                                cy={q2Y}
+                                                r={1.2}
+                                                fill={isCurrentConcluido ? 'rgba(255, 236, 190, 0.8)' : 'rgba(180, 200, 255, 0.2)'}
+                                                style={{ transition: 'all 0.8s ease' }}
+                                            />
+                                        </g>
+                                    );
+                                })}
+                            </svg>
 
-                                        <div className={`flex items-center gap-2 max-w-4xl relative ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
+                            <div className="flex flex-col gap-40 relative z-10">
+                                {jornada.map((item, idx) => {
+                                    const isConcluido = item.progresso?.status === 'concluido';
+                                    const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
+                                    const isAtual = !isConcluido && !isBloqueado;
+                                    const imgUrl = getSymbolImage(item, isConcluido);
+                                    const isLeft = idx % 2 === 0;
+                                    const isFocused = activeNodeIndex === idx;
 
-                                            {/* === NODE (STAR / SYMBOL) === */}
-                                            <div className="relative group">
-                                                {/* Aura effects */}
-                                                <div className={`absolute -inset-10 rounded-full blur-3xl transition-all duration-1000 ${isConcluido ? 'bg-yellow-500/10' : isAtual ? 'bg-blue-500/5 animate-slow-glow' : 'bg-transparent'
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            data-jornada-row
+                                            data-idx={idx}
+                                            className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative group transition-all duration-1000`}
+                                        >
+                                            <div className={`flex items-center gap-2 max-w-4xl relative ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
+
+                                                {/* === NODE (STAR / SYMBOL) === */}
+                                                <div className="relative group" data-jornada-node>
+                                                    {/* Aura effects */}
+                                                    <div className={`absolute -inset-10 rounded-full blur-3xl transition-all duration-1000 ${
+                                                        isConcluido 
+                                                            ? 'bg-yellow-500/10' 
+                                                            : isFocused 
+                                                                ? 'bg-blue-500/10 animate-slow-glow' 
+                                                                : 'bg-transparent'
                                                     }`} />
 
-                                                 {/* Organic Node Image */}
-                                                <div className={`relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${isConcluido ? 'drop-shadow-[0_0_40px_rgba(255,255,255,0.1)] scale-100'
-                                                        : 'drop-shadow-[0_0_60px_rgba(100,120,180,0.2)] scale-95'
+                                                     {/* Organic Node Image */}
+                                                    <div className={`relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${
+                                                        isConcluido 
+                                                            ? 'drop-shadow-[0_0_40px_rgba(255,255,255,0.15)] scale-100'
+                                                            : isFocused 
+                                                                ? 'drop-shadow-[0_0_60px_rgba(100,120,180,0.25)] scale-[1.02]'
+                                                                : 'drop-shadow-[0_0_40px_rgba(100,120,180,0.1)] scale-95 opacity-65'
                                                     }`}>
-                                                    {/* Subtle glow background integrated with nebula color */}
-                                                    {!isConcluido && (
-                                                        <div className="absolute inset-0 rounded-full bg-[#0a0a1a]/60 blur-3xl" />
-                                                    )}
-                                                    <div className="w-full h-full relative" style={{
-                                                        maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
-                                                        WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)'
-                                                    }}>
-                                                        <img
-                                                            src={imgUrl}
-                                                            alt={item.titulo}
-                                                            className={`w-full h-full object-contain transition-all duration-1000 ${!isConcluido ? 'brightness-[1.3] contrast-[1.1] opacity-50 grayscale-[0.5]' : 'brightness-110'}`}
-                                                        />
+                                                        {/* Subtle glow background integrated with nebula color */}
+                                                        {!isConcluido && (
+                                                            <div className="absolute inset-0 rounded-full bg-[#0a0a1a]/60 blur-3xl" />
+                                                        )}
+                                                        
+                                                        {/* Skyrim Star Node Core */}
+                                                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all duration-1000 ${
+                                                            isConcluido 
+                                                                ? 'journey-node active' 
+                                                                : isAtual 
+                                                                    ? 'journey-node revealed animate-pulse'
+                                                                    : 'journey-node'
+                                                        }`} />
 
-                                                        {/* Reveal Animation Overlay */}
-                                                        {revealing === item.id && (
-                                                            <div className="absolute inset-0 bg-white animate-reveal-flash z-50" />
+                                                        <div className="w-full h-full relative" style={{
+                                                            maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
+                                                            WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)'
+                                                        }}>
+                                                            <img
+                                                                src={imgUrl}
+                                                                alt={item.titulo}
+                                                                className={`w-full h-full object-contain transition-all duration-1000 ${
+                                                                    !isConcluido 
+                                                                        ? 'brightness-[1.25] contrast-[1.1] opacity-45 grayscale-[0.5]' 
+                                                                        : 'brightness-110'
+                                                                }`}
+                                                            />
+
+                                                            {/* Reveal Animation Overlay */}
+                                                            {revealing === item.id && (
+                                                                <div className="absolute inset-0 bg-white animate-reveal-flash z-50" />
+                                                            )}
+                                                        </div>
+
+                                                        {/* Status Pulse for Current */}
+                                                        {isAtual && (
+                                                            <div className="absolute inset-10 rounded-full border border-blue-400/20 animate-ping opacity-30" />
                                                         )}
                                                     </div>
+                                                </div>
 
-                                                    {/* Status Pulse for Current */}
-                                                    {isAtual && (
-                                                        <div className="absolute inset-10 rounded-full border border-blue-400/20 animate-ping opacity-30" />
+                                                {/* === INFO SIDE === */}
+                                                <div className={`w-80 md:w-[28rem] relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isLeft ? 'text-left' : 'text-right'} ${isFocused ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`}>
+                                                    <div className="space-y-1">
+                                                        <span className={`text-[9px] font-bold uppercase tracking-[0.4em] block transition-all duration-700 ${isConcluido ? 'text-yellow-500' : 'text-gray-500'} ${isLeft ? 'pl-4' : 'pr-4'}`}>
+                                                            {GRAU_LABELS[item.grau]} • Nível {idx + 1}
+                                                        </span>
+                                                        <h3 className={`text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} ${isLeft ? 'pl-10' : 'pr-10'}`}>
+                                                            {isBloqueado ? 'Oculto por Névoa' : item.titulo}
+                                                        </h3>
+                                                    </div>
+
+                                                    {!isBloqueado && (
+                                                        <div className={`space-y-4 mt-2 animate-in fade-in duration-1000 ${isLeft ? 'slide-in-from-left-4' : 'slide-in-from-right-4'}`}>
+                                                            <p className={`text-gray-400 text-[11px] leading-relaxed font-light line-clamp-3 group-hover:line-clamp-none transition-all ${isLeft ? 'pl-6' : 'pr-6'}`}>
+                                                                {item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.'}
+                                                            </p>
+
+                                                            {isConcluido && (
+                                                                <div className={`flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 ${isLeft ? 'pl-6' : 'justify-end pr-6'}`}>
+                                                                     <span className="w-4 h-4 rounded-full border border-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
+                                                                    Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
-                                            </div>
-
-                                            {/* === INFO SIDE === */}
-                                            <div className={`w-80 md:w-[28rem] relative -top-8 transition-all duration-700 flex flex-col justify-center ${isLeft ? 'text-left' : 'text-right'}`}>
-                                                <div className="space-y-1">
-                                                    <span className={`text-[9px] font-bold uppercase tracking-[0.4em] block transition-all duration-700 ${isConcluido ? 'text-yellow-500' : 'text-gray-500'} ${isLeft ? 'pl-4' : 'pr-4'}`}>
-                                                        {GRAU_LABELS[item.grau]} • Nível {idx + 1}
-                                                    </span>
-                                                    <h3 className={`text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} ${isLeft ? 'pl-10' : 'pr-10'}`}>
-                                                        {isBloqueado ? 'Oculto por Névoa' : item.titulo}
-                                                    </h3>
-                                                </div>
-
-                                                {!isBloqueado && (
-                                                    <div className={`space-y-4 mt-2 animate-in fade-in duration-1000 ${isLeft ? 'slide-in-from-left-4' : 'slide-in-from-right-4'}`}>
-                                                        <p className={`text-gray-400 text-[11px] leading-relaxed font-light line-clamp-3 group-hover:line-clamp-none transition-all ${isLeft ? 'pl-6' : 'pr-6'}`}>
-                                                            {item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.'}
-                                                        </p>
-
-                                                        {isConcluido && (
-                                                            <div className={`flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 ${isLeft ? 'pl-6' : 'justify-end pr-6'}`}>
-                                                                 <span className="w-4 h-4 rounded-full border border-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
-                                                                Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
 
@@ -237,6 +392,32 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 }
                 .animate-slow-glow {
                     animation: slow-glow 15s ease-in-out infinite;
+                }
+
+                /* Celestial Skyrim Star Nodes */
+                .journey-node {
+                    position: absolute;
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 999px;
+                    background: rgba(180, 200, 255, 0.2);
+                    box-shadow: 0 0 8px rgba(180, 200, 255, 0.2);
+                    transition: all 0.8s ease;
+                }
+                
+                .journey-node.revealed {
+                    background: rgba(255, 255, 230, 0.75);
+                    box-shadow: 
+                        0 0 12px rgba(255, 255, 230, 0.7),
+                        0 0 24px rgba(255, 255, 255, 0.35);
+                }
+
+                .journey-node.active {
+                    background: rgba(255, 236, 190, 0.95);
+                    box-shadow:
+                        0 0 14px rgba(255, 236, 190, 0.95),
+                        0 0 32px rgba(212, 175, 55, 0.65),
+                        0 0 60px rgba(212, 175, 55, 0.3);
                 }
             `}</style>
         </div>
