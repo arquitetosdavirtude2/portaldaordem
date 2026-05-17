@@ -11,6 +11,7 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
     const [titulo, setTitulo] = useState('');
     const [tipo, setTipo] = useState('trabalho');
     const [grau, setGrau] = useState(1);
+    const [descricaoJornada, setDescricaoJornada] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -18,6 +19,7 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
             setTitulo(conteudo.titulo || '');
             setTipo(conteudo.tipo || 'trabalho');
             setGrau(conteudo.grau || 1);
+            setDescricaoJornada(conteudo.descricao_jornada || '');
         }
     }, [conteudo]);
 
@@ -30,6 +32,7 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
             const formData = new FormData();
             formData.append('titulo', titulo);
             formData.append('grau', grau.toString());
+            formData.append('descricao_jornada', descricaoJornada);
             // O tipo não é mais enviado para edição para evitar bagunça
 
             const res = await fetch(`/api/trabalhos/conteudo/${conteudo.id}`, {
@@ -53,7 +56,7 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-[#0f1219] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-[#0f1219] w-full max-w-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}
                 <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
@@ -109,6 +112,16 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
                                 <option value={3} className="bg-[#0f1219]">Mestre</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-2">Descrição do Trabalho</label>
+                        <textarea 
+                            value={descricaoJornada}
+                            onChange={e => setDescricaoJornada(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500/50 transition-colors text-sm resize-none h-28"
+                            placeholder="Descreva o conteúdo do trabalho ou preleção que será exibido na jornada celestial do irmão..."
+                        />
                     </div>
 
                     <div className="pt-4 flex justify-end items-center">
