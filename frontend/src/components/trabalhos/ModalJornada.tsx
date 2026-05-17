@@ -330,13 +330,13 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 </div>
 
                                                 {/* === INFO SIDE === */}
-                                                <div className={`work-text w-80 md:w-[32.5rem] text-left relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isFocused ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`}>
+                                                <div className={`work-text w-80 md:w-[32.5rem] text-left relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isFocused ? 'opacity-100 scale-100' : 'opacity-40 scale-95'} ${isBloqueado ? 'is-locked' : 'is-active'}`}>
                                                     <div className="space-y-1">
                                                         <span className={`work-kicker block transition-all duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} pl-6`}>
                                                             {GRAU_LABELS[item.grau]} • Nível {idx + 1}
                                                         </span>
                                                         <h3 className={`work-title text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} pl-6`}>
-                                                            {isBloqueado ? 'Oculto por Névoa' : item.titulo}
+                                                            {isBloqueado ? 'Oculto pelas Sombras' : item.titulo}
                                                         </h3>
                                                     </div>
 
@@ -435,6 +435,17 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                         0 0 14px rgba(255, 236, 190, 0.95),
                         0 0 32px rgba(212, 175, 55, 0.65),
                         0 0 60px rgba(212, 175, 55, 0.3);
+                }
+
+                .work-text.is-locked .work-title {
+                    color: rgba(190, 200, 220, 0.14) !important;
+                    opacity: 0.35;
+                    text-shadow: none;
+                }
+
+                .work-text.is-locked .work-kicker {
+                    color: rgba(210, 215, 230, 0.22) !important;
+                    opacity: 0.5;
                 }
 
                 /* Premium Liturgical Typography Layout - Classic Clean Left Alignment */
