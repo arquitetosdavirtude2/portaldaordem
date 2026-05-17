@@ -292,13 +292,15 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                         )}
                                                         
                                                         {/* Skyrim Star Node Core */}
-                                                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all duration-1000 ${
-                                                            isConcluido 
-                                                                ? 'journey-node active' 
-                                                                : isAtual 
-                                                                    ? 'journey-node revealed animate-pulse'
-                                                                    : 'journey-node'
-                                                        }`} />
+                                                        {!item.titulo.toLowerCase().includes('iniciação') && (
+                                                            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all duration-1000 ${
+                                                                isConcluido 
+                                                                    ? 'journey-node active' 
+                                                                    : isAtual 
+                                                                        ? 'journey-node revealed animate-pulse'
+                                                                        : 'journey-node'
+                                                            }`} />
+                                                        )}
 
                                                         <div className="w-full h-full relative" style={{
                                                             maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
