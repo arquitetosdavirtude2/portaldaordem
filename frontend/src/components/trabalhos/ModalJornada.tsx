@@ -263,7 +263,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                             key={item.id}
                                             data-jornada-row
                                             data-idx={idx}
-                                            className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative group transition-all duration-1000`}
+                                            className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative group transition-all duration-1000 ${isFocused ? 'is-focused' : ''}`}
                                         >
                                             <div className={`flex items-center gap-2 max-w-4xl relative ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
 
@@ -330,24 +330,30 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 </div>
 
                                                 {/* === INFO SIDE === */}
-                                                <div className={`w-80 md:w-[28rem] relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isLeft ? 'text-left' : 'text-right'} ${isFocused ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`}>
+                                                <div className={`work-text w-80 md:w-[32.5rem] relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isLeft ? 'text-left' : 'text-right'} ${isFocused ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`}>
                                                     <div className="space-y-1">
-                                                        <span className={`text-[9px] font-bold uppercase tracking-[0.4em] block transition-all duration-700 ${isConcluido ? 'text-yellow-500' : 'text-gray-500'} ${isLeft ? 'pl-4' : 'pr-4'}`}>
+                                                        <span className={`work-kicker block transition-all duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} ${isLeft ? 'pl-4' : 'pr-4'}`}>
                                                             {GRAU_LABELS[item.grau]} • Nível {idx + 1}
                                                         </span>
-                                                        <h3 className={`text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} ${isLeft ? 'pl-10' : 'pr-10'}`}>
+                                                        <h3 className={`work-title text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} ${isLeft ? 'pl-10' : 'pr-10'}`}>
                                                             {isBloqueado ? 'Oculto por Névoa' : item.titulo}
                                                         </h3>
                                                     </div>
 
                                                     {!isBloqueado && (
-                                                        <div className={`space-y-4 mt-2 animate-in fade-in duration-1000 ${isLeft ? 'slide-in-from-left-4' : 'slide-in-from-right-4'}`}>
-                                                            <p className={`text-gray-400 text-[11px] leading-relaxed font-light line-clamp-3 group-hover:line-clamp-none transition-all ${isLeft ? 'pl-6' : 'pr-6'}`}>
-                                                                {item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.'}
-                                                            </p>
+                                                        <div className={`work-description-wrapper ${isLeft ? 'slide-in-from-left-4 pl-6' : 'slide-in-from-right-4 pr-6'} animate-in fade-in duration-1000 mt-2`}>
+                                                            <div className="work-description">
+                                                                {(item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.')
+                                                                    .split(/\r?\n\s*\r?\n/)
+                                                                    .filter(Boolean)
+                                                                    .map((para, pIdx) => (
+                                                                        <p key={pIdx}>{para}</p>
+                                                                    ))
+                                                                }
+                                                            </div>
 
                                                             {isConcluido && (
-                                                                <div className={`flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 ${isLeft ? 'pl-6' : 'justify-end pr-6'}`}>
+                                                                <div className={`flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 mt-6 ${isLeft ? '' : 'justify-end'}`}>
                                                                      <span className="w-4 h-4 rounded-full border border-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
                                                                     Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
                                                                 </div>
@@ -369,6 +375,8 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
             </div>
 
             <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Libre+Baskerville:ital@0;1&family=Spectral:ital,wght@0,300;0,400;1,400&display=swap');
+
                 @keyframes reveal-flash {
                     0% { opacity: 0; }
                     20% { opacity: 1; }
@@ -421,7 +429,102 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                         0 0 32px rgba(212, 175, 55, 0.65),
                         0 0 60px rgba(212, 175, 55, 0.3);
                 }
-            `}</style>
+
+                /* Premium Liturgical Typography Layout */
+                .work-text {
+                    max-width: 520px;
+                }
+
+                .work-kicker {
+                    font-family: "Cinzel", serif;
+                    font-size: 0.68rem;
+                    letter-spacing: 0.42em;
+                    text-transform: uppercase;
+                    color: rgba(220, 225, 240, 0.62);
+                }
+
+                .work-title {
+                    font-family: "Cinzel", serif;
+                    margin-bottom: 1rem;
+                }
+
+                /* Resumed/Recolhido with Fade Transition */
+                .work-description-wrapper {
+                    position: relative;
+                    overflow: hidden;
+                    max-height: 4.8em;
+                    opacity: 0.72;
+                    transition:
+                        max-height 0.9s cubic-bezier(0.25, 1, 0.5, 1),
+                        opacity 0.65s ease,
+                        filter 0.65s ease;
+                    filter: blur(0px);
+                }
+
+                .is-focused .work-description-wrapper,
+                .group:hover .work-description-wrapper {
+                    max-height: 600px;
+                    opacity: 1;
+                    filter: blur(0);
+                }
+
+                /* Fade overlay for normal state */
+                .work-description-wrapper::after {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    height: 2.4em;
+                    pointer-events: none;
+                    background: linear-gradient(
+                        to bottom,
+                        rgba(2, 2, 5, 0),
+                        rgba(2, 2, 5, 0.95)
+                    );
+                    transition: opacity 0.45s ease;
+                    opacity: 1;
+                }
+
+                .is-focused .work-description-wrapper::after,
+                .group:hover .work-description-wrapper::after {
+                    opacity: 0;
+                }
+
+                /* Smooth vertical shift reveal */
+                .work-description {
+                    transform: translateY(4px);
+                    transition:
+                        transform 0.7s cubic-bezier(0.25, 1, 0.5, 1),
+                        opacity 0.7s ease;
+                }
+
+                .is-focused .work-description,
+                .group:hover .work-description {
+                    transform: translateY(0);
+                }
+
+                /* Cormorant & EB Garamond Liturgical paragraph details */
+                .work-description p {
+                    font-family: "Cormorant Garamond", "EB Garamond", serif;
+                    font-size: clamp(0.92rem, 0.85vw, 1.05rem);
+                    line-height: 1.65;
+                    letter-spacing: 0.015em;
+                    font-weight: 400;
+                    color: rgba(235, 238, 245, 0.72);
+                    margin: 0 0 0.95rem;
+                    transition: color 0.5s ease;
+                }
+
+                .work-description p:last-child {
+                    margin-bottom: 0;
+                }
+
+                /* Glow transition to active/white light text on focus or hover */
+                .is-focused .work-description p,
+                .group:hover .work-description p {
+                    color: rgba(255, 255, 255, 0.92);
+                }`}</style>
         </div>
     );
 }
