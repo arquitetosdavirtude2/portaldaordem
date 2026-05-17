@@ -330,18 +330,18 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 </div>
 
                                                 {/* === INFO SIDE === */}
-                                                <div className={`work-text w-80 md:w-[32.5rem] relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isLeft ? 'text-left' : 'text-right'} ${isFocused ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`}>
+                                                <div className={`work-text w-80 md:w-[32.5rem] text-left relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isFocused ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`}>
                                                     <div className="space-y-1">
-                                                        <span className={`work-kicker block transition-all duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} ${isLeft ? 'pl-4' : 'pr-4'}`}>
+                                                        <span className={`work-kicker block transition-all duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} pl-6`}>
                                                             {GRAU_LABELS[item.grau]} • Nível {idx + 1}
                                                         </span>
-                                                        <h3 className={`work-title text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} ${isLeft ? 'pl-10' : 'pr-10'}`}>
+                                                        <h3 className={`work-title text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} pl-6`}>
                                                             {isBloqueado ? 'Oculto por Névoa' : item.titulo}
                                                         </h3>
                                                     </div>
 
                                                     {!isBloqueado && (
-                                                        <div className={`work-description-wrapper ${isLeft ? 'slide-in-from-left-4 pl-6' : 'slide-in-from-right-4 pr-6'} animate-in fade-in duration-1000 mt-2`}>
+                                                        <div className={`work-description-wrapper pl-6 animate-in fade-in duration-1000 mt-2`}>
                                                             <div className="work-description">
                                                                 {(item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.')
                                                                     .split(/\r?\n\s*\r?\n/)
@@ -353,7 +353,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                             </div>
 
                                                             {isConcluido && (
-                                                                <div className={`flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 mt-6 ${isLeft ? '' : 'justify-end'}`}>
+                                                                <div className="flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 mt-6 pl-6">
                                                                      <span className="w-4 h-4 rounded-full border border-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
                                                                     Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
                                                                 </div>
@@ -430,9 +430,19 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                         0 0 60px rgba(212, 175, 55, 0.3);
                 }
 
-                /* Premium Liturgical Typography Layout */
+                /* Premium Liturgical Typography Layout - Classic Clean Left Alignment */
                 .work-text {
+                    text-align: left;
                     max-width: 520px;
+                }
+
+                .work-kicker,
+                .work-title,
+                .work-description,
+                .work-description p {
+                    margin-left: 0;
+                    margin-right: 0;
+                    text-align: left;
                 }
 
                 .work-kicker {
@@ -517,7 +527,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     font-weight: 300;
                     color: rgba(220, 224, 235, 0.58);
                     margin: 0 0 0.82rem;
-                    transition: color 0.55s ease, margin 0.6s ease;
+                    transition: color 0.55s ease;
                 }
 
                 .work-description p:last-child {
@@ -528,49 +538,6 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 .is-focused .work-description p,
                 .group:hover .work-description p {
                     color: rgba(238, 240, 246, 0.76);
-                }
-
-                /* Opção B — Alinhamento Ritualístico/Curvilíneo */
-                .work-text.text-left .work-kicker {
-                    margin-left: 0;
-                    transition: margin-left 0.6s ease;
-                }
-                .work-text.text-left .work-title {
-                    margin-left: 10px;
-                    transition: margin-left 0.6s ease;
-                }
-                .work-text.text-left .work-description p:nth-child(1) {
-                    margin-left: 20px;
-                    transition: margin-left 0.6s ease;
-                }
-                .work-text.text-left .work-description p:nth-child(2) {
-                    margin-left: 10px;
-                    transition: margin-left 0.6s ease;
-                }
-                .work-text.text-left .work-description p:nth-child(3) {
-                    margin-left: 0;
-                    transition: margin-left 0.6s ease;
-                }
-
-                .work-text.text-right .work-kicker {
-                    margin-right: 0;
-                    transition: margin-right 0.6s ease;
-                }
-                .work-text.text-right .work-title {
-                    margin-right: 10px;
-                    transition: margin-right 0.6s ease;
-                }
-                .work-text.text-right .work-description p:nth-child(1) {
-                    margin-right: 20px;
-                    transition: margin-right 0.6s ease;
-                }
-                .work-text.text-right .work-description p:nth-child(2) {
-                    margin-right: 10px;
-                    transition: margin-right 0.6s ease;
-                }
-                .work-text.text-right .work-description p:nth-child(3) {
-                    margin-right: 0;
-                    transition: margin-right 0.6s ease;
                 }`}</style>
         </div>
     );
