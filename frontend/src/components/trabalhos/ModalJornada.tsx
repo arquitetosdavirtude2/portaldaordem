@@ -50,6 +50,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
     const getSymbolImage = (item: JornadaItem, isConcluido?: boolean) => {
         const title = item.titulo.toLowerCase();
         if (title.includes('iniciação')) return isConcluido ? IMAGE_MAP['iniciação'] : 'https://www.portaldaordem.com.br/initiation_dark.png';
+        if (title.includes('dualidade') || title.includes('mosaico') || title.includes('piso')) {
+            return isConcluido ? 'https://www.portaldaordem.com.br/fellowcraft_light.png' : 'https://www.portaldaordem.com.br/fellowcraft_dark.png';
+        }
         if (item.grau === 1) return IMAGE_MAP['aprendiz'];
         if (item.grau === 2) return IMAGE_MAP['companheiro'];
         return IMAGE_MAP['mestre'];
