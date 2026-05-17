@@ -4,6 +4,17 @@ from fastapi import APIRouter
 from fastapi.staticfiles import StaticFiles
 from routes import auth, pessoas, admin, lojas, tesouraria, academia, trabalhos
 from database import engine
+from sqlalchemy import text
+
+# Migração Automática: Garante que a coluna descricao_jornada exista no banco de dados
+try:
+    with engine.connect() as conn:
+        conn.execute(text('ALTER TABLE conteudos_estudo ADD COLUMN descricao_jornada TEXT'))
+        conn.commit()
+        print("Database Migration: Coluna 'descricao_jornada' criada com sucesso.")
+except Exception as e:
+    # A coluna já existe ou a tabela ainda não foi criada, podemos seguir adiante de forma segura
+    pass
 
 app = FastAPI(title="Sistema Mapa Estados")
 
