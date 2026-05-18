@@ -63,6 +63,18 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
     const total = jornada.length;
     const progressoGlobal = total > 0 ? (concluidos / total) * 100 : 0;
 
+    const getBezierPoint = (t: number, p0: {x: number, y: number}, p1: {x: number, y: number}, p2: {x: number, y: number}, p3: {x: number, y: number}) => {
+        const oneMinusT = 1 - t;
+        const w0 = oneMinusT * oneMinusT * oneMinusT;
+        const w1 = 3 * oneMinusT * oneMinusT * t;
+        const w2 = 3 * oneMinusT * t * t;
+        const w3 = t * t * t;
+        return {
+            x: w0 * p0.x + w1 * p1.x + w2 * p2.x + w3 * p3.x,
+            y: w0 * p0.y + w1 * p1.y + w2 * p2.y + w3 * p3.y
+        };
+    };
+
     const getSymbolImage = (item: JornadaItem, isConcluido?: boolean) => {
         const title = item.titulo.toLowerCase();
         if (title.includes('iniciação')) return isConcluido ? IMAGE_MAP['iniciação'] : 'https://www.portaldaordem.com.br/initiation_dark.png';
@@ -224,22 +236,26 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                     const endX = nextPos.x;
                                     const endY = nextPos.y;
 
-                                    // Triangulation offset: alternate left/right to form elegant triangular elevations
-                                    const midX = (startX + endX) / 2;
-                                    const midY = (startY + endY) / 2;
+                                    // Cubic Bezier curve control points that dip downward through the empty space between rows
+                                    const cp1X = startX + (endX - startX) * 0.45;
+                                    const cp1Y = startY + (endY - startY) * 0.75;
+                                    const cp2X = startX + (endX - startX) * 0.55;
+                                    const cp2Y = startY + (endY - startY) * 0.25;
+
+                                    const p0 = { x: startX, y: startY };
+                                    const p1 = { x: cp1X, y: cp1Y };
+                                    const p2 = { x: cp2X, y: cp2Y };
+                                    const p3 = { x: endX, y: endY };
                                     
-                                    const elevationOffset = idx % 2 === 0 ? 40 : -40;
-                                    const q1X = startX + (midX - startX) / 2 + elevationOffset;
-                                    const q1Y = startY + (midY - startY) / 2 - 20;
-                                    
-                                    const q2X = midX + (endX - midX) / 2 - elevationOffset;
-                                    const q2Y = midY + (endY - midY) / 2 + 20;
+                                    const m1 = getBezierPoint(0.3, p0, p1, p2, p3);
+                                    const m2 = getBezierPoint(0.5, p0, p1, p2, p3);
+                                    const m3 = getBezierPoint(0.7, p0, p1, p2, p3);
 
                                     return (
                                         <g key={`path-${idx}`}>
-                                            {/* Main Constellation Line with angular constellation segments */}
+                                            {/* Cubic Bezier Constellation Path */}
                                             <path
-                                                d={`M ${startX} ${startY} L ${q1X} ${q1Y} L ${midX} ${midY} L ${q2X} ${q2Y} L ${endX} ${endY}`}
+                                                d={`M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`}
                                                 fill="none"
                                                 className={`journey-connection ${
                                                     isConnectionCompleted
@@ -252,24 +268,24 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 }`}
                                             />
                                             
-                                            {/* Intermediate small stars mapping natural patterns */}
+                                            {/* Intermediate small stars positioned mathematically on the curve */}
                                             <circle
-                                                cx={q1X}
-                                                cy={q1Y}
+                                                cx={m1.x}
+                                                cy={m1.y}
                                                 r={1.5}
                                                 fill={isCurrentConcluido ? 'rgba(255, 236, 190, 0.8)' : 'rgba(180, 200, 255, 0.3)'}
                                                 className="journey-intermediate-star"
                                             />
                                             <circle
-                                                cx={midX}
-                                                cy={midY}
+                                                cx={m2.x}
+                                                cy={m2.y}
                                                 r={2}
                                                 fill={isCurrentConcluido ? 'rgba(255, 230, 170, 0.9)' : 'rgba(180, 200, 255, 0.4)'}
                                                 className="journey-intermediate-star"
                                             />
                                             <circle
-                                                cx={q2X}
-                                                cy={q2Y}
+                                                cx={m3.x}
+                                                cy={m3.y}
                                                 r={1.5}
                                                 fill={isCurrentConcluido ? 'rgba(255, 236, 190, 0.8)' : 'rgba(180, 200, 255, 0.3)'}
                                                 className="journey-intermediate-star"
@@ -322,7 +338,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                             data-idx={idx}
                                             className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative group transition-all duration-1000 ${isFocused ? 'is-focused' : ''}`}
                                         >
-                                            <div className={`flex items-center gap-2 max-w-4xl relative ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
+                                            <div className={`flex items-center gap-12 max-w-4xl relative ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
 
                                                 {/* === NODE (STAR / SYMBOL) === */}
                                                 <div className="relative group" data-jornada-node>
@@ -331,9 +347,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                          className="work-node-anchor absolute w-0 h-0 pointer-events-none"
                                                          data-work-id={item.id}
                                                          style={{
-                                                             top: '50%',
-                                                             left: isLeft ? 'auto' : '-16px',
-                                                             right: isLeft ? '-16px' : 'auto',
+                                                             top: '68%',
+                                                             left: isLeft ? 'auto' : '-26px',
+                                                             right: isLeft ? '-26px' : 'auto',
                                                              transform: 'translateY(-50%)'
                                                          }}
                                                      />
@@ -653,8 +669,8 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 /* Realistic Celestial Skyrim Star Nodes (HTML div elements positioned dynamically) */
                 .journey-node {
                     position: absolute;
-                    width: 14px;
-                    height: 14px;
+                    width: 28px;
+                    height: 28px;
                     transform: translate(-50%, -50%);
                     pointer-events: none;
                     z-index: 30; /* Ensures stars sit perfectly above the SVG lines layer */
@@ -663,74 +679,110 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 .journey-node::before {
                     content: "";
                     position: absolute;
-                    inset: 4px;
+                    left: 50%;
+                    top: 50%;
+                    width: 5px;
+                    height: 5px;
+                    transform: translate(-50%, -50%);
                     border-radius: 50%;
                     background: rgba(245, 248, 255, 0.95);
                     box-shadow:
-                        0 0 8px rgba(245, 248, 255, 0.75),
-                        0 0 18px rgba(180, 205, 255, 0.32);
+                        0 0 6px rgba(245, 248, 255, 0.9),
+                        0 0 16px rgba(200, 220, 255, 0.45),
+                        0 0 30px rgba(160, 190, 255, 0.18);
                     transition: all 0.6s ease;
                 }
 
                 .journey-node::after {
                     content: "";
                     position: absolute;
-                    left: 50%;
-                    top: 50%;
-                    width: 18px;
-                    height: 18px;
-                    transform: translate(-50%, -50%);
+                    inset: 0;
                     background:
-                        linear-gradient(to right, transparent 0%, rgba(245,248,255,0.85) 48%, rgba(245,248,255,0.95) 50%, rgba(245,248,255,0.85) 52%, transparent 100%),
-                        linear-gradient(to bottom, transparent 0%, rgba(245,248,255,0.85) 48%, rgba(245,248,255,0.95) 50%, rgba(245,248,255,0.85) 52%, transparent 100%);
-                    opacity: 0.85;
-                    filter: drop-shadow(0 0 8px rgba(220,230,255,0.45));
+                        linear-gradient(
+                            to right,
+                            transparent 0%,
+                            transparent 34%,
+                            rgba(235, 242, 255, 0.08) 42%,
+                            rgba(245, 248, 255, 0.75) 50%,
+                            rgba(235, 242, 255, 0.08) 58%,
+                            transparent 66%,
+                            transparent 100%
+                        ),
+                        linear-gradient(
+                            to bottom,
+                            transparent 0%,
+                            transparent 22%,
+                            rgba(235, 242, 255, 0.06) 38%,
+                            rgba(245, 248, 255, 0.85) 50%,
+                            rgba(235, 242, 255, 0.06) 62%,
+                            transparent 78%,
+                            transparent 100%
+                        );
+                    filter:
+                        drop-shadow(0 0 6px rgba(235, 242, 255, 0.45))
+                        drop-shadow(0 0 14px rgba(180, 205, 255, 0.22));
+                    opacity: 0.9;
                     transition: all 0.6s ease;
                 }
 
-                /* Active and Revealed star styling rules */
-                .journey-node.is-active::before,
-                .journey-node.is-revealed::before {
-                    background: rgba(255, 244, 215, 1);
-                    box-shadow:
-                        0 0 10px rgba(255, 244, 215, 0.95),
-                        0 0 26px rgba(255, 215, 140, 0.55),
-                        0 0 48px rgba(255, 190, 90, 0.25);
+                /* Dormant stars slow breathing */
+                .journey-node.is-dormant,
+                .journey-node.is-next,
+                .journey-node.is-locked {
+                    opacity: 0.72;
                 }
 
+                .journey-node.is-dormant::before,
+                .journey-node.is-next::before,
+                .journey-node.is-locked::before {
+                    background: rgba(220, 230, 245, 0.78);
+                    box-shadow:
+                        0 0 6px rgba(220, 230, 245, 0.55),
+                        0 0 15px rgba(160, 185, 230, 0.22);
+                }
+
+                .journey-node.is-dormant::after,
+                .journey-node.is-next::after,
+                .journey-node.is-locked::after {
+                    opacity: 0.58;
+                }
+
+                /* Active and Revealed star styling rules */
                 .journey-node.is-active,
                 .journey-node.is-revealed {
-                    animation: constellationStarPulse 2.6s ease-in-out infinite;
+                    opacity: 1;
+                    animation: realisticStarPulse 2.8s ease-in-out infinite;
                 }
 
-                @keyframes constellationStarPulse {
+                .journey-node.is-active::before,
+                .journey-node.is-revealed::before {
+                    background: rgba(255, 246, 220, 1);
+                    box-shadow:
+                        0 0 8px rgba(255, 246, 220, 0.95),
+                        0 0 22px rgba(255, 220, 150, 0.58),
+                        0 0 44px rgba(255, 190, 90, 0.28);
+                }
+
+                .journey-node.is-active::after,
+                .journey-node.is-revealed::after {
+                    opacity: 1;
+                    filter:
+                        drop-shadow(0 0 8px rgba(255, 240, 210, 0.75))
+                        drop-shadow(0 0 22px rgba(255, 210, 130, 0.38));
+                }
+
+                @keyframes realisticStarPulse {
                     0% {
-                        transform: translate(-50%, -50%) scale(1);
-                        opacity: 0.78;
+                        transform: translate(-50%, -50%) scale(0.96);
+                        filter: brightness(0.95);
                     }
                     50% {
-                        transform: translate(-50%, -50%) scale(1.28);
-                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1.18);
+                        filter: brightness(1.35);
                     }
                     100% {
-                        transform: translate(-50%, -50%) scale(1);
-                        opacity: 0.78;
-                    }
-                }
-
-                /* Dormant stars slow breathing */
-                .journey-node.is-dormant {
-                    animation: dormantStarPulse 4.5s ease-in-out infinite;
-                }
-
-                @keyframes dormantStarPulse {
-                    0%, 100% {
-                        transform: translate(-50%, -50%) scale(0.92);
-                        opacity: 0.55;
-                    }
-                    50% {
-                        transform: translate(-50%, -50%) scale(1.08);
-                        opacity: 0.8;
+                        transform: translate(-50%, -50%) scale(0.96);
+                        filter: brightness(0.95);
                     }
                 }
 
@@ -760,21 +812,21 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                 .journey-modal.is-open .journey-connection.is-dormant,
                 .journey-modal.is-open .journey-connection.is-next {
-                    stroke: rgba(190, 210, 245, 0.30) !important;
-                    stroke-width: 1.6 !important;
-                    opacity: 0.72 !important;
-                    filter: drop-shadow(0 0 5px rgba(180, 205, 255, 0.18)) !important;
+                    stroke: rgba(185, 205, 240, 0.36) !important;
+                    stroke-width: 1.7 !important;
+                    opacity: 0.78 !important;
+                    filter: drop-shadow(0 0 5px rgba(175, 205, 255, 0.18)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-active,
                 .journey-modal.is-open .journey-connection.is-revealed {
-                    stroke: rgba(255, 235, 185, 0.86) !important;
-                    stroke-width: 1.9 !important;
+                    stroke: rgba(255, 238, 200, 0.88) !important;
+                    stroke-width: 2 !important;
                     opacity: 1 !important;
                     filter:
-                        drop-shadow(0 0 7px rgba(255, 235, 185, 0.62))
-                        drop-shadow(0 0 18px rgba(255, 210, 120, 0.32)) !important;
+                        drop-shadow(0 0 7px rgba(255, 238, 200, 0.62))
+                        drop-shadow(0 0 18px rgba(255, 210, 130, 0.32)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
