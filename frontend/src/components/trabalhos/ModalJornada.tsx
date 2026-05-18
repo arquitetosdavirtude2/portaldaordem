@@ -37,6 +37,20 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
     const [revealing, setRevealing] = useState<number | null>(null);
     const [activeNodeIndex, setActiveNodeIndex] = useState<number>(0);
     const [nodePositions, setNodePositions] = useState<Array<{ x: number; y: number }>>([]);
+    const [isOpen, setIsOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsOpen(true), 50);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+        }, 500);
+    };
 
     if (!itens) return null;
 
@@ -115,10 +129,13 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-700">
-            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={handleClose}></div>
 
             {/* Modal Container */}
-            <div className="bg-[#020205] border border-white/10 rounded-[2.5rem] w-full max-w-7xl h-full max-h-[92vh] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.9)] relative z-10 flex flex-col">
+            <div className={`journey-modal ${isOpen && !isClosing ? 'is-open' : ''} ${isClosing ? 'is-closing' : ''} bg-[#020205] border border-white/10 rounded-[2.5rem] w-full max-w-7xl h-full max-h-[92vh] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.9)] relative z-10 flex flex-col`}>
+                
+                {/* Efeito centelha inicial */}
+                <div className="journey-opening-spark" />
 
                 {/* === Nebula Background Layer === */}
                 <div className="absolute inset-0 opacity-50 pointer-events-none overflow-hidden">
@@ -128,10 +145,17 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                         className="w-full h-full object-cover scale-110 animate-galaxy-expand brightness-110"
                     />
                     <div className="absolute inset-0 bg-black/20" />
+                    
+                    {/* Masonic Esquadro & Compasso background watermark */}
+                    <div className="masonic-bg-symbol absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 select-none">
+                        <svg viewBox="0 0 100 100" className="w-[50vw] h-[50vw] text-yellow-500/10 fill-current">
+                            <path d="M50,15 L25,75 L35,75 L50,30 L65,75 L75,75 Z M50,85 L20,30 L30,30 L50,70 L70,30 L80,30 Z" />
+                        </svg>
+                    </div>
                 </div>
 
                 {/* === HEADER === */}
-                <div className="p-8 pb-4 border-b border-white/5 flex justify-between items-center relative z-20">
+                <div className="journey-header p-8 pb-4 border-b border-white/5 flex justify-between items-center relative z-20">
                     <div className="space-y-1">
                         <h2 className="text-3xl font-light text-white uppercase tracking-[-0.05em] mb-1 flex items-center gap-3">
                             <img src="/logo-gomb.png" alt="GOMB" className="journey-header-logo" /> Minha Jornada Maçônica
@@ -143,7 +167,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                             <span className="text-[9px] text-gray-400 uppercase font-bold tracking-[0.3em]">{concluidos} / {total} Conhecimentos Revelados</span>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-all cursor-pointer group">
+                    <button onClick={handleClose} className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-all cursor-pointer group">
                         <span className="group-hover:rotate-90 transition-transform duration-300">✕</span>
                     </button>
                 </div>
@@ -284,7 +308,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                     }`} />
 
                                                      {/* Organic Node Image */}
-                                                    <div className={`journey-work-image relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${
+                                                    <div className={`journey-work-image work-image relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${
                                                         isConcluido 
                                                             ? 'drop-shadow-[0_0_40px_rgba(255,255,255,0.15)] scale-100'
                                                             : isFocused 
@@ -451,6 +475,145 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     z-index: 4;
                 }
 
+                /* General Modal Open and Close transitions */
+                .journey-modal {
+                    opacity: 0;
+                    transform: scale(0.965) translateY(18px);
+                    filter: blur(10px);
+                    transition:
+                        opacity 0.9s ease,
+                        transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+                        filter 1s ease;
+                    will-change: opacity, transform, filter;
+                }
+
+                .journey-modal.is-open {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                    filter: blur(0);
+                }
+
+                .journey-modal.is-closing {
+                    opacity: 0 !important;
+                    transform: scale(0.975) translateY(10px) !important;
+                    filter: blur(8px) !important;
+                    transition:
+                        opacity 0.45s ease,
+                        transform 0.5s ease,
+                        filter 0.5s ease !important;
+                }
+
+                /* Overlay Veil dissolving transition */
+                .journey-modal::before {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    z-index: 20;
+                    pointer-events: none;
+                    background:
+                        radial-gradient(circle at 38% 42%, rgba(255,255,255,0.10), transparent 0%),
+                        radial-gradient(circle at center, rgba(12,16,32,0.18), rgba(0,0,0,0.88) 72%);
+                    opacity: 1;
+                    backdrop-filter: blur(8px);
+                    transition:
+                        opacity 1.4s ease 0.25s,
+                        backdrop-filter 1.4s ease 0.25s;
+                }
+
+                .journey-modal.is-open::before {
+                    opacity: 0;
+                    backdrop-filter: blur(0);
+                }
+
+                /* Masonic Esquadro & Compasso backdrop symbol */
+                .masonic-bg-symbol {
+                    opacity: 0;
+                    filter: blur(4px) drop-shadow(0 0 0 rgba(255,220,160,0));
+                    transform: scale(0.96);
+                    transition:
+                        opacity 1.2s ease 0.35s,
+                        filter 1.4s ease 0.35s,
+                        transform 1.4s ease 0.35s;
+                }
+
+                .journey-modal.is-open .masonic-bg-symbol {
+                    opacity: 0.42 !important;
+                    filter: blur(0) drop-shadow(0 0 12px rgba(255,220,160,0.18)) !important;
+                    transform: scale(1);
+                }
+
+                /* Centelha Inicial / Spark */
+                .journey-opening-spark {
+                    position: absolute;
+                    left: 24%;
+                    top: 55%;
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 999px;
+                    background: rgba(255, 245, 220, 0.9);
+                    box-shadow:
+                        0 0 12px rgba(255, 245, 220, 0.8),
+                        0 0 36px rgba(255, 210, 130, 0.35);
+                    opacity: 0;
+                    pointer-events: none;
+                    z-index: 25;
+                }
+
+                .journey-modal.is-open .journey-opening-spark {
+                    animation: openingSpark 1.6s ease 0.65s forwards;
+                }
+
+                @keyframes openingSpark {
+                    0% {
+                        opacity: 0;
+                        transform: scale(0.4);
+                    }
+                    35% {
+                        opacity: 1;
+                        transform: scale(1.5);
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: scale(2.6);
+                    }
+                }
+
+                /* Header cascading appearance */
+                .journey-header {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                    filter: blur(4px);
+                    transition:
+                        opacity 0.8s ease 0.25s,
+                        transform 0.8s ease 0.25s,
+                        filter 0.8s ease 0.25s;
+                    will-change: opacity, transform, filter;
+                }
+
+                .journey-modal.is-open .journey-header {
+                    opacity: 1;
+                    transform: translateY(0);
+                    filter: blur(0);
+                }
+
+                /* Work Image cascading silhouetted appearance */
+                .work-image {
+                    opacity: 0;
+                    transform: scale(0.94) translateY(14px);
+                    filter: blur(8px) brightness(0.65);
+                    transition:
+                        opacity 1s ease 0.45s,
+                        transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.45s,
+                        filter 1.2s ease 0.45s;
+                    will-change: opacity, transform, filter;
+                }
+
+                .journey-modal.is-open .work-image {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                    filter: blur(0) brightness(1);
+                }
+
                 /* Celestial Skyrim Star Nodes */
                 .journey-node {
                     position: absolute;
@@ -459,13 +622,22 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     border-radius: 999px;
                     background: rgba(220, 230, 245, 0.42);
                     box-shadow: 0 0 8px rgba(220, 230, 245, 0.22);
-                    transition: all 0.8s ease;
+                    opacity: 0;
+                    transform: scale(0.5);
+                    transition:
+                        opacity 0.8s ease 1.65s,
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 1.65s;
+                    will-change: opacity, transform, filter;
+                }
+
+                .journey-modal.is-open .journey-node {
+                    opacity: 1;
+                    transform: scale(1);
                 }
 
                 .journey-node.is-next,
                 .journey-node.is-locked {
                     background: rgba(210, 220, 240, 0.34) !important;
-                    opacity: 0.7 !important;
                     box-shadow:
                         0 0 7px rgba(190, 210, 245, 0.22),
                         0 0 16px rgba(160, 180, 220, 0.10) !important;
@@ -474,7 +646,6 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 .journey-node.is-active,
                 .journey-node.is-revealed {
                     background: rgba(255, 245, 220, 0.96) !important;
-                    opacity: 1 !important;
                     box-shadow:
                         0 0 10px rgba(255, 245, 220, 0.85),
                         0 0 24px rgba(255, 220, 150, 0.5),
@@ -495,15 +666,21 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 /* Celestial Connections between Nodes */
                 .journey-connection {
                     stroke-dasharray: 1000;
-                    stroke-dashoffset: 0;
+                    stroke-dashoffset: 1000;
+                    opacity: 0;
                     transition:
-                        stroke-dashoffset 1.4s ease,
-                        opacity 0.8s ease,
-                        stroke 0.8s ease,
-                        filter 0.8s ease;
+                        stroke-dashoffset 1.6s ease 1.45s,
+                        opacity 1s ease 1.25s,
+                        filter 1s ease 1.25s;
+                    will-change: opacity, transform, filter;
                 }
 
-                .journey-connection.is-locked {
+                .journey-modal.is-open .journey-connection {
+                    stroke-dashoffset: 0;
+                    opacity: 0.58;
+                }
+
+                .journey-modal.is-open .journey-connection.is-locked {
                     stroke: rgba(160, 180, 220, 0.10) !important;
                     stroke-width: 1 !important;
                     opacity: 0.35 !important;
@@ -511,8 +688,8 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     stroke-dashoffset: 0 !important;
                 }
 
-                .journey-connection.is-dormant,
-                .journey-connection.is-next {
+                .journey-modal.is-open .journey-connection.is-dormant,
+                .journey-modal.is-open .journey-connection.is-next {
                     stroke: rgba(190, 205, 235, 0.22) !important;
                     stroke-width: 1.1 !important;
                     opacity: 0.58 !important;
@@ -520,8 +697,8 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     stroke-dashoffset: 0 !important;
                 }
 
-                .journey-connection.is-active,
-                .journey-connection.is-revealed {
+                .journey-modal.is-open .journey-connection.is-active,
+                .journey-modal.is-open .journey-connection.is-revealed {
                     stroke: rgba(255, 235, 185, 0.78) !important;
                     stroke-width: 1.3 !important;
                     opacity: 0.95 !important;
@@ -531,7 +708,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     stroke-dashoffset: 0 !important;
                 }
 
-                .journey-connection.is-completed {
+                .journey-modal.is-open .journey-connection.is-completed {
                     stroke: rgba(255, 240, 205, 0.7) !important;
                     stroke-width: 1.2 !important;
                     opacity: 0.82 !important;
@@ -601,6 +778,74 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     margin-bottom: 1rem;
                     color: rgba(248, 248, 252, 0.9);
                     text-shadow: 0 0 14px rgba(255, 255, 255, 0.08);
+                }
+
+                /* Cascading Text transitions with slower fade */
+                .work-kicker,
+                .work-title,
+                .work-description {
+                    opacity: 0;
+                    transform: translateY(12px);
+                    filter: blur(5px);
+                }
+
+                .journey-modal.is-open .work-kicker {
+                    opacity: 1;
+                    transform: translateY(0);
+                    filter: blur(0);
+                    transition:
+                        opacity 0.85s ease 0.7s,
+                        transform 0.85s ease 0.7s,
+                        filter 0.85s ease 0.7s;
+                }
+
+                .journey-modal.is-open .work-title {
+                    opacity: 1;
+                    transform: translateY(0);
+                    filter: blur(0);
+                    transition:
+                        opacity 0.95s ease 0.9s,
+                        transform 0.95s ease 0.9s,
+                        filter 0.95s ease 0.9s;
+                }
+
+                .journey-modal.is-open .work-description {
+                    opacity: 1;
+                    transform: translateY(0);
+                    filter: blur(0);
+                    transition:
+                        opacity 1.1s ease 1.12s,
+                        transform 1.1s ease 1.12s,
+                        filter 1.1s ease 1.12s;
+                }
+
+                /* Paragraph cascading details */
+                .work-description p {
+                    opacity: 0;
+                    transform: translateY(8px);
+                    filter: blur(4px);
+                    transition:
+                        opacity 0.8s ease,
+                        transform 0.8s ease,
+                        filter 0.8s ease;
+                }
+
+                .journey-modal.is-open .work-description p {
+                    opacity: 1;
+                    transform: translateY(0);
+                    filter: blur(0);
+                }
+
+                .journey-modal.is-open .work-description p:nth-child(1) {
+                    transition: opacity 0.8s ease 1.15s, transform 0.8s ease 1.15s, filter 0.8s ease 1.15s;
+                }
+
+                .journey-modal.is-open .work-description p:nth-child(2) {
+                    transition: opacity 0.8s ease 1.3s, transform 0.8s ease 1.3s, filter 0.8s ease 1.3s;
+                }
+
+                .journey-modal.is-open .work-description p:nth-child(3) {
+                    transition: opacity 0.8s ease 1.45s, transform 0.8s ease 1.45s, filter 0.8s ease 1.45s;
                 }
 
                 /* Resumed/Recolhido with Fade Transition */
@@ -675,6 +920,18 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                 .work-description p:last-child {
                     margin-bottom: 0;
+                }
+
+                /* Acessibilidade */
+                @media (prefers-reduced-motion: reduce) {
+                    .journey-modal,
+                    .journey-modal *,
+                    .journey-modal::before {
+                        animation: none !important;
+                        transition: none !important;
+                        filter: none !important;
+                        transform: none !important;
+                    }
                 }
 
                 /* Glow transition to active/softer light text on focus or hover */
