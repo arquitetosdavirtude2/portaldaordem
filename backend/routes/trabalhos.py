@@ -211,3 +211,79 @@ async def upload_entrega(
     
     db.commit()
     return {"message": "Trabalho enviado com sucesso"}
+
+@router.post("/corrigir")
+def corrigir_trabalho(
+    pessoa_id: int = Form(...),
+    conteudo_id: int = Form(...),
+    status: str = Form(...), # 'aprovado' ou 'revisar'
+    feedback: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Luz (Admin) corrige o trabalho de um membro, aprovando ou solicitando revisão."""
+    entrega = db.query(EntregaTrabalho).filter(
+        EntregaTrabalho.pessoa_id == pessoa_id, 
+        EntregaTrabalho.conteudo_id == conteudo_id
+    ).first()
+    
+    if not entrega:
+        # Se não houver registro de entrega física, cria uma
+        entrega = EntregaTrabalho(pessoa_id=pessoa_id, conteudo_id=conteudo_id)
+        db.add(entrega)
+        
+    entrega.status = status
+    if feedback is not None:
+        entrega.feedback = feedback
+        
+    # Atualiza o progresso de estudo correspondente
+    prog = db.query(ProgressoEstudo).filter(
+        ProgressoEstudo.pessoa_id == pessoa_id,
+        ProgressoEstudo.conteudo_id == conteudo_id
+    ).first()
+    
+    if not prog:
+        prog = ProgressoEstudo(pessoa_id=pessoa_id, conteudo_id=conteudo_id)
+        db.add(prog)
+        
+    if status == 'aprovado':
+        prog.status = 'concluido'
+        prog.data_conclusao = datetime.now().isoformat()
+    elif status == 'revisar':
+        prog.status = 'em_estudo' # volta para em estudo para poder reenviar/corrigir
+        
+    db.commit()
+    return {"message": "Trabalho corrigido com sucesso"}
+
+@router.get("/entregas/admin")
+def listar_entregas_admin(
+    loja_id: int,
+    db: Session = Depends(get_db)
+):
+    """Lista todas as entregas de trabalhos dos membros da loja para correção."""
+    pessoas = db.query(Pessoa).filter(Pessoa.loja_id == loja_id).all()
+    pessoa_ids = [p.id for p in pessoas]
+    
+    entregas = db.query(EntregaTrabalho).filter(EntregaTrabalho.pessoa_id.in_(pessoa_ids)).all()
+    
+    resultados = []
+    for ent in entregas:
+        pessoa = db.query(Pessoa).filter(Pessoa.id == ent.pessoa_id).first()
+        conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == ent.conteudo_id).first()
+        
+        if not pessoa or not conteudo:
+            continue
+            
+        resultados.append({
+            "id": ent.id,
+            "pessoa_id": ent.pessoa_id,
+            "pessoa_nome": pessoa.nome,
+            "conteudo_id": ent.conteudo_id,
+            "conteudo_titulo": conteudo.titulo,
+            "arquivo_url": ent.arquivo_url,
+            "status": ent.status,
+            "feedback": ent.feedback,
+            "data_upload": ent.data_upload
+        })
+        
+    return resultados
+

@@ -316,7 +316,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                  return (
                                      <div
                                          key={`star-node-${idx}`}
-                                         className={`journey-node ${isStarActive ? 'is-active' : ''} ${isStarRevealed ? 'is-revealed' : 'is-dormant'}`}
+                                         className={`journey-node ${isStarCompleted ? 'is-completed' : ''} ${isStarActive ? 'is-active' : ''} ${isStarRevealed ? 'is-revealed' : 'is-dormant'}`}
                                          style={{
                                              left: `${pos.x}px`,
                                              top: `${pos.y}px`,
@@ -396,9 +396,11 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                                 src={imgUrl}
                                                                 alt={item.titulo}
                                                                 className={`w-full h-full object-contain transition-all duration-1000 ${
-                                                                    !isConcluido 
-                                                                        ? 'brightness-[1.25] contrast-[1.1] opacity-45 grayscale-[0.5]' 
-                                                                        : 'brightness-110'
+                                                                    isConcluido 
+                                                                        ? 'brightness-110 drop-shadow-[0_0_20px_rgba(255,220,150,0.2)]' 
+                                                                        : isAtual
+                                                                            ? 'grayscale brightness-[0.7] opacity-60'
+                                                                            : 'grayscale brightness-[0.4] opacity-30'
                                                                 }`}
                                                             />
 
@@ -754,6 +756,33 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 }
 
                 /* Active and Revealed star styling rules */
+                .journey-node.is-completed {
+                    opacity: 1;
+                    animation: realisticStarPulse 2.0s ease-in-out infinite;
+                }
+
+                .journey-node.is-completed .star-core {
+                    background: rgba(255, 250, 220, 1) !important;
+                    box-shadow:
+                        0 0 10px rgba(255, 245, 210, 1),
+                        0 0 26px rgba(255, 225, 140, 0.95),
+                        0 0 55px rgba(255, 180, 70, 0.45) !important;
+                    width: 5px !important;
+                    height: 5px !important;
+                }
+
+                .journey-node.is-completed .star-ray-h {
+                    background: linear-gradient(to right, transparent, rgba(255, 245, 210, 1), transparent) !important;
+                    width: 44px !important;
+                    height: 1px !important;
+                }
+
+                .journey-node.is-completed .star-ray-v {
+                    background: linear-gradient(to bottom, transparent, rgba(255, 245, 210, 1), transparent) !important;
+                    width: 1px !important;
+                    height: 44px !important;
+                }
+
                 .journey-node.is-active,
                 .journey-node.is-revealed {
                     opacity: 1;
@@ -810,6 +839,13 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     stroke-dashoffset: 0;
                 }
 
+                /* Glowing constellation flow trail animation */
+                @keyframes constellationFlow {
+                    to {
+                        stroke-dashoffset: -40;
+                    }
+                }
+
                 .journey-modal.is-open .journey-connection.is-locked {
                     stroke: rgba(160, 185, 230, 0.16) !important;
                     stroke-width: 1.5 !important;
@@ -825,6 +861,8 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     opacity: 0.78 !important;
                     filter: drop-shadow(0 0 5px rgba(175, 205, 255, 0.18)) !important;
                     stroke-dashoffset: 0 !important;
+                    stroke-dasharray: 8, 8;
+                    animation: constellationFlow 12s linear infinite !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-active,
@@ -836,6 +874,8 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                         drop-shadow(0 0 7px rgba(255, 238, 200, 0.62))
                         drop-shadow(0 0 18px rgba(255, 210, 130, 0.32)) !important;
                     stroke-dashoffset: 0 !important;
+                    stroke-dasharray: 12, 6;
+                    animation: constellationFlow 8s linear infinite !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-completed {
@@ -846,6 +886,8 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                         drop-shadow(0 0 6px rgba(255, 230, 160, 0.65))
                         drop-shadow(0 0 18px rgba(255, 180, 70, 0.3)) !important;
                     stroke-dashoffset: 0 !important;
+                    stroke-dasharray: 12, 6;
+                    animation: constellationFlow 6s linear infinite !important;
                 }
 
                 .journey-intermediate-star {
