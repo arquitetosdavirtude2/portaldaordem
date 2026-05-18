@@ -193,6 +193,27 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                             
                             {/* === CELESTIAL CONSTELLATION SVG LAYER === */}
                             <svg className="journey-constellation-layer absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                                <defs>
+                                    {/* Realistic celestial star glow filters */}
+                                    <filter id="celestial-glow" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feGaussianBlur stdDeviation="5" result="blur" />
+                                        <feMerge>
+                                            <feMergeNode in="blur" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                    <filter id="celestial-glow-intense" x="-100%" y="-100%" width="300%" height="300%">
+                                        <feGaussianBlur stdDeviation="10" result="blur1" />
+                                        <feGaussianBlur stdDeviation="3" result="blur2" />
+                                        <feMerge>
+                                            <feMergeNode in="blur1" />
+                                            <feMergeNode in="blur2" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+
+                                {/* Connections */}
                                 {nodePositions.map((pos, idx) => {
                                     if (idx >= nodePositions.length - 1) return null;
                                     const nextPos = nodePositions[idx + 1];
@@ -208,21 +229,31 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                     const isConnectionActive = isCurrentConcluido && isNextActive;
                                     const isConnectionNext = isCurrentConcluido && !isNextConcluido && !isConnectionActive;
 
-                                    // Spline control points for an organic celestial constellation route
-                                    const midX = (pos.x + nextPos.x) / 2;
-                                    const midY = (pos.y + nextPos.y) / 2;
+                                    const R = 150;
+                                    const isLeft = idx % 2 === 0;
+                                    const isNextLeft = (idx + 1) % 2 === 0;
+
+                                    const startX = pos.x + (isLeft ? R : -R);
+                                    const startY = pos.y;
+                                    const endX = nextPos.x + (isNextLeft ? R : -R);
+                                    const endY = nextPos.y;
+
+                                    // Triangulation offset: alternate left/right to form elegant triangular elevations / esquadro angles
+                                    const midX = (startX + endX) / 2;
+                                    const midY = (startY + endY) / 2;
                                     
-                                    const q1X = (pos.x + midX) / 2 + (idx % 2 === 0 ? 30 : -30);
-                                    const q1Y = (pos.y + midY) / 2 - 15;
+                                    const elevationOffset = idx % 2 === 0 ? 55 : -55;
+                                    const q1X = startX + (midX - startX) / 2 + elevationOffset;
+                                    const q1Y = startY + (midY - startY) / 2 - 25;
                                     
-                                    const q2X = (midX + nextPos.x) / 2 + (idx % 2 === 0 ? -30 : 30);
-                                    const q2Y = (midY + nextPos.y) / 2 + 15;
+                                    const q2X = midX + (endX - midX) / 2 - elevationOffset;
+                                    const q2Y = midY + (endY - midY) / 2 + 25;
 
                                     return (
                                         <g key={`path-${idx}`}>
                                             {/* Main Constellation Line with angular constellation segments (Esquadro / Triângulo breaks) */}
                                             <path
-                                                d={`M ${pos.x} ${pos.y} L ${q1X} ${q1Y} L ${midX} ${midY} L ${q2X} ${q2Y} L ${nextPos.x} ${nextPos.y}`}
+                                                d={`M ${startX} ${startY} L ${q1X} ${q1Y} L ${midX} ${midY} L ${q2X} ${q2Y} L ${endX} ${endY}`}
                                                 fill="none"
                                                 className={`journey-connection ${
                                                     isConnectionCompleted
@@ -235,39 +266,68 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 }`}
                                             />
                                             
-                                            {/* Glow points at the connection ends (Opção B) */}
-                                            <circle
-                                                cx={pos.x}
-                                                cy={pos.y}
-                                                className={`connection-end-glow ${isCurrentConcluido ? 'is-revealed' : 'is-dormant'}`}
-                                            />
-                                            <circle
-                                                cx={nextPos.x}
-                                                cy={nextPos.y}
-                                                className={`connection-end-glow ${isNextConcluido ? 'is-revealed' : 'is-dormant'}`}
-                                            />
-
                                             {/* Intermediate small stars mapping natural patterns */}
                                             <circle
                                                 cx={q1X}
                                                 cy={q1Y}
-                                                r={1.2}
-                                                fill={isCurrentConcluido ? 'rgba(255, 236, 190, 0.8)' : 'rgba(180, 200, 255, 0.2)'}
-                                                style={{ transition: 'all 0.8s ease' }}
+                                                r={1.5}
+                                                fill={isCurrentConcluido ? 'rgba(255, 236, 190, 0.8)' : 'rgba(180, 200, 255, 0.3)'}
+                                                className="journey-intermediate-star"
                                             />
                                             <circle
                                                 cx={midX}
                                                 cy={midY}
-                                                r={1.8}
-                                                fill={isCurrentConcluido ? 'rgba(255, 230, 170, 0.9)' : 'rgba(180, 200, 255, 0.3)'}
-                                                style={{ transition: 'all 0.8s ease' }}
+                                                r={2}
+                                                fill={isCurrentConcluido ? 'rgba(255, 230, 170, 0.9)' : 'rgba(180, 200, 255, 0.4)'}
+                                                className="journey-intermediate-star"
                                             />
                                             <circle
                                                 cx={q2X}
                                                 cy={q2Y}
-                                                r={1.2}
-                                                fill={isCurrentConcluido ? 'rgba(255, 236, 190, 0.8)' : 'rgba(180, 200, 255, 0.2)'}
-                                                style={{ transition: 'all 0.8s ease' }}
+                                                r={1.5}
+                                                fill={isCurrentConcluido ? 'rgba(255, 236, 190, 0.8)' : 'rgba(180, 200, 255, 0.3)'}
+                                                className="journey-intermediate-star"
+                                            />
+                                        </g>
+                                    );
+                                })}
+
+                                {/* Main Star Nodes (rendered on outer edges of node images) */}
+                                {nodePositions.map((pos, idx) => {
+                                    const item = jornada[idx];
+                                    const isConcluido = item.progresso?.status === 'concluido';
+                                    const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
+                                    const isAtual = !isConcluido && !isBloqueado;
+                                    
+                                    const isStarCompleted = isConcluido;
+                                    const isStarActive = isAtual;
+                                    const isStarNext = !isConcluido && !isAtual && (idx === 0 || (idx > 0 && (jornada[idx - 1].progresso?.status === 'concluido' || jornada[idx - 1].progresso?.status === 'em_estudo')));
+
+                                    const R = 150;
+                                    const isLeft = idx % 2 === 0;
+                                    const starX = pos.x + (isLeft ? R : -R);
+                                    const starY = pos.y;
+
+                                    const isRevealed = isStarCompleted || isStarActive;
+
+                                    return (
+                                        <g key={`star-${idx}`} className={`journey-star-group ${isRevealed ? 'is-revealed' : 'is-dormant'} ${isStarActive ? 'is-active' : ''}`}>
+                                            {/* Outer halo */}
+                                            <circle
+                                                cx={starX}
+                                                cy={starY}
+                                                r={isRevealed ? 14 : 9}
+                                                className="journey-star-halo"
+                                                fill={isRevealed ? "rgba(255, 220, 140, 0.28)" : "rgba(180, 200, 245, 0.14)"}
+                                                filter="url(#celestial-glow)"
+                                            />
+                                            {/* Core point */}
+                                            <circle
+                                                cx={starX}
+                                                cy={starY}
+                                                r={isRevealed ? 4.5 : 3}
+                                                className="journey-star-core"
+                                                fill={isRevealed ? "#ffffff" : "rgba(210, 225, 255, 0.7)"}
                                             />
                                         </g>
                                     );
@@ -320,18 +380,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                             <div className="absolute inset-0 rounded-full bg-[#0a0a1a]/60 blur-3xl" />
                                                         )}
                                                         
-                                                        {/* Skyrim Star Node Core */}
-                                                        {!item.titulo.toLowerCase().includes('iniciação') && (
-                                                            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all duration-1000 journey-node ${
-                                                                isNodeCompleted 
-                                                                    ? 'is-completed' 
-                                                                    : isNodeActive 
-                                                                        ? 'is-active is-revealed' 
-                                                                        : isNodeNext 
-                                                                            ? 'is-next' 
-                                                                            : 'is-locked'
-                                                            }`} />
-                                                        )}
+                                                        
 
                                                         <div className="w-full h-full relative" style={{
                                                             maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
@@ -614,53 +663,57 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     filter: blur(0) brightness(1);
                 }
 
-                /* Celestial Skyrim Star Nodes */
-                .journey-node {
-                    position: absolute;
-                    width: 7px;
-                    height: 7px;
-                    border-radius: 999px;
-                    background: rgba(220, 230, 245, 0.42);
-                    box-shadow: 0 0 8px rgba(220, 230, 245, 0.22);
-                    opacity: 0;
-                    transform: scale(0.5);
-                    transition:
-                        opacity 0.8s ease 1.65s,
-                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 1.65s;
-                    will-change: opacity, transform, filter;
+                /* Realistic Celestial Skyrim Star Nodes inside SVG */
+                @keyframes starBreathingDormant {
+                    0%, 100% {
+                        transform: scale(1);
+                        opacity: 0.65;
+                    }
+                    50% {
+                        transform: scale(1.15);
+                        opacity: 0.9;
+                    }
                 }
 
-                .journey-modal.is-open .journey-node {
-                    opacity: 1;
-                    transform: scale(1);
+                @keyframes starBreathingActive {
+                    0%, 100% {
+                        transform: scale(1);
+                        opacity: 0.85;
+                    }
+                    50% {
+                        transform: scale(1.35);
+                        opacity: 1;
+                    }
                 }
 
-                .journey-node.is-next,
-                .journey-node.is-locked {
-                    background: rgba(210, 220, 240, 0.34) !important;
-                    box-shadow:
-                        0 0 7px rgba(190, 210, 245, 0.22),
-                        0 0 16px rgba(160, 180, 220, 0.10) !important;
+                .journey-star-group {
+                    transform-box: fill-box;
+                    transform-origin: center;
+                    transition: all 0.8s ease;
                 }
 
-                .journey-node.is-active,
-                .journey-node.is-revealed {
-                    background: rgba(255, 245, 220, 0.96) !important;
-                    box-shadow:
-                        0 0 10px rgba(255, 245, 220, 0.85),
-                        0 0 24px rgba(255, 220, 150, 0.5),
-                        0 0 46px rgba(255, 210, 120, 0.22) !important;
-                    animation: journeyNodePulse 2.4s ease-in-out infinite !important;
+                .journey-star-group.is-dormant {
+                    animation: starBreathingDormant 4.2s ease-in-out infinite;
                 }
 
-                .journey-node.is-completed {
-                    width: 8px;
-                    height: 8px;
-                    background: rgba(255, 240, 200, 0.9);
-                    box-shadow:
-                        0 0 9px rgba(255, 240, 200, 0.7),
-                        0 0 22px rgba(212, 175, 55, 0.38);
-                    opacity: 0.95;
+                .journey-star-group.is-revealed {
+                    animation: starBreathingActive 3.0s ease-in-out infinite;
+                }
+
+                .journey-star-halo {
+                    transition: all 0.8s ease;
+                }
+
+                .journey-star-group.is-dormant .journey-star-halo {
+                    filter: url(#celestial-glow);
+                }
+
+                .journey-star-group.is-revealed .journey-star-halo {
+                    filter: url(#celestial-glow-intense);
+                }
+
+                .journey-star-core {
+                    transition: all 0.8s ease;
                 }
 
                 /* Celestial Connections between Nodes */
@@ -669,72 +722,56 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     stroke-dashoffset: 1000;
                     opacity: 0;
                     transition:
-                        stroke-dashoffset 1.6s ease 1.45s,
-                        opacity 1s ease 1.25s,
-                        filter 1s ease 1.25s;
+                        stroke-dashoffset 1.8s ease 1.35s,
+                        opacity 1.2s ease 1.15s,
+                        filter 1.2s ease 1.15s;
                     will-change: opacity, transform, filter;
                 }
 
                 .journey-modal.is-open .journey-connection {
                     stroke-dashoffset: 0;
-                    opacity: 0.58;
                 }
 
                 .journey-modal.is-open .journey-connection.is-locked {
-                    stroke: rgba(160, 180, 220, 0.10) !important;
-                    stroke-width: 1 !important;
-                    opacity: 0.35 !important;
-                    filter: none !important;
+                    stroke: rgba(160, 185, 230, 0.16) !important;
+                    stroke-width: 2.2 !important;
+                    opacity: 0.42 !important;
+                    filter: drop-shadow(0 0 2px rgba(180, 200, 255, 0.08)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-dormant,
                 .journey-modal.is-open .journey-connection.is-next {
-                    stroke: rgba(190, 205, 235, 0.22) !important;
-                    stroke-width: 1.1 !important;
-                    opacity: 0.58 !important;
-                    filter: drop-shadow(0 0 4px rgba(180, 200, 255, 0.12)) !important;
+                    stroke: rgba(185, 205, 240, 0.35) !important;
+                    stroke-width: 2.4 !important;
+                    opacity: 0.68 !important;
+                    filter: drop-shadow(0 0 5px rgba(180, 200, 255, 0.18)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-active,
                 .journey-modal.is-open .journey-connection.is-revealed {
-                    stroke: rgba(255, 235, 185, 0.78) !important;
-                    stroke-width: 1.3 !important;
+                    stroke: rgba(255, 225, 150, 0.95) !important;
+                    stroke-width: 2.8 !important;
                     opacity: 0.95 !important;
                     filter:
-                        drop-shadow(0 0 6px rgba(255, 235, 185, 0.55))
-                        drop-shadow(0 0 18px rgba(255, 210, 120, 0.28)) !important;
+                        drop-shadow(0 0 8px rgba(255, 225, 150, 0.85))
+                        drop-shadow(0 0 24px rgba(255, 190, 80, 0.45)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-completed {
-                    stroke: rgba(255, 240, 205, 0.7) !important;
-                    stroke-width: 1.2 !important;
-                    opacity: 0.82 !important;
+                    stroke: rgba(255, 235, 180, 0.85) !important;
+                    stroke-width: 2.6 !important;
+                    opacity: 0.90 !important;
                     filter:
-                        drop-shadow(0 0 5px rgba(255, 235, 185, 0.38))
-                        drop-shadow(0 0 14px rgba(255, 210, 120, 0.18)) !important;
+                        drop-shadow(0 0 6px rgba(255, 230, 160, 0.65))
+                        drop-shadow(0 0 18px rgba(255, 180, 70, 0.3)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
-                /* Connection Ends Glow (Opção B) */
-                .connection-end-glow {
+                .journey-intermediate-star {
                     transition: all 0.8s ease;
-                }
-
-                .connection-end-glow.is-dormant {
-                    r: 3;
-                    fill: rgba(210, 220, 245, 0.34) !important;
-                    filter: drop-shadow(0 0 6px rgba(190, 210, 245, 0.22)) !important;
-                }
-
-                .connection-end-glow.is-revealed {
-                    r: 4;
-                    fill: rgba(255, 245, 220, 0.9) !important;
-                    filter:
-                        drop-shadow(0 0 8px rgba(255, 235, 185, 0.62))
-                        drop-shadow(0 0 20px rgba(255, 210, 120, 0.32)) !important;
                 }
 
                 /* Locked work titles and kicker states */
