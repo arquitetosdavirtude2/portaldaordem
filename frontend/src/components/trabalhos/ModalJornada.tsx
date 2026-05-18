@@ -80,13 +80,13 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
         const container = containerRef.current;
         const rect = container.getBoundingClientRect();
         
-        const nodes = container.querySelectorAll('[data-jornada-node]');
-        const positions = Array.from(nodes).map(node => {
-            const nodeRect = node.getBoundingClientRect();
+        const anchors = container.querySelectorAll('.work-node-anchor');
+        const positions = Array.from(anchors).map(anchor => {
+            const anchorRect = anchor.getBoundingClientRect();
             // Calculate relative coordinates inside scrollable pane
             return {
-                x: nodeRect.left - rect.left + nodeRect.width / 2 + container.scrollLeft,
-                y: nodeRect.top - rect.top + nodeRect.height / 2 + container.scrollTop
+                x: anchorRect.left - rect.left + anchorRect.width / 2 + container.scrollLeft,
+                y: anchorRect.top - rect.top + anchorRect.height / 2 + container.scrollTop
             };
         });
         setNodePositions(positions);
@@ -97,10 +97,20 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
         updatePositions();
         window.addEventListener('resize', updatePositions);
         
-        // Setup observer to detect which node is currently centered in viewport
+        // Setup ResizeObserver to handle element layout updates dynamically
         const container = containerRef.current;
         if (!container) return;
 
+        const resizeObserver = new ResizeObserver(() => {
+            updatePositions();
+        });
+        resizeObserver.observe(container);
+
+        // Also observe each row's size
+        const rowsToObserve = container.querySelectorAll('[data-jornada-row]');
+        rowsToObserve.forEach(row => resizeObserver.observe(row));
+        
+        // Setup observer to detect which node is currently centered in viewport
         const observerOptions = {
             root: container,
             rootMargin: '-35% 0px -35% 0px',
@@ -121,11 +131,18 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
         const rows = container.querySelectorAll('[data-jornada-row]');
         rows.forEach(row => observer.observe(row));
 
+        // Initial timeouts to ensure position is correct after rendering cycles
+        const timer1 = setTimeout(updatePositions, 100);
+        const timer2 = setTimeout(updatePositions, 500);
+
         return () => {
             window.removeEventListener('resize', updatePositions);
+            resizeObserver.disconnect();
             observer.disconnect();
+            clearTimeout(timer1);
+            clearTimeout(timer2);
         };
-    }, [jornada.length]);
+    }, [jornada.length, isOpen]);
 
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-700">
@@ -142,16 +159,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     <img 
                         src="https://www.portaldaordem.com.br/nebula_bg.png" 
                         alt="Nebula" 
-                        className="w-full h-full object-cover scale-110 animate-galaxy-expand brightness-110"
+                        className="journey-modal-background w-full h-full object-cover scale-110 animate-galaxy-expand brightness-110"
                     />
-                    <div className="absolute inset-0 bg-black/20" />
-                    
-                    {/* Masonic Esquadro & Compasso background watermark */}
-                    <div className="masonic-bg-symbol absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 select-none">
-                        <svg viewBox="0 0 100 100" className="w-[50vw] h-[50vw] text-yellow-500/10 fill-current">
-                            <path d="M50,15 L25,75 L35,75 L50,30 L65,75 L75,75 Z M50,85 L20,30 L30,30 L50,70 L70,30 L80,30 Z" />
-                        </svg>
-                    </div>
+                    <div className="journey-background-overlay absolute inset-0 bg-[#030612]/61 pointer-events-none" />
                 </div>
 
                 {/* === HEADER === */}
@@ -193,26 +203,6 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                             
                             {/* === CELESTIAL CONSTELLATION SVG LAYER === */}
                             <svg className="journey-constellation-layer absolute inset-0 w-full h-full pointer-events-none overflow-visible">
-                                <defs>
-                                    {/* Realistic celestial star glow filters */}
-                                    <filter id="celestial-glow" x="-50%" y="-50%" width="200%" height="200%">
-                                        <feGaussianBlur stdDeviation="5" result="blur" />
-                                        <feMerge>
-                                            <feMergeNode in="blur" />
-                                            <feMergeNode in="SourceGraphic" />
-                                        </feMerge>
-                                    </filter>
-                                    <filter id="celestial-glow-intense" x="-100%" y="-100%" width="300%" height="300%">
-                                        <feGaussianBlur stdDeviation="10" result="blur1" />
-                                        <feGaussianBlur stdDeviation="3" result="blur2" />
-                                        <feMerge>
-                                            <feMergeNode in="blur1" />
-                                            <feMergeNode in="blur2" />
-                                            <feMergeNode in="SourceGraphic" />
-                                        </feMerge>
-                                    </filter>
-                                </defs>
-
                                 {/* Connections */}
                                 {nodePositions.map((pos, idx) => {
                                     if (idx >= nodePositions.length - 1) return null;
@@ -229,29 +219,25 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                     const isConnectionActive = isCurrentConcluido && isNextActive;
                                     const isConnectionNext = isCurrentConcluido && !isNextConcluido && !isConnectionActive;
 
-                                    const R = 150;
-                                    const isLeft = idx % 2 === 0;
-                                    const isNextLeft = (idx + 1) % 2 === 0;
-
-                                    const startX = pos.x + (isLeft ? R : -R);
+                                    const startX = pos.x;
                                     const startY = pos.y;
-                                    const endX = nextPos.x + (isNextLeft ? R : -R);
+                                    const endX = nextPos.x;
                                     const endY = nextPos.y;
 
-                                    // Triangulation offset: alternate left/right to form elegant triangular elevations / esquadro angles
+                                    // Triangulation offset: alternate left/right to form elegant triangular elevations
                                     const midX = (startX + endX) / 2;
                                     const midY = (startY + endY) / 2;
                                     
-                                    const elevationOffset = idx % 2 === 0 ? 55 : -55;
+                                    const elevationOffset = idx % 2 === 0 ? 40 : -40;
                                     const q1X = startX + (midX - startX) / 2 + elevationOffset;
-                                    const q1Y = startY + (midY - startY) / 2 - 25;
+                                    const q1Y = startY + (midY - startY) / 2 - 20;
                                     
                                     const q2X = midX + (endX - midX) / 2 - elevationOffset;
-                                    const q2Y = midY + (endY - midY) / 2 + 25;
+                                    const q2Y = midY + (endY - midY) / 2 + 20;
 
                                     return (
                                         <g key={`path-${idx}`}>
-                                            {/* Main Constellation Line with angular constellation segments (Esquadro / Triângulo breaks) */}
+                                            {/* Main Constellation Line with angular constellation segments */}
                                             <path
                                                 d={`M ${startX} ${startY} L ${q1X} ${q1Y} L ${midX} ${midY} L ${q2X} ${q2Y} L ${endX} ${endY}`}
                                                 fill="none"
@@ -291,48 +277,30 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                         </g>
                                     );
                                 })}
-
-                                {/* Main Star Nodes (rendered on outer edges of node images) */}
-                                {nodePositions.map((pos, idx) => {
-                                    const item = jornada[idx];
-                                    const isConcluido = item.progresso?.status === 'concluido';
-                                    const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
-                                    const isAtual = !isConcluido && !isBloqueado;
-                                    
-                                    const isStarCompleted = isConcluido;
-                                    const isStarActive = isAtual;
-                                    const isStarNext = !isConcluido && !isAtual && (idx === 0 || (idx > 0 && (jornada[idx - 1].progresso?.status === 'concluido' || jornada[idx - 1].progresso?.status === 'em_estudo')));
-
-                                    const R = 150;
-                                    const isLeft = idx % 2 === 0;
-                                    const starX = pos.x + (isLeft ? R : -R);
-                                    const starY = pos.y;
-
-                                    const isRevealed = isStarCompleted || isStarActive;
-
-                                    return (
-                                        <g key={`star-${idx}`} className={`journey-star-group ${isRevealed ? 'is-revealed' : 'is-dormant'} ${isStarActive ? 'is-active' : ''}`}>
-                                            {/* Outer halo */}
-                                            <circle
-                                                cx={starX}
-                                                cy={starY}
-                                                r={isRevealed ? 14 : 9}
-                                                className="journey-star-halo"
-                                                fill={isRevealed ? "rgba(255, 220, 140, 0.28)" : "rgba(180, 200, 245, 0.14)"}
-                                                filter="url(#celestial-glow)"
-                                            />
-                                            {/* Core point */}
-                                            <circle
-                                                cx={starX}
-                                                cy={starY}
-                                                r={isRevealed ? 4.5 : 3}
-                                                className="journey-star-core"
-                                                fill={isRevealed ? "#ffffff" : "rgba(210, 225, 255, 0.7)"}
-                                            />
-                                        </g>
-                                    );
-                                })}
                             </svg>
+
+                            {/* Main Star Nodes (HTML div elements positioned dynamically on coordinates) */}
+                            {nodePositions.map((pos, idx) => {
+                                const item = jornada[idx];
+                                const isConcluido = item.progresso?.status === 'concluido';
+                                const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
+                                const isAtual = !isConcluido && !isBloqueado;
+                                
+                                const isStarCompleted = isConcluido;
+                                const isStarActive = isAtual;
+                                const isStarRevealed = isStarCompleted || isStarActive;
+
+                                return (
+                                    <div
+                                        key={`star-node-${idx}`}
+                                        className={`journey-node ${isStarActive ? 'is-active' : ''} ${isStarRevealed ? 'is-revealed' : 'is-dormant'}`}
+                                        style={{
+                                            left: `${pos.x}px`,
+                                            top: `${pos.y}px`,
+                                        }}
+                                    />
+                                );
+                            })}
 
                             <div className="flex flex-col gap-40 relative z-10">
                                 {jornada.map((item, idx) => {
@@ -358,6 +326,17 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                                                 {/* === NODE (STAR / SYMBOL) === */}
                                                 <div className="relative group" data-jornada-node>
+                                                     {/* Anchor for dynamic positioning */}
+                                                     <div
+                                                         className="work-node-anchor absolute w-0 h-0 pointer-events-none"
+                                                         data-work-id={item.id}
+                                                         style={{
+                                                             top: '50%',
+                                                             left: isLeft ? 'auto' : '-16px',
+                                                             right: isLeft ? '-16px' : 'auto',
+                                                             transform: 'translateY(-50%)'
+                                                         }}
+                                                     />
                                                     {/* Aura effects */}
                                                     <div className={`absolute -inset-10 rounded-full blur-3xl transition-all duration-1000 ${
                                                         isConcluido 
@@ -663,57 +642,96 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     filter: blur(0) brightness(1);
                 }
 
-                /* Realistic Celestial Skyrim Star Nodes inside SVG */
-                @keyframes starBreathingDormant {
-                    0%, 100% {
-                        transform: scale(1);
-                        opacity: 0.65;
-                    }
-                    50% {
-                        transform: scale(1.15);
-                        opacity: 0.9;
-                    }
+                /* Enhanced Cosmic Deep Nebula & Background Overlay Contrast */
+                .journey-modal-background {
+                    filter: saturate(1.22) contrast(1.12) brightness(1.08) !important;
+                }
+                .journey-background-overlay {
+                    background: rgba(3, 6, 18, 0.61) !important;
                 }
 
-                @keyframes starBreathingActive {
-                    0%, 100% {
-                        transform: scale(1);
-                        opacity: 0.85;
+                /* Realistic Celestial Skyrim Star Nodes (HTML div elements positioned dynamically) */
+                .journey-node {
+                    position: absolute;
+                    width: 14px;
+                    height: 14px;
+                    transform: translate(-50%, -50%);
+                    pointer-events: none;
+                    z-index: 30; /* Ensures stars sit perfectly above the SVG lines layer */
+                }
+
+                .journey-node::before {
+                    content: "";
+                    position: absolute;
+                    inset: 4px;
+                    border-radius: 50%;
+                    background: rgba(245, 248, 255, 0.95);
+                    box-shadow:
+                        0 0 8px rgba(245, 248, 255, 0.75),
+                        0 0 18px rgba(180, 205, 255, 0.32);
+                    transition: all 0.6s ease;
+                }
+
+                .journey-node::after {
+                    content: "";
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    width: 18px;
+                    height: 18px;
+                    transform: translate(-50%, -50%);
+                    background:
+                        linear-gradient(to right, transparent 0%, rgba(245,248,255,0.85) 48%, rgba(245,248,255,0.95) 50%, rgba(245,248,255,0.85) 52%, transparent 100%),
+                        linear-gradient(to bottom, transparent 0%, rgba(245,248,255,0.85) 48%, rgba(245,248,255,0.95) 50%, rgba(245,248,255,0.85) 52%, transparent 100%);
+                    opacity: 0.85;
+                    filter: drop-shadow(0 0 8px rgba(220,230,255,0.45));
+                    transition: all 0.6s ease;
+                }
+
+                /* Active and Revealed star styling rules */
+                .journey-node.is-active::before,
+                .journey-node.is-revealed::before {
+                    background: rgba(255, 244, 215, 1);
+                    box-shadow:
+                        0 0 10px rgba(255, 244, 215, 0.95),
+                        0 0 26px rgba(255, 215, 140, 0.55),
+                        0 0 48px rgba(255, 190, 90, 0.25);
+                }
+
+                .journey-node.is-active,
+                .journey-node.is-revealed {
+                    animation: constellationStarPulse 2.6s ease-in-out infinite;
+                }
+
+                @keyframes constellationStarPulse {
+                    0% {
+                        transform: translate(-50%, -50%) scale(1);
+                        opacity: 0.78;
                     }
                     50% {
-                        transform: scale(1.35);
+                        transform: translate(-50%, -50%) scale(1.28);
                         opacity: 1;
                     }
+                    100% {
+                        transform: translate(-50%, -50%) scale(1);
+                        opacity: 0.78;
+                    }
                 }
 
-                .journey-star-group {
-                    transform-box: fill-box;
-                    transform-origin: center;
-                    transition: all 0.8s ease;
+                /* Dormant stars slow breathing */
+                .journey-node.is-dormant {
+                    animation: dormantStarPulse 4.5s ease-in-out infinite;
                 }
 
-                .journey-star-group.is-dormant {
-                    animation: starBreathingDormant 4.2s ease-in-out infinite;
-                }
-
-                .journey-star-group.is-revealed {
-                    animation: starBreathingActive 3.0s ease-in-out infinite;
-                }
-
-                .journey-star-halo {
-                    transition: all 0.8s ease;
-                }
-
-                .journey-star-group.is-dormant .journey-star-halo {
-                    filter: url(#celestial-glow);
-                }
-
-                .journey-star-group.is-revealed .journey-star-halo {
-                    filter: url(#celestial-glow-intense);
-                }
-
-                .journey-star-core {
-                    transition: all 0.8s ease;
+                @keyframes dormantStarPulse {
+                    0%, 100% {
+                        transform: translate(-50%, -50%) scale(0.92);
+                        opacity: 0.55;
+                    }
+                    50% {
+                        transform: translate(-50%, -50%) scale(1.08);
+                        opacity: 0.8;
+                    }
                 }
 
                 /* Celestial Connections between Nodes */
@@ -734,35 +752,35 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                 .journey-modal.is-open .journey-connection.is-locked {
                     stroke: rgba(160, 185, 230, 0.16) !important;
-                    stroke-width: 2.2 !important;
-                    opacity: 0.42 !important;
+                    stroke-width: 1.5 !important;
+                    opacity: 0.38 !important;
                     filter: drop-shadow(0 0 2px rgba(180, 200, 255, 0.08)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-dormant,
                 .journey-modal.is-open .journey-connection.is-next {
-                    stroke: rgba(185, 205, 240, 0.35) !important;
-                    stroke-width: 2.4 !important;
-                    opacity: 0.68 !important;
-                    filter: drop-shadow(0 0 5px rgba(180, 200, 255, 0.18)) !important;
+                    stroke: rgba(190, 210, 245, 0.30) !important;
+                    stroke-width: 1.6 !important;
+                    opacity: 0.72 !important;
+                    filter: drop-shadow(0 0 5px rgba(180, 205, 255, 0.18)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-active,
                 .journey-modal.is-open .journey-connection.is-revealed {
-                    stroke: rgba(255, 225, 150, 0.95) !important;
-                    stroke-width: 2.8 !important;
-                    opacity: 0.95 !important;
+                    stroke: rgba(255, 235, 185, 0.86) !important;
+                    stroke-width: 1.9 !important;
+                    opacity: 1 !important;
                     filter:
-                        drop-shadow(0 0 8px rgba(255, 225, 150, 0.85))
-                        drop-shadow(0 0 24px rgba(255, 190, 80, 0.45)) !important;
+                        drop-shadow(0 0 7px rgba(255, 235, 185, 0.62))
+                        drop-shadow(0 0 18px rgba(255, 210, 120, 0.32)) !important;
                     stroke-dashoffset: 0 !important;
                 }
 
                 .journey-modal.is-open .journey-connection.is-completed {
                     stroke: rgba(255, 235, 180, 0.85) !important;
-                    stroke-width: 2.6 !important;
+                    stroke-width: 1.8 !important;
                     opacity: 0.90 !important;
                     filter:
                         drop-shadow(0 0 6px rgba(255, 230, 160, 0.65))
