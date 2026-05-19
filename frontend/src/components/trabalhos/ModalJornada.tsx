@@ -40,6 +40,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
     const [nodePositions, setNodePositions] = useState<Array<{ x: number; y: number }>>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
+    const [constellationReady, setConstellationReady] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsOpen(true), 50);
@@ -94,6 +95,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
         const rect = content.getBoundingClientRect();
         
         const anchors = content.querySelectorAll('.work-node-anchor');
+        if (anchors.length === 0) return;
         const positions = Array.from(anchors).map(anchor => {
             const anchorRect = anchor.getBoundingClientRect();
             // Calculate relative coordinates inside content pane
@@ -102,7 +104,11 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                 y: anchorRect.top - rect.top + anchorRect.height / 2
             };
         });
+        // Only accept positions where at least 1 node has non-zero coordinates
+        const hasValidPos = positions.some(p => p.x !== 0 || p.y !== 0);
+        if (!hasValidPos) return;
         setNodePositions(positions);
+        setConstellationReady(true);
     };
 
     // Calculate node coordinates on render and on viewport dimensions changes
@@ -145,8 +151,15 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
         rows.forEach(row => observer.observe(row));
 
         // Initial timeouts to ensure position is correct after rendering cycles
-        const timer1 = setTimeout(updatePositions, 100);
-        const timer2 = setTimeout(updatePositions, 500);
+        const timer1 = setTimeout(() => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    updatePositions();
+                });
+            });
+        }, 150);
+        const timer2 = setTimeout(updatePositions, 600);
+        const timer3 = setTimeout(updatePositions, 1200);
 
         return () => {
             window.removeEventListener('resize', updatePositions);
@@ -154,6 +167,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
             observer.disconnect();
             clearTimeout(timer1);
             clearTimeout(timer2);
+            clearTimeout(timer3);
         };
     }, [jornada.length, isOpen]);
 
@@ -215,7 +229,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                         <div ref={contentRef} className="relative min-h-[500px]">
                             
                             {/* === CELESTIAL CONSTELLATION SVG LAYER === */}
-                            <svg className="journey-constellation-layer absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                            <svg className={`journey-constellation-layer absolute inset-0 w-full h-full pointer-events-none overflow-visible transition-opacity duration-700 ${constellationReady ? 'opacity-100' : 'opacity-0'}`}>
                                 {/* Connections */}
                                 {nodePositions.map((pos, idx) => {
                                     if (idx >= nodePositions.length - 1) return null;
@@ -303,8 +317,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                             </svg>
 
                             {/* Main Star Nodes (HTML div elements positioned dynamically on coordinates) */}
-                            {nodePositions.map((pos, idx) => {
+                            {constellationReady && nodePositions.map((pos, idx) => {
                                  const item = jornada[idx];
+                                 if (!item) return null;
                                  const isConcluido = item.progresso?.status === 'concluido';
                                  const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
                                  const isAtual = !isConcluido && !isBloqueado;
@@ -353,15 +368,19 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                                                 {/* === NODE (STAR / SYMBOL) === */}
                                                 <div className="relative group" data-jornada-node>
-                                                     {/* Anchor for dynamic positioning */}
+                                                     {/* Anchor for dynamic positioning - invisible */}
                                                      <div
-                                                         className="work-node-anchor absolute w-0 h-0 pointer-events-none"
+                                                         className="work-node-anchor absolute pointer-events-none"
                                                          data-work-id={item.id}
                                                          style={{
                                                              top: '68%',
                                                              left: isLeft ? 'auto' : '-26px',
                                                              right: isLeft ? '-26px' : 'auto',
-                                                             transform: 'translateY(-50%)'
+                                                             transform: 'translateY(-50%)',
+                                                             width: 0,
+                                                             height: 0,
+                                                             opacity: 0,
+                                                             visibility: 'hidden' as const
                                                          }}
                                                      />
                                                     {/* Aura effects */}
