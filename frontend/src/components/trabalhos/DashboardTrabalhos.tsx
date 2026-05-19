@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import ModalNovoConteudo from './ModalNovoConteudo';
-import ModalUploadMaterial from './ModalUploadMaterial';
+import ModalMateriaisTrabalho from './ModalMateriaisTrabalho';
 import ModalQuiz from './ModalQuiz';
 import ModalEditarConteudo from './ModalEditarConteudo';
 import ModalJornada from './ModalJornada';
@@ -46,7 +46,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [novoConteudoModal, setNovoConteudoModal] = useState(false);
     const [conteudoEditando, setConteudoEditando] = useState<any>(null);
     const [conteudoExcluir, setConteudoExcluir] = useState<any>(null);
-    const [uploadMaterialModal, setUploadMaterialModal] = useState<{ativo: boolean, tipo: 'video'|'pdf'}>({ativo: false, tipo: 'video'});
+    const [materiaisModal, setMateriaisModal] = useState<{ativo: boolean, tipo: 'video'|'pdf'}>({ativo: false, tipo: 'video'});
+    const [materiaisItem, setMateriaisItem] = useState<any>(null);
     const [quizModalAtivo, setQuizModalAtivo] = useState(false);
     const [previewModals, setPreviewModals] = useState<{video: boolean, pdf: boolean, url: string}>({video: false, pdf: false, url: ''});
     const [correcaoTrabalho, setCorrecaoTrabalho] = useState<any>(null);
@@ -453,21 +454,21 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                         <div className="flex items-center gap-1.5 shrink-0">
                                             {isDiretoria ? (
                                                 <>
-                                                    <button onClick={() => { setItemEmEstudo(item); setUploadMaterialModal({ativo: true, tipo: 'video'}); }} className="p-2 bg-white/[0.03] hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Videos">
+                                                    <button onClick={() => { setMateriaisItem(item); setMateriaisModal({ativo: true, tipo: 'video'}); }} className="p-2 bg-white/[0.03] hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Gerenciar videos">
                                                         <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">🎬</span>
                                                     </button>
-                                                    <button onClick={() => { setItemEmEstudo(item); setUploadMaterialModal({ativo: true, tipo: 'pdf'}); }} className="p-2 bg-white/[0.03] hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Materiais">
+                                                    <button onClick={() => { setMateriaisItem(item); setMateriaisModal({ativo: true, tipo: 'pdf'}); }} className="p-2 bg-white/[0.03] hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Gerenciar materiais de apoio">
                                                         <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">📄</span>
                                                     </button>
-                                                    <button onClick={() => { setItemEmEstudo(item); setQuizModalAtivo(true); }} className="p-2 bg-white/[0.03] hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Quiz">
+                                                    <button onClick={() => { setItemEmEstudo(item); setQuizModalAtivo(true); }} className="p-2 bg-white/[0.03] hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Configurar quiz">
                                                         <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">🧩</span>
                                                     </button>
-                                                    <button onClick={() => setCorrecaoTrabalho(item)} className="p-2 bg-white/[0.03] hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Correcoes">
+                                                    <button onClick={() => setCorrecaoTrabalho(item)} className="p-2 bg-white/[0.03] hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Correcoes do trabalho">
                                                         <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">📋</span>
                                                     </button>
                                                     <div className="w-px h-6 bg-white/5 mx-1"></div>
-                                                    <button onClick={() => setConteudoEditando(item)} className="px-2.5 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] rounded-lg text-[8px] font-bold uppercase text-gray-500 hover:text-gray-300 cursor-pointer transition-all" title="Editar">Editar</button>
-                                                    <button onClick={() => setConteudoExcluir(item)} className="px-2.5 py-1.5 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-[8px] font-bold uppercase text-red-500/60 hover:text-red-400 cursor-pointer transition-all" title="Excluir">Excluir</button>
+                                                    <button onClick={() => setConteudoEditando(item)} className="px-2.5 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] rounded-lg text-[8px] font-bold uppercase text-gray-500 hover:text-gray-300 cursor-pointer transition-all" title="Editar trabalho">Editar</button>
+                                                    <button onClick={() => setConteudoExcluir(item)} className="px-2.5 py-1.5 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-[8px] font-bold uppercase text-red-500/60 hover:text-red-400 cursor-pointer transition-all" title="Excluir trabalho">Excluir</button>
                                                 </>
                                             ) : (
                                                 <button onClick={() => setItemEmEstudo(item)} className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[9px] font-bold uppercase tracking-widest rounded-lg cursor-pointer hover:bg-yellow-500/20 transition-all">Estudar</button>
@@ -712,7 +713,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
                     <ModalEditarConteudo isOpen={!!conteudoEditando} onClose={() => setConteudoEditando(null)} conteudo={conteudoEditando} onSuccess={() => { carregarConteudos(); setConteudoEditando(null); }} />
                     {novoConteudoModal && <ModalNovoConteudo lojaId={acesso.loja_id} tabAtiva={tabAtiva === 'correcoes' ? 'trabalhos' : tabAtiva} onClose={() => setNovoConteudoModal(false)} onSuccess={carregarConteudos} />}
-                    {uploadMaterialModal.ativo && itemEmEstudo && <ModalUploadMaterial conteudoId={itemEmEstudo.id} tipo={uploadMaterialModal.tipo} onClose={() => setUploadMaterialModal({ativo: false, tipo: 'video'})} onSuccess={carregarConteudos} />}
+                    {materiaisModal.ativo && materiaisItem && <ModalMateriaisTrabalho conteudo={materiaisItem} tipoMaterial={materiaisModal.tipo} onClose={() => { setMateriaisModal({ativo: false, tipo: 'video'}); setMateriaisItem(null); }} onSuccess={carregarConteudos} />}
                     {quizModalAtivo && itemEmEstudo && <ModalQuiz conteudoId={itemEmEstudo.id} quizzesIniciais={itemEmEstudo.quizzes || []} onClose={() => setQuizModalAtivo(false)} onSuccess={carregarConteudos} />}
                     {correcaoTrabalho && <ModalCorrecaoTrabalho conteudo={correcaoTrabalho} lojaId={acesso.loja_id || acesso.id_loja} acesso={acesso} onClose={() => setCorrecaoTrabalho(null)} onSuccess={carregarConteudos} />}
                 </>,

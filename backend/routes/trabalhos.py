@@ -176,9 +176,12 @@ async def upload_material(
     conteudo_id: int = Form(...),
     tipo: str = Form(...), # 'video' ou 'pdf'
     file: UploadFile = File(...),
+    titulo: str = Form(None),
+    descricao: str = Form(None),
+    ordem: int = Form(None),
     db: Session = Depends(get_db)
 ):
-    """Faz upload de material (video ou apoio) para um conteúdo."""
+    """Faz upload de material (video ou apoio) para um conteudo."""
     diretorio = VIDEO_DIR if tipo == 'video' else UPLOAD_DIR
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     filename = f"{timestamp}_{file.filename}"
@@ -186,18 +189,39 @@ async def upload_material(
     
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-        
+
+    # Se ordem nao foi informada, colocar no final da sequencia
+    if ordem is None:
+        max_ordem = db.query(MaterialEstudo).filter(
+            MaterialEstudo.conteudo_id == conteudo_id,
+            MaterialEstudo.tipo == tipo
+        ).count()
+        ordem = max_ordem + 1
+    
     material = MaterialEstudo(
         conteudo_id=conteudo_id,
         tipo=tipo,
         nome_arquivo=file.filename,
         url=f"/{diretorio}/{filename}",
-        data_upload=datetime.now().isoformat()
+        data_upload=datetime.now().isoformat(),
+        titulo=titulo or file.filename,
+        descricao=descricao,
+        ordem=ordem
     )
     db.add(material)
     db.commit()
     db.refresh(material)
-    return material
+    return {
+        "id": material.id,
+        "conteudo_id": material.conteudo_id,
+        "tipo": material.tipo,
+        "nome_arquivo": material.nome_arquivo,
+        "url": material.url,
+        "titulo": material.titulo,
+        "descricao": material.descricao,
+        "ordem": material.ordem,
+        "data_upload": material.data_upload
+    }
 
 @router.post("/quiz")
 async def configurar_quiz(
