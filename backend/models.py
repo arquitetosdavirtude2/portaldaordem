@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -183,6 +183,7 @@ class ConteudoEstudo(Base):
     grau = Column(Integer, default=1) # 1=Aprendiz, 2=Companheiro, 3=Mestre
     ordem = Column(Integer, default=0)
     descricao_jornada = Column(Text, nullable=True)
+    ativo = Column(Integer, default=1) # 1=ativo, 0=inativo (soft delete)
 
     loja = relationship("Loja")
 
@@ -194,6 +195,10 @@ class MaterialEstudo(Base):
     nome_arquivo = Column(String(200))
     url = Column(String(500))
     data_upload = Column(String(30), nullable=True)
+    titulo = Column(String(200), nullable=True)       # Título exibido na lista
+    descricao = Column(String(500), nullable=True)     # Descrição curta
+    ordem = Column(Integer, default=0)                 # Ordem de exibição
+    duracao_segundos = Column(Integer, nullable=True)  # Duração do vídeo (se aplicável)
 
     conteudo = relationship("ConteudoEstudo")
 
@@ -204,6 +209,8 @@ class Quiz(Base):
     pergunta = Column(String(500))
     opcoes_json = Column(String(2000)) # JSON string with options
     resposta_correta = Column(Integer) # Index of the correct option
+    tipo = Column(String(30), default='livre')  # 'livre', 'lacunas', 'multipla_escolha'
+    ordem = Column(Integer, default=0)           # Ordem de exibição
 
     conteudo = relationship("ConteudoEstudo")
 
@@ -212,10 +219,13 @@ class ProgressoEstudo(Base):
     id = Column(Integer, primary_key=True, index=True)
     pessoa_id = Column(Integer, ForeignKey("pessoas.id"))
     conteudo_id = Column(Integer, ForeignKey("conteudos_estudo.id"))
-    status = Column(String(50), default="pendente") # 'pendente', 'em_estudo', 'concluido'
+    status = Column(String(50), default="pendente") # 'pendente', 'em_estudo', 'aguardando_correcao', 'aprovado', 'reprovado', 'refazer', 'concluido'
     quiz_score = Column(Integer, nullable=True)
+    nota = Column(Float, nullable=True)  # Nota opcional 0-10
     data_conclusao = Column(String(30), nullable=True)
     data_agendamento = Column(String(20), nullable=True) # YYYY-MM-DD
+
+    __table_args__ = (UniqueConstraint('pessoa_id', 'conteudo_id', name='uq_progresso_pessoa_conteudo'),)
 
     pessoa = relationship("Pessoa")
     conteudo = relationship("ConteudoEstudo")
@@ -229,7 +239,50 @@ class EntregaTrabalho(Base):
     status = Column(String(50), default="pendente") # 'pendente', 'aprovado', 'revisar'
     feedback = Column(String(2000), nullable=True)
     data_upload = Column(String(30), nullable=True)
+    corrigido_por = Column(Integer, ForeignKey("pessoas.id"), nullable=True)  # Qual Luz corrigiu
+    data_correcao = Column(String(30), nullable=True)
+
+    pessoa = relationship("Pessoa", foreign_keys=[pessoa_id])
+    conteudo = relationship("ConteudoEstudo")
+    corretor = relationship("Pessoa", foreign_keys=[corrigido_por])
+
+class RespostaQuiz(Base):
+    """Armazena respostas individuais do obreiro para cada pergunta do quiz."""
+    __tablename__ = "respostas_quiz"
+    id = Column(Integer, primary_key=True, index=True)
+    pessoa_id = Column(Integer, ForeignKey("pessoas.id"))
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"))
+    conteudo_id = Column(Integer, ForeignKey("conteudos_estudo.id"))
+    resposta_texto = Column(Text, nullable=True)          # Para resposta livre
+    opcao_selecionada = Column(Integer, nullable=True)    # Para múltipla escolha (índice)
+    lacunas_json = Column(String(2000), nullable=True)    # Para completar lacunas (JSON)
+    is_correto = Column(Integer, nullable=True)           # 0=errado, 1=correto, NULL=pendente correção
+    nota = Column(Float, nullable=True)                   # Nota opcional 0-10
+    feedback = Column(String(2000), nullable=True)        # Feedback da Luz
+    status = Column(String(50), default="pendente")       # 'pendente', 'aprovado', 'reprovado', 'refazer'
+    corrigido_por = Column(Integer, ForeignKey("pessoas.id"), nullable=True)
+    data_resposta = Column(String(30), nullable=True)
+    data_correcao = Column(String(30), nullable=True)
+
+    __table_args__ = (UniqueConstraint('pessoa_id', 'quiz_id', name='uq_resposta_pessoa_quiz'),)
+
+    pessoa = relationship("Pessoa", foreign_keys=[pessoa_id])
+    quiz = relationship("Quiz")
+    conteudo = relationship("ConteudoEstudo")
+    corretor = relationship("Pessoa", foreign_keys=[corrigido_por])
+
+class ProgressoMaterial(Base):
+    """Rastreia progresso individual por vídeo/documento do obreiro."""
+    __tablename__ = "progresso_material"
+    id = Column(Integer, primary_key=True, index=True)
+    pessoa_id = Column(Integer, ForeignKey("pessoas.id"))
+    material_id = Column(Integer, ForeignKey("materiais_estudo.id"))
+    max_segundos_assistidos = Column(Integer, default=0)   # Para vídeos: maior ponto assistido
+    progresso_percentual = Column(Integer, default=0)      # Para documentos: 0-100
+    concluido = Column(Integer, default=0)                 # 0 ou 1
+    data_conclusao = Column(String(30), nullable=True)
+
+    __table_args__ = (UniqueConstraint('pessoa_id', 'material_id', name='uq_progresso_pessoa_material'),)
 
     pessoa = relationship("Pessoa")
-    conteudo = relationship("ConteudoEstudo")
-
+    material = relationship("MaterialEstudo")

@@ -203,7 +203,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const handleFinalizarEstudo = async () => {
         if (!itemEmEstudo || !acesso.id) return;
         try {
-            const res = await fetch('/api/trabalhos/progresso', {
+            const res = await fetch('/api/trabalhos/progresso/json', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
