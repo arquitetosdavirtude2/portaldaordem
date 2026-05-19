@@ -6,10 +6,10 @@ from routes import auth, pessoas, admin, lojas, tesouraria, academia, trabalhos
 from database import engine
 from sqlalchemy import text
 
-# Migração Automática: Garante que novas colunas e tabelas existam no banco de dados
+# Migracao Automatica: Garante que novas colunas e tabelas existam no banco de dados
 def run_safe_migrations(engine_ref):
-    """Executa migrações aditivas seguras — ADD COLUMN e CREATE TABLE.
-    Cada operação é individual para que falhas não afetem as demais."""
+    """Executa migracoes aditivas seguras - ADD COLUMN e CREATE TABLE.
+    Cada operacao eh individual para que falhas nao afetem as demais."""
     
     migrations = [
         # --- ConteudoEstudo ---
@@ -92,9 +92,9 @@ def run_safe_migrations(engine_ref):
 
 try:
     run_safe_migrations(engine)
-    print("Database Migration: Fase 1 — Migrações executadas com sucesso.")
+    print("Database Migration: Fase 1 - Migracoes executadas com sucesso.")
 except Exception as e:
-    print(f"Database Migration: Aviso — {str(e)}")
+    print("Database Migration: Aviso - %s" % str(e))
 
 app = FastAPI(title="Sistema Mapa Estados")
 

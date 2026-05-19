@@ -86,8 +86,11 @@ def listar_conteudos(loja_id: Optional[int] = None, pessoa_id: Optional[int] = N
         return resultados
     except Exception as e:
         import traceback
-        error_msg = f"Erro no backend: {str(e)}\n{traceback.format_exc()}"
-        print(error_msg)
+        error_msg = "Erro no backend: %s" % str(e)
+        try:
+            print(error_msg)
+        except UnicodeEncodeError:
+            print("Erro no backend (encoding error in traceback)")
         raise HTTPException(status_code=500, detail=error_msg)
 
 @router.post("/conteudo")
@@ -330,9 +333,9 @@ def listar_entregas_admin(
     return resultados
 
 
-# ═══════════════════════════════════════════════════════════════════
-# NOVOS ENDPOINTS — FASE 1
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
+# NOVOS ENDPOINTS - FASE 1
+# ===================================================================
 
 @router.post("/progresso")
 def registrar_progresso(
@@ -553,7 +556,7 @@ def submeter_respostas_quiz(body: RespostasQuizBody, db: Session = Depends(get_d
             except Exception:
                 resp.status = 'pendente'
         else:
-            # Resposta livre — aguarda correção da Luz
+            # Resposta livre - aguarda correcao da Luz
             resp.status = 'pendente'
             resp.is_correto = None
             tem_livre = True
@@ -572,12 +575,12 @@ def submeter_respostas_quiz(body: RespostasQuizBody, db: Session = Depends(get_d
     if tem_livre:
         prog.status = 'aguardando_correcao'
     else:
-        # Todas as respostas são autocorrigíveis — verificar se precisa de aprovação de trabalho
+        # Todas as respostas sao autocorrigiveis - verificar se precisa de aprovacao de trabalho
         conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == body.conteudo_id).first()
         if conteudo and conteudo.tipo == 'trabalho':
             prog.status = 'aguardando_correcao'
         else:
-            # Preleção com apenas respostas objetivas — pode concluir automaticamente
+            # Prelecao com apenas respostas objetivas - pode concluir automaticamente
             prog.status = 'concluido'
             prog.data_conclusao = datetime.now().isoformat()
     
@@ -756,8 +759,8 @@ def painel_correcoes(loja_id: int, db: Session = Depends(get_db)):
             "pessoa_id": r.pessoa_id,
             "pessoa_nome": pessoas_map.get(r.pessoa_id, "Desconhecido"),
             "conteudo_id": r.conteudo_id,
-            "conteudo_titulo": conteudo.titulo if conteudo else "—",
-            "pergunta": quiz.pergunta if quiz else "—",
+            "conteudo_titulo": conteudo.titulo if conteudo else "-",
+            "pergunta": quiz.pergunta if quiz else "-",
             "data_envio": r.data_resposta,
             "status": r.status
         })
@@ -776,7 +779,7 @@ def painel_correcoes(loja_id: int, db: Session = Depends(get_db)):
             "pessoa_id": e.pessoa_id,
             "pessoa_nome": pessoas_map.get(e.pessoa_id, "Desconhecido"),
             "conteudo_id": e.conteudo_id,
-            "conteudo_titulo": conteudo.titulo if conteudo else "—",
+            "conteudo_titulo": conteudo.titulo if conteudo else "-",
             "pergunta": None,
             "arquivo_url": e.arquivo_url,
             "data_envio": e.data_upload,
