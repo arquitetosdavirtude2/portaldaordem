@@ -178,8 +178,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
             {/* Modal Container */}
             <div className={`journey-modal ${isOpen && !isClosing ? 'is-open' : ''} ${isClosing ? 'is-closing' : ''} bg-[#020205] border border-white/10 rounded-[2.5rem] w-full max-w-7xl h-full max-h-[92vh] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.9)] relative z-10 flex flex-col`}>
                 
-                {/* Efeito centelha inicial */}
-                <div className="journey-opening-spark" />
+                {/* Centelha inicial removida - causava ponto sobre a imagem */}
 
                 {/* === Nebula Background Layer === */}
                 <div className="absolute inset-0 opacity-50 pointer-events-none overflow-hidden">
@@ -383,14 +382,10 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                              visibility: 'hidden' as const
                                                          }}
                                                      />
-                                                    {/* Aura effects */}
-                                                    <div className={`absolute -inset-10 rounded-full blur-3xl transition-all duration-1000 ${
-                                                        isConcluido 
-                                                            ? 'bg-yellow-500/10' 
-                                                            : isFocused 
-                                                                ? 'bg-blue-500/10 animate-slow-glow' 
-                                                                : 'bg-transparent'
-                                                    }`} />
+                                                    {/* Aura glow - only for completed, positioned behind everything */}
+                                                    {isConcluido && (
+                                                        <div className="absolute -inset-12 rounded-full blur-[60px] bg-yellow-500/8 pointer-events-none" style={{ zIndex: -1 }} />
+                                                    )}
 
                                                      {/* Organic Node Image */}
                                                     <div className={`journey-work-image work-image relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-1000 ${
@@ -400,11 +395,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                                 ? 'drop-shadow-[0_0_60px_rgba(100,120,180,0.25)] scale-[1.02]'
                                                                 : 'drop-shadow-[0_0_40px_rgba(100,120,180,0.1)] scale-95 opacity-65'
                                                     }`}>
-                                                        {/* Subtle glow background integrated with nebula color */}
-                                                        {!isConcluido && (
-                                                            <div className="absolute inset-0 rounded-full bg-[#0a0a1a]/60 blur-3xl" />
-                                                        )}
-                                                        
+                                                        {/* Dark glow removed - was creating visible circle over image */}
                                                         
 
                                                         <div className="w-full h-full relative" style={{
@@ -429,10 +420,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                             )}
                                                         </div>
 
-                                                        {/* Status Pulse for Current */}
-                                                        {isAtual && (
-                                                            <div className="absolute inset-10 rounded-full border border-blue-400/20 animate-ping opacity-30" />
-                                                        )}
+                                                        {/* Status pulse removed - was rendering a visible ring over the image */}
                                                     </div>
                                                 </div>
 
@@ -618,41 +606,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     transform: scale(1);
                 }
 
-                /* Centelha Inicial / Spark */
-                .journey-opening-spark {
-                    position: absolute;
-                    left: 24%;
-                    top: 55%;
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 999px;
-                    background: rgba(255, 245, 220, 0.9);
-                    box-shadow:
-                        0 0 12px rgba(255, 245, 220, 0.8),
-                        0 0 36px rgba(255, 210, 130, 0.35);
-                    opacity: 0;
-                    pointer-events: none;
-                    z-index: 25;
-                }
 
-                .journey-modal.is-open .journey-opening-spark {
-                    animation: openingSpark 1.6s ease 0.65s forwards;
-                }
+                /* Centelha inicial removida do DOM */
 
-                @keyframes openingSpark {
-                    0% {
-                        opacity: 0;
-                        transform: scale(0.4);
-                    }
-                    35% {
-                        opacity: 1;
-                        transform: scale(1.5);
-                    }
-                    100% {
-                        opacity: 0;
-                        transform: scale(2.6);
-                    }
-                }
 
                 /* Header cascading appearance */
                 .journey-header {
