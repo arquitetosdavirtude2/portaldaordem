@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import PlayerVideoObreiro from './PlayerVideoObreiro';
 import LeitorMateriaisObreiro from './LeitorMateriaisObreiro';
 import QuizObreiro from './QuizObreiro';
+import EntregaTrabalhoObreiro from './EntregaTrabalhoObreiro';
 
 interface ModalEstudoObreiroProps {
     conteudo: any;
@@ -12,13 +13,13 @@ interface ModalEstudoObreiroProps {
     onSuccess: () => void;
 }
 
-type StepType = 'videos' | 'materiais' | 'quiz' | 'conclusao';
+type StepType = 'videos' | 'materiais' | 'quiz' | 'entrega' | 'conclusao';
 
 export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSuccess }: ModalEstudoObreiroProps) {
     const [activeStep, setActiveStep] = useState<StepType>('videos');
     const [availableSteps, setAvailableSteps] = useState<StepType[]>([]);
     const [completedSteps, setCompletedSteps] = useState<Record<StepType, boolean>>({
-        videos: false, materiais: false, quiz: false, conclusao: false
+        videos: false, materiais: false, quiz: false, entrega: false, conclusao: false
     });
     const [statusFinal, setStatusFinal] = useState<string>('concluido');
 
@@ -32,7 +33,13 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
         if (videos.length > 0) steps.push('videos');
         if (documentos.length > 0) steps.push('materiais');
         if (quizzes.length > 0) steps.push('quiz');
-        steps.push('conclusao'); // Always have a conclusion step
+        
+        // Se for um trabalho formal (prancha), a etapa de entrega e obrigatoria e nunca auto-conclui
+        if (conteudo.tipo === 'trabalho') {
+            steps.push('entrega');
+        }
+        
+        steps.push('conclusao'); // Sempre tem uma etapa final de feedback
 
         setAvailableSteps(steps);
 
@@ -60,6 +67,7 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
             case 'videos': return 'Videos';
             case 'materiais': return 'Materiais de Apoio';
             case 'quiz': return 'Quiz';
+            case 'entrega': return 'Entrega';
             case 'conclusao': return 'Conclusao';
             default: return '';
         }
@@ -70,6 +78,7 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
             case 'videos': return '🎬';
             case 'materiais': return '📄';
             case 'quiz': return '🧩';
+            case 'entrega': return '📤';
             case 'conclusao': return '✅';
             default: return '';
         }
@@ -209,6 +218,14 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                                 pessoaId={pessoaId} 
                                 conteudoId={conteudo.id} 
                                 onComplete={(status) => handleStepComplete('quiz', status)}
+                            />
+                        )}
+
+                        {activeStep === 'entrega' && (
+                            <EntregaTrabalhoObreiro 
+                                pessoaId={pessoaId} 
+                                conteudoId={conteudo.id} 
+                                onComplete={(status) => handleStepComplete('entrega', status)}
                             />
                         )}
 
