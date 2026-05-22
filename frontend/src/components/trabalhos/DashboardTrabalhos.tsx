@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import ModalNovoConteudo from './ModalNovoConteudo';
 import ModalMateriaisTrabalho from './ModalMateriaisTrabalho';
+import ModalEstudoObreiro from './ModalEstudoObreiro';
 import ModalQuiz from './ModalQuiz';
 import ModalEditarConteudo from './ModalEditarConteudo';
 import ModalJornada from './ModalJornada';
@@ -51,6 +52,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [quizModalAtivo, setQuizModalAtivo] = useState(false);
     const [previewModals, setPreviewModals] = useState<{video: boolean, pdf: boolean, url: string}>({video: false, pdf: false, url: ''});
     const [correcaoTrabalho, setCorrecaoTrabalho] = useState<any>(null);
+    const [estudoObreiroConteudo, setEstudoObreiroConteudo] = useState<any>(null);
 
     const carregarEntregasAdmin = async () => {
         setIsLoadingAdmin(true);
@@ -471,7 +473,31 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                     <button onClick={() => setConteudoExcluir(item)} className="px-2.5 py-1.5 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-[8px] font-bold uppercase text-red-500/60 hover:text-red-400 cursor-pointer transition-all" title="Excluir trabalho">Excluir</button>
                                                 </>
                                             ) : (
-                                                <button onClick={() => setItemEmEstudo(item)} className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[9px] font-bold uppercase tracking-widest rounded-lg cursor-pointer hover:bg-yellow-500/20 transition-all">Estudar</button>
+                                                <button 
+                                                    onClick={() => setEstudoObreiroConteudo(item)} 
+                                                    className={`px-4 py-2 border text-[9px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all ${
+                                                        (item.progresso?.status === 'aguardando_correcao') 
+                                                            ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 hover:bg-blue-500/20' 
+                                                            : (item.progresso?.status === 'revisar' || item.entrega?.status === 'revisar')
+                                                                ? 'bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500/20'
+                                                                : (item.progresso?.status === 'concluido' || item.progresso?.status === 'aprovado' || item.entrega?.status === 'aprovado')
+                                                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20'
+                                                                    : (item.progresso?.status === 'em_andamento')
+                                                                        ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20'
+                                                                        : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20'
+                                                    }`}
+                                                >
+                                                    {(item.progresso?.status === 'aguardando_correcao') 
+                                                        ? 'Aguardando' 
+                                                        : (item.progresso?.status === 'revisar' || item.entrega?.status === 'revisar')
+                                                            ? 'Refazer'
+                                                            : (item.progresso?.status === 'concluido' || item.progresso?.status === 'aprovado' || item.entrega?.status === 'aprovado')
+                                                                ? 'Rever'
+                                                                : (item.progresso?.status === 'em_andamento')
+                                                                    ? 'Continuar'
+                                                                    : 'Estudar'
+                                                    }
+                                                </button>
                                             )}
                                         </div>
                                     </div>
@@ -716,6 +742,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     {materiaisModal.ativo && materiaisItem && <ModalMateriaisTrabalho conteudo={materiaisItem} tipoMaterial={materiaisModal.tipo} onClose={() => { setMateriaisModal({ativo: false, tipo: 'video'}); setMateriaisItem(null); }} onSuccess={carregarConteudos} />}
                     {quizModalAtivo && itemEmEstudo && <ModalQuiz conteudoId={itemEmEstudo.id} quizzesIniciais={itemEmEstudo.quizzes || []} onClose={() => setQuizModalAtivo(false)} onSuccess={carregarConteudos} />}
                     {correcaoTrabalho && <ModalCorrecaoTrabalho conteudo={correcaoTrabalho} lojaId={acesso.loja_id || acesso.id_loja} acesso={acesso} onClose={() => setCorrecaoTrabalho(null)} onSuccess={carregarConteudos} />}
+                    {estudoObreiroConteudo && <ModalEstudoObreiro conteudo={estudoObreiroConteudo} pessoaId={acesso.pessoa_id || acesso.id_membro} onClose={() => setEstudoObreiroConteudo(null)} onSuccess={carregarConteudos} />}
                 </>,
                 document.body
             )}
