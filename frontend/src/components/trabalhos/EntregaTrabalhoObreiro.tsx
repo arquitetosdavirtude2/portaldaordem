@@ -13,7 +13,7 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
     const [file, setFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-    const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger'} | null>(null);
+    const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger' | 'success' | 'info'} | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -36,25 +36,76 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
         if (!file) {
             setAlertConfig({
                 isOpen: true,
-                title: 'Atenção',
-                message: 'Por favor, selecione um arquivo para enviar.',
+                title: 'Arquivo ausente',
+                message: 'Selecione um arquivo PDF ou DOCX antes de enviar.',
                 variant: 'warning'
             });
             return;
         }
+
+        const allowedTypes = [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ];
+        
+        if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|doc|docx)$/i)) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Formato inválido',
+                message: 'O arquivo selecionado não é válido. Apenas PDF e DOCX são aceitos.',
+                variant: 'danger'
+            });
+            return;
+        }
+
+        const cId = conteudoId;
+        const pId = pessoaId;
+
+        if (!cId || !pId) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Trabalho sem ID',
+                message: 'Não foi possível identificar o trabalho. Recarregue a página e tente novamente.',
+                variant: 'danger'
+            });
+            return;
+        }
+
         setShowConfirm(true);
     };
 
     const executeSubmit = async () => {
         if (!file) return;
+
+        const cId = conteudoId;
+        const pId = pessoaId;
+
+        if (!cId || !pId) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Trabalho sem ID',
+                message: 'Não foi possível identificar o trabalho. Recarregue a página e tente novamente.',
+                variant: 'danger'
+            });
+            return;
+        }
         
         setShowConfirm(false);
         setIsSubmitting(true);
         try {
-            // 1. Upload do arquivo
+            console.log("Enviando trabalho", {
+                conteudoId: cId,
+                pessoaId: pId,
+                hasFile: !!file,
+                fileName: file.name,
+                fileType: file.type,
+            });
+
+            // 1. Upload do arquivo para a rota correta de entrega
             const formData = new FormData();
-            formData.append('pessoa_id', pessoaId.toString());
-            formData.append('conteudo_id', conteudoId.toString());
+            formData.append('pessoa_id', String(pId));
+            formData.append('conteudo_id', String(cId));
             formData.append('file', file);
 
             const resEntrega = await fetch('/api/trabalhos/entrega', {
@@ -63,10 +114,15 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
             });
 
             if (!resEntrega.ok) {
+                let errorMessage = 'O servidor encontrou um erro ao processar o envio.';
+                if (resEntrega.status === 422) {
+                    errorMessage = 'Os dados enviados estão incompletos ou inválidos. Verifique o arquivo e tente novamente.';
+                }
+                
                 setAlertConfig({
                     isOpen: true,
-                    title: 'Erro no Upload',
-                    message: 'Erro ao fazer o upload do arquivo.',
+                    title: 'Erro ao enviar trabalho',
+                    message: errorMessage,
                     variant: 'danger'
                 });
                 setIsSubmitting(false);
@@ -74,23 +130,39 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
             }
 
             // 2. Atualizar status de progresso para aguardando_correcao
-            await fetch('/api/trabalhos/progresso/json', {
+            const resProgresso = await fetch('/api/trabalhos/progresso/json', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    pessoa_id: pessoaId,
-                    conteudo_id: conteudoId,
+                    pessoa_id: pId,
+                    conteudo_id: cId,
                     status: 'aguardando_correcao'
                 })
             });
 
-            onComplete('aguardando_correcao');
-        } catch (e) {
-            console.error('Erro ao enviar trabalho:', e);
+            if (!resProgresso.ok) {
+                console.warn("Falha ao registrar progresso de aguardando_correcao, mas o arquivo foi salvo.");
+            }
+
+            // Sucesso total
             setAlertConfig({
                 isOpen: true,
-                title: 'Erro de Conexão',
-                message: 'Ocorreu um erro de conexao ao enviar seu trabalho. Verifique a internet e tente novamente.',
+                title: 'Sucesso',
+                message: 'Seu trabalho foi enviado para correção. Você será notificado quando for avaliado pelas Luzes da Loja.',
+                variant: 'success'
+            });
+
+            // Aguarda o alerta ser fechado e notifica o pai
+            setTimeout(() => {
+                onComplete('aguardando_correcao');
+            }, 3000);
+
+        } catch (e) {
+            console.error("Erro na execucao do envio:", e);
+            setAlertConfig({
+                isOpen: true,
+                title: 'Erro ao enviar trabalho',
+                message: 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.',
                 variant: 'danger'
             });
         } finally {
