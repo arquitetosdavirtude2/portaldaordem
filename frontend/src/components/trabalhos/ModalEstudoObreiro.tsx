@@ -225,9 +225,15 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                         </h1>
 
                         {conteudo.descricao_jornada && (
-                            <p className="font-serif text-[clamp(0.95rem,1vw,1.05rem)] text-white/50 leading-[1.7] font-normal tracking-[0.01em] max-w-2xl mx-auto" data-animate="fade-up" data-delay="3">
-                                {conteudo.descricao_jornada}
-                            </p>
+                            <div className="space-y-4 text-[clamp(0.95rem,1vw,1.05rem)] text-white/50 leading-relaxed font-serif font-normal tracking-[0.01em] max-w-2xl mx-auto" data-animate="fade-up" data-delay="3">
+                                {conteudo.descricao_jornada
+                                    .split(/\n\s*\n|\n/)
+                                    .map((p: string) => p.trim())
+                                    .filter(Boolean)
+                                    .map((paragrafo: string, index: number) => (
+                                        <p key={index}>{paragrafo}</p>
+                                    ))}
+                            </div>
                         )}
                     </div>
 
