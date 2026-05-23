@@ -233,7 +233,7 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
                     <div className="w-10 h-10 border-t-2 border-r-2 border-yellow-500 rounded-full animate-spin mb-4"></div>
                     <p className="font-serif text-[1rem] text-[rgba(235,238,245,0.7)] font-light">Verificando status do trabalho...</p>
                 </div>
-            ) : entregaAtual?.status === 'aguardando_correcao' ? (
+            ) : (entregaAtual?.status === 'aguardando_correcao' || entregaAtual?.status === 'pendente') ? (
                 <div className="w-full border border-yellow-500/20 bg-yellow-500/5 rounded-3xl p-10 text-center relative z-10 flex flex-col items-center shadow-lg">
                     <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-6 border border-yellow-500/30">
                         <svg className="w-7 h-7 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -249,7 +249,7 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
                         {entregaAtual.arquivo_nome && <span>Arquivo enviado: {entregaAtual.arquivo_nome}</span>}
                     </div>
                 </div>
-            ) : entregaAtual?.status === 'aprovado' ? (
+            ) : (entregaAtual?.status === 'aprovado' || entregaAtual?.status === 'concluido') ? (
                 <div className="w-full border border-emerald-500/20 bg-emerald-500/5 rounded-3xl p-10 text-center relative z-10 flex flex-col items-center shadow-lg">
                     <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6 border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
                         <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -264,7 +264,7 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
             ) : (
                 <>
                     {/* Caso tenha tido recusa/revisão solicitada */}
-                    {(entregaAtual?.status === 'refazer' || entregaAtual?.status === 'reprovado') && (
+                    {(entregaAtual?.status === 'refazer' || entregaAtual?.status === 'revisar' || entregaAtual?.status === 'reprovado') && (
                         <div className="w-full mb-8 border border-red-500/20 bg-red-500/5 rounded-2xl p-6 relative z-10 flex gap-4 text-left shadow-lg">
                             <div className="mt-1 flex-shrink-0">
                                 <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

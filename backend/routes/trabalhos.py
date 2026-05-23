@@ -269,7 +269,7 @@ async def upload_entrega(
         
     entrega.arquivo_url = f"/{UPLOAD_DIR}/{filename}"
     entrega.data_upload = datetime.now().isoformat()
-    entrega.status = "pendente"
+    entrega.status = "aguardando_correcao"
     
     db.commit()
     return {"message": "Trabalho enviado com sucesso"}
@@ -319,10 +319,48 @@ def corrigir_trabalho(
     elif status == 'revisar':
         prog.status = 'refazer'
     elif status == 'reprovado':
-        prog.status = 'reprovado'
+        prog.data_conclusao = None
         
     db.commit()
     return {"message": "Trabalho corrigido com sucesso"}
+
+@router.post("/entregas/admin/correcao")
+def corrigir_entrega_admin(
+    entrega_id: int = Form(...),
+    status: str = Form(...),
+    feedback: str = Form(""),
+    corrigido_por: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Endpoint simplificado para corrigir baseado no ID da entrega diretamente."""
+    entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.id == entrega_id).first()
+    if not entrega:
+        raise HTTPException(status_code=404, detail="Entrega não encontrada")
+        
+    entrega.status = status
+    entrega.feedback = feedback
+    entrega.corrigido_por = corrigido_por
+    entrega.data_correcao = datetime.now().isoformat()
+    
+    # Atualiza progresso de estudo correspondente
+    prog = db.query(ProgressoEstudo).filter(
+        ProgressoEstudo.pessoa_id == entrega.pessoa_id,
+        ProgressoEstudo.conteudo_id == entrega.conteudo_id
+    ).first()
+    
+    if not prog:
+        prog = ProgressoEstudo(pessoa_id=entrega.pessoa_id, conteudo_id=entrega.conteudo_id)
+        db.add(prog)
+        
+    if status == 'aprovado':
+        prog.status = 'concluido'
+        prog.data_conclusao = datetime.now().isoformat()
+    elif status == 'revisar' or status == 'refazer':
+        prog.status = 'refazer'
+        prog.data_conclusao = None
+        
+    db.commit()
+    return {"message": "Correção aplicada com sucesso"}
 
 @router.get("/minha-entrega/{conteudo_id}/{pessoa_id}")
 def get_minha_entrega(conteudo_id: int, pessoa_id: int, db: Session = Depends(get_db)):

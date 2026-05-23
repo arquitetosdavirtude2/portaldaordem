@@ -394,9 +394,9 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                             {ent.data_upload ? new Date(ent.data_upload).toLocaleString() : '---'}
                                         </td>
                                         <td className="px-6 py-4">
-                                            {ent.status === 'pendente' && (
+                                            {(ent.status === 'pendente' || ent.status === 'aguardando_correcao') && (
                                                 <span className="px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[9px] font-bold uppercase rounded-md">
-                                                    ⏳ Pendente
+                                                    ⏳ Aguardando Correção
                                                 </span>
                                             )}
                                             {ent.status === 'aprovado' && (
