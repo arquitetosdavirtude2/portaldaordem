@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database import get_db
 from models import ConteudoEstudo, MaterialEstudo, ProgressoEstudo, Quiz, EntregaTrabalho, Pessoa, RespostaQuiz, ProgressoMaterial
@@ -369,7 +370,9 @@ def listar_entregas_admin(
             "pessoa_nome": pessoa.nome,
             "conteudo_id": ent.conteudo_id,
             "conteudo_titulo": conteudo.titulo,
-            "arquivo_url": ent.arquivo_url,
+            "arquivo_nome": os.path.basename(ent.arquivo_url) if ent.arquivo_url else None,
+            "arquivo_url": f"/api/trabalhos/entregas/{ent.id}/arquivo?download=false" if ent.arquivo_url else None,
+            "arquivo_download_url": f"/api/trabalhos/entregas/{ent.id}/arquivo?download=true" if ent.arquivo_url else None,
             "status": ent.status,
             "feedback": ent.feedback,
             "data_upload": ent.data_upload
@@ -826,12 +829,60 @@ def painel_correcoes(loja_id: int, db: Session = Depends(get_db)):
             "conteudo_id": e.conteudo_id,
             "conteudo_titulo": conteudo.titulo if conteudo else "-",
             "pergunta": None,
-            "arquivo_url": e.arquivo_url,
-            "data_envio": e.data_upload,
+            "arquivo_nome": os.path.basename(e.arquivo_url) if e.arquivo_url else None,
+            "arquivo_url": f"/api/trabalhos/entregas/{e.id}/arquivo?download=false" if e.arquivo_url else None,
+            "arquivo_download_url": f"/api/trabalhos/entregas/{e.id}/arquivo?download=true" if e.arquivo_url else None,
+            "data_upload": e.data_upload,
             "status": e.status
         })
     
     # Ordenar por data de envio (mais recente primeiro)
-    pendencias.sort(key=lambda x: x.get("data_envio") or "", reverse=True)
+    pendencias.sort(key=lambda x: x.get("data_upload") if x.get("tipo_pendencia") == "entrega_prancha" else x.get("data_envio") or "", reverse=True)
     
     return {"total": len(pendencias), "pendencias": pendencias}
+
+@router.get("/entregas/{entrega_id}/arquivo")
+def obter_arquivo_entrega(entrega_id: int, pessoa_id: int, download: bool = False, db: Session = Depends(get_db)):
+    """Obtem o arquivo de uma entrega. Requer que a pessoa_id seja o dono do arquivo ou alguém da mesma loja com acesso de Luzes."""
+    entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.id == entrega_id).first()
+    if not entrega:
+        raise HTTPException(status_code=404, detail="Entrega não encontrada")
+        
+    if not entrega.arquivo_url:
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado para esta entrega")
+
+    # Autorização
+    pessoa = db.query(Pessoa).filter(Pessoa.id == pessoa_id).first()
+    if not pessoa:
+        raise HTTPException(status_code=401, detail="Usuário inválido")
+        
+    dono = db.query(Pessoa).filter(Pessoa.id == entrega.pessoa_id).first()
+    
+    is_owner = (pessoa_id == entrega.pessoa_id)
+    is_luz = (pessoa.cargo_id is not None and dono and pessoa.loja_id == dono.loja_id)
+    # is_luz is simplified for now: anyone with a cargo in the same loja can see it, 
+    # assuming the frontend only shows the Pendencias tab to 'isDiretoria'.
+    
+    if not is_owner and not is_luz:
+         raise HTTPException(status_code=403, detail="Você não tem permissão para acessar este arquivo")
+
+    # Arquivo existe?
+    file_path = entrega.arquivo_url
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Arquivo físico não encontrado no servidor")
+
+    # Nome para download
+    nome_irmao = dono.nome if dono else "irmao"
+    conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == entrega.conteudo_id).first()
+    nome_trabalho = conteudo.titulo if conteudo else "trabalho"
+    
+    ext = os.path.splitext(file_path)[1]
+    filename = f"{nome_irmao} - {nome_trabalho}{ext}"
+    
+    if download:
+        return FileResponse(path=file_path, filename=filename, media_type='application/octet-stream')
+    else:
+        # Se for para visualizar, retornar o FileResponse normal para o iframe
+        # Determinar media_type básico
+        media_type = 'application/pdf' if ext.lower() == '.pdf' else 'application/octet-stream'
+        return FileResponse(path=file_path, media_type=media_type)

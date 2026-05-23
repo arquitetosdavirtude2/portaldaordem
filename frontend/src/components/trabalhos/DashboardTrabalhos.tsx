@@ -9,6 +9,7 @@ import ModalQuiz from './ModalQuiz';
 import ModalEditarConteudo from './ModalEditarConteudo';
 import ModalJornada from './ModalJornada';
 import ModalCorrecaoTrabalho from './ModalCorrecaoTrabalho';
+import ModalCorrecaoEntrega from './ModalCorrecaoEntrega';
 
 interface DashboardTrabalhosProps {
     acesso: any;
@@ -53,6 +54,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [adminDeliveries, setAdminDeliveries] = useState<any[]>([]);
     const [isLoadingAdmin, setIsLoadingAdmin] = useState(false);
     const [evaluatingDelivery, setEvaluatingDelivery] = useState<any | null>(null);
+    const [modalCorrecaoEntrega, setModalCorrecaoEntrega] = useState<any | null>(null);
     const [adminFeedback, setAdminFeedback] = useState('');
     const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
 
@@ -772,6 +774,18 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     {novoConteudoModal && <ModalNovoConteudo lojaId={acesso.loja_id} tabAtiva={tabAtiva === 'correcoes' ? 'trabalhos' : tabAtiva} onClose={() => setNovoConteudoModal(false)} onSuccess={carregarConteudos} />}
                     {materiaisModal.ativo && materiaisItem && <ModalMateriaisTrabalho conteudo={materiaisItem} tipoMaterial={materiaisModal.tipo} onClose={() => { setMateriaisModal({ativo: false, tipo: 'video'}); setMateriaisItem(null); }} onSuccess={carregarConteudos} />}
                     {quizModalAtivo && itemEmEstudo && <ModalQuiz conteudoId={itemEmEstudo.id} quizzesIniciais={itemEmEstudo.quizzes || []} onClose={() => setQuizModalAtivo(false)} onSuccess={carregarConteudos} />}
+                    {modalCorrecaoEntrega && (
+                        <ModalCorrecaoEntrega 
+                            entrega={modalCorrecaoEntrega} 
+                            acessoId={getPessoaId(acesso) || 0} 
+                            onClose={() => setModalCorrecaoEntrega(null)} 
+                            onSuccess={() => {
+                                setModalCorrecaoEntrega(null);
+                                carregarEntregasAdmin();
+                                carregarConteudos();
+                            }} 
+                        />
+                    )}
                     {correcaoTrabalho && <ModalCorrecaoTrabalho conteudo={correcaoTrabalho} lojaId={acesso.loja_id || acesso.id_loja} acesso={acesso} onClose={() => setCorrecaoTrabalho(null)} onSuccess={carregarConteudos} />}
                     {estudoObreiroConteudo && <ModalEstudoObreiro conteudo={estudoObreiroConteudo} pessoaId={getPessoaId(acesso) || 0} onClose={() => setEstudoObreiroConteudo(null)} onSuccess={carregarConteudos} />}
                 </>,
