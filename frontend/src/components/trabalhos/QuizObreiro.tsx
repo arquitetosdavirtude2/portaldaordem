@@ -169,7 +169,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
         <div className="max-w-4xl mx-auto pb-10 font-sans">
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 lg:p-10 space-y-8">
                 <div className="text-center mb-10">
-                    <h2 className="text-2xl font-bold text-white mb-2">Quiz de Compreensao</h2>
+                    <h2 className="text-2xl font-bold text-white mb-2 font-sans tracking-normal">Quiz de Compreensao</h2>
                     <p className="text-xs text-gray-500 uppercase tracking-widest">
                         Responda as {perguntas.length} perguntas abaixo para concluir o estudo.
                     </p>
@@ -182,7 +182,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                                 <span className="text-yellow-500 text-sm font-bold">{idx + 1}</span>
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-sm font-bold text-gray-200 mb-1">{p.pergunta}</h3>
+                                <h3 className="text-sm font-bold text-gray-200 mb-1 font-sans tracking-normal">{p.pergunta}</h3>
                                 
                                 {p.tipo === 'livre' && (
                                     <textarea
