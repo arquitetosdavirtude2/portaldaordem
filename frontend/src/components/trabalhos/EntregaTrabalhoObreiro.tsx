@@ -171,79 +171,73 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
     };
 
     return (
-        <div className="max-w-3xl mx-auto pb-10">
-            <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-3xl p-8 lg:p-12 space-y-10 shadow-2xl relative overflow-hidden">
-                {/* Efeito de luz de fundo */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-32 bg-yellow-500/5 blur-[80px] pointer-events-none"></div>
+        <div className="w-full max-w-3xl mx-auto pb-10 flex flex-col items-center">
+            {/* Efeito luminoso de fundo */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500/5 blur-[120px] pointer-events-none rounded-full"></div>
 
-                <div className="text-center mb-10 relative z-10">
-                    <div className="w-16 h-16 mx-auto mb-5 bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.05)]">
-                        <span className="text-3xl opacity-80 drop-shadow-sm">📜</span>
-                    </div>
-                    <h2 className="font-serif text-[clamp(1.8rem,2.4vw,2.6rem)] font-normal text-[rgba(245,245,250,0.88)] leading-[1.12] tracking-[0.015em] mb-4" style={{ textShadow: '0 0 16px rgba(255,255,255,0.06)' }}>
-                        Entrega do Trabalho
-                    </h2>
-                    <p className="font-serif text-[clamp(0.95rem,1vw,1.05rem)] text-[rgba(220,225,235,0.66)] max-w-xl mx-auto leading-[1.65] font-normal tracking-[0.01em]">
-                        Envie seu trabalho em arquivo PDF ou DOCX para apreciacao das Luzes da Loja.
-                        Certifique-se de que o documento esta completo antes do envio.
-                    </p>
-                </div>
-
-                <div 
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    className="border-2 border-dashed border-white/15 hover:border-yellow-500/40 rounded-2xl p-12 text-center transition-all bg-white/[0.01] hover:bg-yellow-500/[0.02] group relative z-10"
-                >
-                    <input 
-                        type="file" 
-                        onChange={handleFileChange}
-                        accept=".pdf,.doc,.docx"
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
-                    />
-                    
-                    {!file ? (
-                        <>
-                            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:bg-yellow-500/10 group-hover:border-yellow-500/20 transition-all duration-300 shadow-lg">
-                                <span className="text-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-300">📤</span>
-                            </div>
-                            <p className="font-normal text-[rgba(235,238,245,0.82)] mb-2">
-                                Arraste o arquivo aqui ou <span className="text-yellow-500 font-medium group-hover:underline cursor-pointer">clique para selecionar</span>
-                            </p>
-                            <p className="text-[0.82rem] tracking-[0.12em] uppercase text-[rgba(160,170,190,0.72)] font-normal">Formatos aceitos: PDF, DOCX (Max: 10MB)</p>
-                        </>
-                    ) : (
-                        <div className="flex flex-col items-center animate-fade-in">
-                            <div className="w-20 h-20 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(234,179,8,0.15)] relative">
-                                <span className="text-3xl">📄</span>
-                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500/20 border border-emerald-500/50 rounded-full flex items-center justify-center backdrop-blur-md">
-                                    <span className="text-emerald-400 text-xs">✓</span>
+            <div 
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                className="w-full border border-dashed border-white/10 hover:border-yellow-500/30 rounded-3xl p-12 lg:p-16 text-center transition-all duration-500 bg-white/[0.01] hover:bg-yellow-500/[0.02] group relative z-10 flex flex-col items-center justify-center cursor-pointer shadow-lg"
+            >
+                <input 
+                    type="file" 
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+                />
+                
+                {!file ? (
+                    <>
+                        <div className="w-16 h-16 rounded-full bg-white/[0.03] flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-yellow-500/10 transition-all duration-500 border border-white/5 group-hover:border-yellow-500/20">
+                            <svg className="w-6 h-6 text-white/40 group-hover:text-yellow-500/80 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                        </div>
+                        <p className="font-serif text-[1.1rem] text-[rgba(235,238,245,0.8)] font-light mb-2">
+                            Arraste seu documento ou <span className="text-yellow-500/90 font-medium border-b border-yellow-500/30 group-hover:border-yellow-500 transition-colors">clique para procurar</span>
+                        </p>
+                        <p className="text-[0.7rem] tracking-[0.15em] uppercase text-white/30 font-normal mt-4">
+                            Apenas PDF ou DOCX (Max: 10MB)
+                        </p>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center animate-fade-in">
+                        <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-5 shadow-[0_0_30px_rgba(234,179,8,0.15)] relative border border-yellow-500/20">
+                            <svg className="w-7 h-7 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#050505] rounded-full flex items-center justify-center">
+                                <div className="w-5 h-5 bg-emerald-500/20 border border-emerald-500/50 rounded-full flex items-center justify-center">
+                                    <span className="text-emerald-400 text-[10px] font-bold">✓</span>
                                 </div>
                             </div>
-                            <p className="text-base font-bold text-white truncate max-w-[250px]">{file.name}</p>
-                            <p className="text-xs text-yellow-500/70 mt-3 font-medium uppercase tracking-wider hover:text-yellow-400 transition-colors">Clique ou arraste para trocar o arquivo</p>
                         </div>
-                    )}
-                </div>
-
-                <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-5 flex gap-4 items-start relative z-10 backdrop-blur-sm">
-                    <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0 border border-yellow-500/20">
-                        <span className="text-yellow-500 text-sm">ℹ️</span>
+                        <p className="text-sm font-medium text-white/90 truncate max-w-[280px] mb-2">{file.name}</p>
+                        <p className="text-[0.65rem] text-yellow-500/60 uppercase tracking-widest hover:text-yellow-400 transition-colors">
+                            Clique ou arraste para substituir
+                        </p>
                     </div>
-                    <p className="text-sm text-yellow-500/80 leading-relaxed pt-1 font-medium">
-                        Apos o envio, seu trabalho ficara com status <strong className="text-yellow-400">Aguardando Correcao</strong> e voce nao podera altera-lo, 
-                        salvo se as Luzes solicitarem ajustes.
+                )}
+            </div>
+
+            <div className="w-full mt-8 flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10 px-2">
+                <div className="flex items-start gap-3 opacity-60 max-w-sm">
+                    <svg className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-[0.75rem] text-white leading-relaxed text-left">
+                        Após envio, não será possível alterar o arquivo salvo se as Luzes solicitarem ajustes.
                     </p>
                 </div>
 
-                <div className="pt-8 border-t border-white/10 flex justify-end relative z-10">
-                    <button
-                        onClick={handleSubmitClick}
-                        disabled={!file || isSubmitting}
-                        className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold uppercase tracking-[0.2em] rounded-xl transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5"
-                    >
-                        {isSubmitting ? 'Enviando Trabalho...' : 'Enviar para Correcao'}
-                    </button>
-                </div>
+                <button
+                    onClick={handleSubmitClick}
+                    disabled={!file || isSubmitting}
+                    className="px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black text-[0.75rem] font-bold uppercase tracking-[0.2em] rounded-full transition-all shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] disabled:opacity-30 disabled:cursor-not-allowed transform hover:-translate-y-0.5 shrink-0"
+                >
+                    {isSubmitting ? 'Enviando...' : 'Enviar Trabalho'}
+                </button>
             </div>
 
             {/* Modais de Confirmação e Alerta */}
