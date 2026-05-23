@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 
 interface EntregaTrabalhoObreiroProps {
     pessoaId: number;
@@ -11,6 +12,8 @@ interface EntregaTrabalhoObreiroProps {
 export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplete }: EntregaTrabalhoObreiroProps) {
     const [file, setFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger'} | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -29,15 +32,23 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
         e.preventDefault();
     };
 
-    const handleSubmit = async () => {
+    const handleSubmitClick = () => {
         if (!file) {
-            alert('Por favor, selecione um arquivo para enviar.');
+            setAlertConfig({
+                isOpen: true,
+                title: 'Atenção',
+                message: 'Por favor, selecione um arquivo para enviar.',
+                variant: 'warning'
+            });
             return;
         }
+        setShowConfirm(true);
+    };
 
-        const confirmacao = window.confirm('Tem certeza de que deseja enviar este trabalho para correcao?');
-        if (!confirmacao) return;
-
+    const executeSubmit = async () => {
+        if (!file) return;
+        
+        setShowConfirm(false);
         setIsSubmitting(true);
         try {
             // 1. Upload do arquivo
@@ -52,7 +63,12 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
             });
 
             if (!resEntrega.ok) {
-                alert('Erro ao fazer o upload do arquivo.');
+                setAlertConfig({
+                    isOpen: true,
+                    title: 'Erro no Upload',
+                    message: 'Erro ao fazer o upload do arquivo.',
+                    variant: 'danger'
+                });
                 setIsSubmitting(false);
                 return;
             }
@@ -71,7 +87,12 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
             onComplete('aguardando_correcao');
         } catch (e) {
             console.error('Erro ao enviar trabalho:', e);
-            alert('Erro de conexao ao enviar trabalho.');
+            setAlertConfig({
+                isOpen: true,
+                title: 'Erro de Conexão',
+                message: 'Ocorreu um erro de conexao ao enviar seu trabalho. Verifique a internet e tente novamente.',
+                variant: 'danger'
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -142,7 +163,7 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
 
                 <div className="pt-8 border-t border-white/10 flex justify-end relative z-10">
                     <button
-                        onClick={handleSubmit}
+                        onClick={handleSubmitClick}
                         disabled={!file || isSubmitting}
                         className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold uppercase tracking-[0.2em] rounded-xl transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5"
                     >
@@ -150,6 +171,33 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
                     </button>
                 </div>
             </div>
+
+            {/* Modais de Confirmação e Alerta */}
+            <ConfirmDialog 
+                isOpen={showConfirm}
+                title="Confirmar envio do trabalho"
+                message={
+                    <>
+                        Após o envio, seu trabalho ficará com status <strong className="text-yellow-400">Aguardando Correção</strong> e não poderá ser alterado, salvo se as Luzes solicitarem ajustes.
+                    </>
+                }
+                confirmLabel="Enviar para Correção"
+                cancelLabel="Cancelar"
+                onConfirm={executeSubmit}
+                onCancel={() => setShowConfirm(false)}
+                variant="warning"
+                loading={isSubmitting}
+            />
+
+            <ConfirmDialog 
+                isOpen={!!alertConfig?.isOpen}
+                title={alertConfig?.title || ''}
+                message={alertConfig?.message || ''}
+                confirmLabel="OK"
+                onConfirm={() => setAlertConfig(null)}
+                variant={alertConfig?.variant || 'warning'}
+                isAlertOnly={true}
+            />
         </div>
     );
 }
