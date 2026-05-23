@@ -23,16 +23,27 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
     const isDocx = entrega.arquivo_nome?.toLowerCase().endsWith('.docx') || entrega.arquivo_nome?.toLowerCase().endsWith('.doc');
     const isPdf = entrega.arquivo_nome?.toLowerCase().endsWith('.pdf');
 
-    // URLs usando o novo endpoint (com pessoa_id injetado)
-    const urlVisualizar = entrega.arquivo_url ? `${entrega.arquivo_url}&pessoa_id=${acessoId}` : null;
-    const urlBaixar = entrega.arquivo_download_url ? `${entrega.arquivo_download_url}&pessoa_id=${acessoId}` : null;
+    // URLs usando apenas o id da entrega (sem pessoa_id=0)
+    const idDaEntrega = entrega.id || entrega.entrega_id;
+    const urlVisualizar = idDaEntrega ? `/api/trabalhos/entregas/${idDaEntrega}/arquivo?download=false` : null;
+    const urlBaixar = idDaEntrega ? `/api/trabalhos/entregas/${idDaEntrega}/arquivo?download=true` : null;
 
     useEffect(() => {
         if (showPreview && isDocx && urlVisualizar) {
             setDocxError(false);
             fetch(urlVisualizar)
                 .then(async res => {
-                    if (!res.ok) throw new Error("Falha ao carregar DOCX");
+                    if (!res.ok) {
+                        const text = await res.text();
+                        console.error("Erro ao carregar DOCX:", res.status, text);
+                        throw new Error("Falha ao carregar DOCX");
+                    }
+                    const contentType = res.headers.get("content-type") || "";
+                    if (contentType.includes("application/json")) {
+                        const err = await res.json();
+                        console.error("Erro ao carregar DOCX (JSON retornou):", err);
+                        throw new Error("Falha ao carregar DOCX");
+                    }
                     const blob = await res.blob();
                     if (docxContainerRef.current) {
                         await renderAsync(blob, docxContainerRef.current);
@@ -161,15 +172,19 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                                             try {
                                                 const res = await fetch(urlBaixar);
                                                 if (!res.ok) {
-                                                    const contentType = res.headers.get("content-type") || "";
-                                                    if (contentType.includes("application/json")) {
-                                                        const err = await res.json();
-                                                        setAlertConfig({isOpen: true, title: 'Erro', message: err.detail || 'Arquivo indisponível.', variant: 'danger'});
-                                                        return;
-                                                    }
-                                                    setAlertConfig({isOpen: true, title: 'Erro', message: 'Arquivo não encontrado no servidor.', variant: 'danger'});
+                                                    const text = await res.text();
+                                                    console.error("Erro ao baixar arquivo:", res.status, text);
+                                                    setAlertConfig({isOpen: true, title: 'Erro', message: 'Não foi possível baixar o arquivo. Verifique se ele existe no servidor.', variant: 'danger'});
                                                     return;
                                                 }
+
+                                                const contentType = res.headers.get("content-type") || "";
+                                                if (contentType.includes("application/json")) {
+                                                    const error = await res.json();
+                                                    setAlertConfig({isOpen: true, title: 'Erro', message: error.detail || 'Erro ao baixar arquivo.', variant: 'danger'});
+                                                    return;
+                                                }
+
                                                 const blob = await res.blob();
                                                 const url = window.URL.createObjectURL(blob);
                                                 const a = document.createElement('a');
@@ -185,6 +200,7 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                                                 a.remove();
                                                 window.URL.revokeObjectURL(url);
                                             } catch (e) {
+                                                console.error(e);
                                                 setAlertConfig({isOpen: true, title: 'Erro', message: 'Falha de comunicação ao tentar baixar o arquivo.', variant: 'danger'});
                                             }
                                         }}

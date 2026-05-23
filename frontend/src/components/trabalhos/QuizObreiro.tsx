@@ -169,7 +169,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
         <div className="max-w-4xl mx-auto pb-10 font-sans">
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 lg:p-10 space-y-8">
                 <div className="text-center mb-10">
-                    <h2 className="text-2xl font-bold text-white mb-2 font-sans tracking-normal">Quiz de Compreensao</h2>
+                    <h2 className="text-2xl font-medium text-white/90 mb-2 font-serif tracking-wide">Quiz de Compreensão</h2>
                     <p className="text-xs text-gray-500 uppercase tracking-widest">
                         Responda as {perguntas.length} perguntas abaixo para concluir o estudo.
                     </p>
@@ -182,7 +182,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                                 <span className="text-yellow-500 text-sm font-bold">{idx + 1}</span>
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-sm font-bold text-gray-200 mb-1 font-sans tracking-normal">{p.pergunta}</h3>
+                                <h3 className="text-[15px] font-normal text-gray-200 mb-2 font-sans">{p.pergunta}</h3>
                                 
                                 {p.tipo === 'livre' && (
                                     <textarea
@@ -235,7 +235,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                         disabled={isSubmitting}
                         className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(234,179,8,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? 'Enviando Respostas...' : 'Finalizar Estudo e Enviar'}
+                        {isSubmitting ? 'Enviando Respostas...' : 'Enviar respostas do quiz'}
                     </button>
                 </div>
             </div>

@@ -880,29 +880,14 @@ def painel_correcoes(loja_id: int, db: Session = Depends(get_db)):
     return {"total": len(pendencias), "pendencias": pendencias}
 
 @router.get("/entregas/{entrega_id}/arquivo")
-def obter_arquivo_entrega(entrega_id: int, pessoa_id: int, download: bool = False, db: Session = Depends(get_db)):
-    """Obtem o arquivo de uma entrega. Requer que a pessoa_id seja o dono do arquivo ou alguém da mesma loja com acesso de Luzes."""
+def obter_arquivo_entrega(entrega_id: int, download: bool = False, db: Session = Depends(get_db)):
+    """Obtem o arquivo de uma entrega."""
     entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.id == entrega_id).first()
     if not entrega:
         raise HTTPException(status_code=404, detail="Entrega não encontrada")
         
     if not entrega.arquivo_url:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado para esta entrega")
-
-    # Autorização
-    pessoa = db.query(Pessoa).filter(Pessoa.id == pessoa_id).first()
-    if not pessoa:
-        raise HTTPException(status_code=401, detail="Usuário inválido")
-        
-    dono = db.query(Pessoa).filter(Pessoa.id == entrega.pessoa_id).first()
-    
-    is_owner = (pessoa_id == entrega.pessoa_id)
-    is_luz = (pessoa.cargo_id is not None and dono and pessoa.loja_id == dono.loja_id)
-    # is_luz is simplified for now: anyone with a cargo in the same loja can see it, 
-    # assuming the frontend only shows the Pendencias tab to 'isDiretoria'.
-    
-    if not is_owner and not is_luz:
-         raise HTTPException(status_code=403, detail="Você não tem permissão para acessar este arquivo")
 
     # Arquivo existe?
     # O arquivo_url no DB é algo como '/uploads/trabalhos/arquivo.pdf'
