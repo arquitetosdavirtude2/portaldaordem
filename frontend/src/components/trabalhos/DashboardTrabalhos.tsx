@@ -8,7 +8,6 @@ import ModalEstudoObreiro from './ModalEstudoObreiro';
 import ModalQuiz from './ModalQuiz';
 import ModalEditarConteudo from './ModalEditarConteudo';
 import ModalJornada from './ModalJornada';
-import ModalCorrecaoTrabalho from './ModalCorrecaoTrabalho';
 import ModalCorrecaoEntrega from './ModalCorrecaoEntrega';
 
 interface DashboardTrabalhosProps {
@@ -53,10 +52,11 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     // Admin correction states
     const [adminDeliveries, setAdminDeliveries] = useState<any[]>([]);
     const [isLoadingAdmin, setIsLoadingAdmin] = useState(false);
-    const [evaluatingDelivery, setEvaluatingDelivery] = useState<any | null>(null);
-    const [modalCorrecaoEntrega, setModalCorrecaoEntrega] = useState<any | null>(null);
-    const [adminFeedback, setAdminFeedback] = useState('');
-    const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
+    
+    // Novo fluxo unificado
+    const [entregaParaCorrecao, setEntregaParaCorrecao] = useState<any | null>(null);
+    const [listaEntregasParaSelecao, setListaEntregasParaSelecao] = useState<{ativo: boolean, entregas: any[], tituloTrabalho: string}>({ativo: false, entregas: [], tituloTrabalho: ''});
+    const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger' | 'success'} | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -70,8 +70,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [materiaisModal, setMateriaisModal] = useState<{ativo: boolean, tipo: 'video'|'pdf'}>({ativo: false, tipo: 'video'});
     const [materiaisItem, setMateriaisItem] = useState<any>(null);
     const [quizModalAtivo, setQuizModalAtivo] = useState(false);
-    const [previewModals, setPreviewModals] = useState<{video: boolean, pdf: boolean, url: string}>({video: false, pdf: false, url: ''});
-    const [correcaoTrabalho, setCorrecaoTrabalho] = useState<any>(null);
     const [estudoObreiroConteudo, setEstudoObreiroConteudo] = useState<any>(null);
 
     const carregarEntregasAdmin = async () => {
@@ -116,9 +114,9 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                 setFileToUpload(null);
                 await carregarConteudos();
                 setItemEmEstudo(null);
-                alert('Prancha de trabalho enviada com sucesso para correção!');
+                alert('Trabalho enviado com sucesso para correção!');
             } else {
-                alert('Falha ao enviar a prancha do trabalho.');
+                alert('Falha ao enviar o trabalho.');
             }
         } catch (e) {
             console.error(e);
@@ -128,37 +126,31 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
         }
     };
 
-    const handleEnviarCorrecao = async (status: 'aprovado' | 'revisar') => {
-        if (!evaluatingDelivery) return;
-        setIsSubmittingCorrection(true);
-        try {
-            const formData = new FormData();
-            formData.append('pessoa_id', String(evaluatingDelivery.pessoa_id));
-            formData.append('conteudo_id', String(evaluatingDelivery.conteudo_id));
-            formData.append('status', status);
-            formData.append('feedback', adminFeedback);
-
-            const res = await fetch('/api/trabalhos/corrigir', {
-                method: 'POST',
-                body: formData
+    const handleAbrirListaOuCorrecao = (item: any) => {
+        // Encontra todas as entregas deste trabalho específico
+        const entregasDesteTrabalho = adminDeliveries.filter(ent => ent.conteudo_id === item.id);
+        
+        if (entregasDesteTrabalho.length === 0) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Nenhuma entrega encontrada',
+                message: 'Este trabalho ainda não possui envios aguardando correção.',
+                variant: 'warning'
             });
-
-            if (res.ok) {
-                setEvaluatingDelivery(null);
-                setAdminFeedback('');
-                await carregarEntregasAdmin();
-                await carregarConteudos();
-                alert(status === 'aprovado' ? 'Trabalho aprovado com sucesso!' : 'Solicitação de revisão enviada com sucesso!');
-            } else {
-                alert('Falha ao enviar correção.');
-            }
-        } catch (e) {
-            console.error(e);
-            alert('Erro de conexão ao enviar correção.');
-        } finally {
-            setIsSubmittingCorrection(false);
+            return;
+        }
+        
+        if (entregasDesteTrabalho.length === 1) {
+            setEntregaParaCorrecao(entregasDesteTrabalho[0]);
+        } else {
+            setListaEntregasParaSelecao({
+                ativo: true,
+                tituloTrabalho: item.titulo,
+                entregas: entregasDesteTrabalho
+            });
         }
     };
+
 
     const carregarConteudos = async () => {
         setIsLoading(true);
@@ -411,16 +403,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right space-x-2">
-                                            {ent.arquivo_url && (
-                                                <button
-                                                    onClick={() => setPreviewModals({video: false, pdf: true, url: ent.arquivo_url})}
-                                                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[8px] font-bold uppercase text-gray-400 cursor-pointer transition-all"
-                                                >
-                                                    📄 Ver Arquivo
-                                                </button>
-                                            )}
                                             <button
-                                                onClick={() => { setEvaluatingDelivery(ent); setAdminFeedback(ent.feedback || ''); }}
+                                                onClick={() => setEntregaParaCorrecao(ent)}
                                                 className="px-3 py-1.5 bg-emerald-500 text-black rounded-lg text-[8px] font-bold uppercase tracking-widest cursor-pointer transition-all hover:bg-emerald-400"
                                             >
                                                 🎯 Corrigir
@@ -491,7 +475,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                     <button onClick={() => { setItemEmEstudo(item); setQuizModalAtivo(true); }} className="p-2 bg-white/[0.03] hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Configurar quiz">
                                                         <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">🧩</span>
                                                     </button>
-                                                    <button onClick={() => setCorrecaoTrabalho(item)} className="p-2 bg-white/[0.03] hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Correcoes do trabalho">
+                                                    <button onClick={() => handleAbrirListaOuCorrecao(item)} className="p-2 bg-white/[0.03] hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Correcoes do trabalho">
                                                         <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">📋</span>
                                                     </button>
                                                     <div className="w-px h-6 bg-white/5 mx-1"></div>
@@ -588,15 +572,15 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                 {itemEmEstudo.materiais?.find((m: any) => m.tipo === 'pdf') ? (
                                                     <div className="flex items-center justify-between p-6 bg-white/[0.03] border border-white/10 rounded-2xl">
                                                         <p className="text-sm font-medium text-white">{itemEmEstudo.materiais.find((m: any) => m.tipo === 'pdf').nome}</p>
-                                                        <button onClick={() => setPreviewModals({video: false, pdf: true, url: itemEmEstudo.materiais.find((m: any) => m.tipo === 'pdf').url})} className="px-6 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase rounded-lg cursor-pointer">Visualizar</button>
+                                                        <button onClick={() => window.open(itemEmEstudo.materiais.find((m: any) => m.tipo === 'pdf').url, '_blank')} className="px-6 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase rounded-lg cursor-pointer">Visualizar</button>
                                                     </div>
                                                 ) : <p className="text-[10px] text-gray-700 uppercase font-bold tracking-widest">Nenhum documento.</p>}
                                             </div>
 
-                                            {/* Submissão da Prancha (Apenas para Trabalhos) */}
+                                            {/* Submissão do Trabalho (Apenas para Trabalhos) */}
                                             {itemEmEstudo.tipo === 'trabalho' && (
                                                 <div className="space-y-6 bg-white/[0.02] border border-white/5 rounded-2xl p-6">
-                                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Entrega da Prancha de Trabalho</h4>
+                                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Entrega do Trabalho</h4>
                                                     
                                                     {itemEmEstudo.entrega ? (
                                                         <div className="space-y-4">
@@ -628,7 +612,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
                                                             {itemEmEstudo.entrega.status === 'revisar' && (
                                                                 <div className="pt-4 border-t border-white/5 space-y-4">
-                                                                    <p className="text-xs text-gray-400">Por favor, faça os ajustes solicitados e reenvie a nova prancha abaixo:</p>
+                                                                    <p className="text-xs text-gray-400">Por favor, faça os ajustes solicitados e reenvie o novo arquivo abaixo:</p>
                                                                     <div className="flex flex-col gap-4">
                                                                         <input
                                                                             type="file"
@@ -642,7 +626,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                                                 onClick={handleEnviarTrabalho}
                                                                                 className="px-6 py-2.5 bg-yellow-500 text-black text-[9px] font-bold uppercase tracking-widest rounded-lg cursor-pointer hover:bg-yellow-400 transition-all w-fit"
                                                                             >
-                                                                                {isUploading ? 'Reenviando...' : 'Reenviar Prancha Corrigida'}
+                                                                                {isUploading ? 'Reenviando...' : 'Reenviar Trabalho Corrigido'}
                                                                             </button>
                                                                         )}
                                                                     </div>
@@ -651,7 +635,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                         </div>
                                                     ) : (
                                                         <div className="space-y-4">
-                                                            <p className="text-xs text-gray-400">Escreva sua prancha de estudos e submeta o arquivo digital abaixo para que as Luzes possam avaliar e aprovar a conclusão deste nível da constelação.</p>
+                                                            <p className="text-xs text-gray-400">Escreva seu trabalho de estudos e submeta o arquivo digital abaixo para que as Luzes possam avaliar e aprovar a conclusão deste nível da constelação.</p>
                                                             <div className="flex flex-col gap-4">
                                                                 <input
                                                                     type="file"
@@ -665,7 +649,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                                         onClick={handleEnviarTrabalho}
                                                                         className="px-6 py-2.5 bg-yellow-500 text-black text-[9px] font-bold uppercase tracking-widest rounded-lg cursor-pointer hover:bg-yellow-400 transition-all w-fit"
                                                                     >
-                                                                        {isUploading ? 'Enviando...' : 'Enviar Prancha de Trabalho'}
+                                                                        {isUploading ? 'Enviando...' : 'Enviar Trabalho'}
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -698,95 +682,74 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                         </div>
                     )}
 
-                    {evaluatingDelivery && (
-                        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-8">
-                            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setEvaluatingDelivery(null)}></div>
-                            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10 flex flex-col">
-                                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                                    <div>
-                                        <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Avaliação de Trabalho</span>
-                                        <h3 className="text-lg font-serif text-white uppercase">Corrigir Prancha de {evaluatingDelivery.pessoa_nome}</h3>
-                                    </div>
-                                    <button onClick={() => setEvaluatingDelivery(null)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 cursor-pointer">✕</button>
-                                </div>
-                                <div className="p-6 md:p-8 space-y-6">
-                                    <div>
-                                        <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Trabalho/Tema</label>
-                                        <p className="text-sm font-medium text-white uppercase">{evaluatingDelivery.conteudo_titulo}</p>
-                                    </div>
-                                    
-                                    {evaluatingDelivery.arquivo_url && (
-                                        <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center justify-between">
-                                            <span className="text-xs text-gray-400">Arquivo enviado: prancha_trabalho.pdf</span>
-                                            <button
-                                                onClick={() => setPreviewModals({video: false, pdf: true, url: evaluatingDelivery.arquivo_url})}
-                                                className="px-4 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[9px] font-bold uppercase rounded-lg hover:bg-blue-500/20 transition-all cursor-pointer"
-                                            >
-                                                📄 Visualizar Prancha
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest block">Feedback / Observações</label>
-                                        <textarea
-                                            value={adminFeedback}
-                                            onChange={(e) => setAdminFeedback(e.target.value)}
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-yellow-500/30 transition-all min-h-[120px]"
-                                            placeholder="Digite suas observações, correções ou orientações para o irmão..."
-                                        />
-                                    </div>
-
-                                    <div className="flex gap-4 pt-4 border-t border-white/5">
-                                        <button
-                                            disabled={isSubmittingCorrection}
-                                            onClick={() => handleEnviarCorrecao('revisar')}
-                                            className="flex-1 py-3 bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-wider rounded-xl hover:bg-red-500/20 transition-all cursor-pointer"
-                                        >
-                                            ⚠️ Solicitar Revisão
-                                        </button>
-                                        <button
-                                            disabled={isSubmittingCorrection}
-                                            onClick={() => handleEnviarCorrecao('aprovado')}
-                                            className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-400 transition-all cursor-pointer"
-                                        >
-                                            {isSubmittingCorrection ? 'Enviando...' : '✅ Aprovar Trabalho'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {previewModals.pdf && (
-                        <div className="fixed inset-0 z-[250] flex items-center justify-center p-8 bg-black/95 backdrop-blur-md">
-                            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden w-full h-full flex flex-col relative">
-                                <div className="p-4 flex justify-between items-center bg-white/[0.03] border-b border-white/5">
-                                    <h4 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest ml-2">Leitor de Documentos</h4>
-                                    <button onClick={() => setPreviewModals({...previewModals, pdf: false})} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">✕</button>
-                                </div>
-                                <iframe src={previewModals.url} className="flex-1 w-full border-none" />
-                            </div>
-                        </div>
-                    )}
 
                     <ModalEditarConteudo isOpen={!!conteudoEditando} onClose={() => setConteudoEditando(null)} conteudo={conteudoEditando} onSuccess={() => { carregarConteudos(); setConteudoEditando(null); }} />
                     {novoConteudoModal && <ModalNovoConteudo lojaId={acesso.loja_id} tabAtiva={tabAtiva === 'correcoes' ? 'trabalhos' : tabAtiva} onClose={() => setNovoConteudoModal(false)} onSuccess={carregarConteudos} />}
                     {materiaisModal.ativo && materiaisItem && <ModalMateriaisTrabalho conteudo={materiaisItem} tipoMaterial={materiaisModal.tipo} onClose={() => { setMateriaisModal({ativo: false, tipo: 'video'}); setMateriaisItem(null); }} onSuccess={carregarConteudos} />}
                     {quizModalAtivo && itemEmEstudo && <ModalQuiz conteudoId={itemEmEstudo.id} quizzesIniciais={itemEmEstudo.quizzes || []} onClose={() => setQuizModalAtivo(false)} onSuccess={carregarConteudos} />}
-                    {modalCorrecaoEntrega && (
+                    
+                    {entregaParaCorrecao && (
                         <ModalCorrecaoEntrega 
-                            entrega={modalCorrecaoEntrega} 
+                            entrega={entregaParaCorrecao} 
                             acessoId={getPessoaId(acesso) || 0} 
-                            onClose={() => setModalCorrecaoEntrega(null)} 
+                            onClose={() => setEntregaParaCorrecao(null)} 
                             onSuccess={() => {
-                                setModalCorrecaoEntrega(null);
+                                setEntregaParaCorrecao(null);
                                 carregarEntregasAdmin();
                                 carregarConteudos();
                             }} 
                         />
                     )}
-                    {correcaoTrabalho && <ModalCorrecaoTrabalho conteudo={correcaoTrabalho} lojaId={acesso.loja_id || acesso.id_loja} acesso={acesso} onClose={() => setCorrecaoTrabalho(null)} onSuccess={carregarConteudos} />}
+                    
+                    {listaEntregasParaSelecao.ativo && (
+                        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''})}></div>
+                            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden relative z-10 flex flex-col shadow-2xl">
+                                <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                                    <div>
+                                        <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-0.5">Selecione o Irmão</span>
+                                        <h3 className="text-sm font-serif text-white uppercase truncate">{listaEntregasParaSelecao.tituloTrabalho}</h3>
+                                    </div>
+                                    <button onClick={() => setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''})} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400">✕</button>
+                                </div>
+                                <div className="p-4 flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
+                                    {listaEntregasParaSelecao.entregas.map(ent => (
+                                        <button 
+                                            key={ent.id}
+                                            onClick={() => {
+                                                setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''});
+                                                setEntregaParaCorrecao(ent);
+                                            }}
+                                            className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-yellow-500/30 hover:bg-yellow-500/5 transition-all text-left"
+                                        >
+                                            <div>
+                                                <p className="text-xs font-medium text-white">{ent.pessoa_nome}</p>
+                                                <p className="text-[9px] text-gray-500 uppercase mt-1">Data: {new Date(ent.data_upload).toLocaleDateString()}</p>
+                                            </div>
+                                            <span className="text-xs">➡️</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {alertConfig?.isOpen && (
+                        <div className="fixed bottom-6 right-6 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300">
+                            <div className={`p-4 rounded-xl border shadow-xl flex gap-4 items-start max-w-sm ${
+                                alertConfig.variant === 'warning' ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500' :
+                                alertConfig.variant === 'danger' ? 'bg-red-500/10 border-red-500/30 text-red-500' :
+                                'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                            }`}>
+                                <div className="flex-1">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-widest mb-1">{alertConfig.title}</h4>
+                                    <p className="text-xs opacity-80">{alertConfig.message}</p>
+                                </div>
+                                <button onClick={() => setAlertConfig(null)} className="opacity-50 hover:opacity-100 transition-opacity">✕</button>
+                            </div>
+                        </div>
+                    )}
+                    
                     {estudoObreiroConteudo && <ModalEstudoObreiro conteudo={estudoObreiroConteudo} pessoaId={getPessoaId(acesso) || 0} onClose={() => setEstudoObreiroConteudo(null)} onSuccess={carregarConteudos} />}
                 </>,
                 document.body
