@@ -62,11 +62,21 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
         const cId = conteudoId;
         const pId = pessoaId;
 
-        if (!cId || !pId) {
+        if (!cId) {
             setAlertConfig({
                 isOpen: true,
                 title: 'Trabalho sem ID',
                 message: 'Não foi possível identificar o trabalho. Recarregue a página e tente novamente.',
+                variant: 'danger'
+            });
+            return;
+        }
+
+        if (!pId) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Usuário sem ID',
+                message: 'Não foi possível identificar o seu usuário. Faça login novamente ou verifique a conexão.',
                 variant: 'danger'
             });
             return;
@@ -81,11 +91,21 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
         const cId = conteudoId;
         const pId = pessoaId;
 
-        if (!cId || !pId) {
+        if (!cId) {
             setAlertConfig({
                 isOpen: true,
                 title: 'Trabalho sem ID',
                 message: 'Não foi possível identificar o trabalho. Recarregue a página e tente novamente.',
+                variant: 'danger'
+            });
+            return;
+        }
+
+        if (!pId) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Usuário sem ID',
+                message: 'Não foi possível identificar o seu usuário. Faça login novamente ou verifique a conexão.',
                 variant: 'danger'
             });
             return;

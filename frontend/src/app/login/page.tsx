@@ -52,6 +52,7 @@ export default function LoginPage() {
                 const estadoDefault = states.length > 0 ? states[0] : 'BR';
 
                 localStorage.setItem('acesso', JSON.stringify({
+                    id: data.id || null,
                     login: identificacao,
                     tipo: userTipo,
                     role: userRole,

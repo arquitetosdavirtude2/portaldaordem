@@ -20,6 +20,7 @@ class LoginResponse(BaseModel):
     role: Optional[str] = None # same as above, normalizing
     allowed_states: list = [] # List of siglas
     message: Optional[str] = None
+    id: Optional[int] = None
     loja_id: Optional[int] = None
     loja_nome: Optional[str] = None
     loja_numero: Optional[str] = None
@@ -61,6 +62,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
                 return LoginResponse(
                     success=True, 
+                    id=user.id,
                     tipo="leitor", 
                     role=user.role, 
                     allowed_states=states,
@@ -112,6 +114,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
                 
                 return LoginResponse(
                     success=True,
+                    id=pessoa.id,
                     tipo="membro",
                     role=user_role,
                     allowed_states=states,
