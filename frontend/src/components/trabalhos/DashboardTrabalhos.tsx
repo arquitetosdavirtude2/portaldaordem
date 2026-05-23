@@ -15,6 +15,24 @@ interface DashboardTrabalhosProps {
     isDiretoria?: boolean;
 }
 
+export function normalizeTipo(tipo: string = "") {
+    return tipo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+export function getPessoaId(usuarioAtual: any): number | null {
+    if (!usuarioAtual) return null;
+    const rawId = usuarioAtual.pessoa_id ?? usuarioAtual.pessoaId ?? usuarioAtual.pessoa?.id ?? usuarioAtual.membro?.id ?? usuarioAtual.irmao?.id ?? usuarioAtual.id;
+    const parsed = Number(rawId);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+export function getConteudoId(item: any): number | null {
+    if (!item) return null;
+    const rawId = item.id ?? item.conteudo_id ?? item.conteudoId ?? item.trabalho_id ?? item.trabalhoId;
+    const parsed = Number(rawId);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTrabalhosProps) {
     const [grauAtivo, setGrauAtivo] = useState<number>(1); 
     const [tabAtiva, setTabAtivo] = useState<'trabalhos' | 'prelecoes' | 'correcoes'>('trabalhos');
@@ -143,7 +161,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const carregarConteudos = async () => {
         setIsLoading(true);
         try {
-            const pId = acesso.id || acesso.pessoa_id;
+            const pId = getPessoaId(acesso);
             const lid = acesso.loja_id || acesso.id_loja;
             
             let url = `/api/trabalhos/?`;
@@ -198,7 +216,13 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
 
     const itensFiltrados = conteudos.filter(item => {
         const matchesGrau = grauAtivo === 0 || item.grau === grauAtivo;
-        const matchesTipo = item.tipo?.toLowerCase().includes(tabAtiva.replace('s', ''));
+        
+        const normTipo = normalizeTipo(item.tipo);
+        let matchesTipo = false;
+        if (tabAtiva === 'trabalhos' && normTipo === 'trabalho') matchesTipo = true;
+        if (tabAtiva === 'prelecoes' && normTipo === 'prelecao') matchesTipo = true;
+        if (tabAtiva === 'correcoes') matchesTipo = true;
+        
         return matchesGrau && matchesTipo;
     });
 
@@ -474,7 +498,14 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                 </>
                                             ) : (
                                                 <button 
-                                                    onClick={() => setEstudoObreiroConteudo({ ...item, id: item.id ?? item.conteudo_id })} 
+                                                    onClick={() => {
+                                                        const cid = getConteudoId(item);
+                                                        if (!cid) {
+                                                            alert("Trabalho sem ID: Não foi possível identificar este conteúdo.");
+                                                            return;
+                                                        }
+                                                        setEstudoObreiroConteudo({ ...item, id: cid, conteudo_id: cid });
+                                                    }}
                                                     className={`px-4 py-2 border text-[9px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all ${
                                                         (item.progresso?.status === 'aguardando_correcao') 
                                                             ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 hover:bg-blue-500/20' 
@@ -742,7 +773,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     {materiaisModal.ativo && materiaisItem && <ModalMateriaisTrabalho conteudo={materiaisItem} tipoMaterial={materiaisModal.tipo} onClose={() => { setMateriaisModal({ativo: false, tipo: 'video'}); setMateriaisItem(null); }} onSuccess={carregarConteudos} />}
                     {quizModalAtivo && itemEmEstudo && <ModalQuiz conteudoId={itemEmEstudo.id} quizzesIniciais={itemEmEstudo.quizzes || []} onClose={() => setQuizModalAtivo(false)} onSuccess={carregarConteudos} />}
                     {correcaoTrabalho && <ModalCorrecaoTrabalho conteudo={correcaoTrabalho} lojaId={acesso.loja_id || acesso.id_loja} acesso={acesso} onClose={() => setCorrecaoTrabalho(null)} onSuccess={carregarConteudos} />}
-                    {estudoObreiroConteudo && <ModalEstudoObreiro conteudo={estudoObreiroConteudo} pessoaId={acesso.id || acesso.pessoa_id || acesso.id_membro} onClose={() => setEstudoObreiroConteudo(null)} onSuccess={carregarConteudos} />}
+                    {estudoObreiroConteudo && <ModalEstudoObreiro conteudo={estudoObreiroConteudo} pessoaId={getPessoaId(acesso) || 0} onClose={() => setEstudoObreiroConteudo(null)} onSuccess={carregarConteudos} />}
                 </>,
                 document.body
             )}

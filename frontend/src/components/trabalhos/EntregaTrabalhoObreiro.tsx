@@ -172,13 +172,25 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
 
     return (
         <div className="w-full max-w-3xl mx-auto pb-10 flex flex-col items-center">
+            
+            <style>{`
+                .study-dropzone {
+                    transition: border-color 0.35s ease, background 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+                }
+                .study-dropzone:hover {
+                    transform: translateY(-2px);
+                    border-color: rgba(212, 175, 55, 0.55);
+                    box-shadow: 0 0 28px rgba(212, 175, 55, 0.08);
+                }
+            `}</style>
+
             {/* Efeito luminoso de fundo */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500/5 blur-[120px] pointer-events-none rounded-full"></div>
 
             <div 
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                className="w-full border border-dashed border-white/10 hover:border-yellow-500/30 rounded-3xl p-12 lg:p-16 text-center transition-all duration-500 bg-white/[0.01] hover:bg-yellow-500/[0.02] group relative z-10 flex flex-col items-center justify-center cursor-pointer shadow-lg"
+                className="study-dropzone w-full border border-dashed border-white/10 hover:border-yellow-500/30 rounded-3xl p-12 lg:p-16 text-center transition-all duration-500 bg-white/[0.01] hover:bg-yellow-500/[0.02] group relative z-10 flex flex-col items-center justify-center cursor-pointer shadow-lg"
             >
                 <input 
                     type="file" 

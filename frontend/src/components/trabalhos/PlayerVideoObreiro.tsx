@@ -43,7 +43,7 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
     useEffect(() => {
         const fetchProgresso = async () => {
             if (!conteudoId || !pessoaId || videos.length === 0) {
-                console.warn("Progresso material não carregado: conteudoId, pessoaId ou videos ausentes", { conteudoId, pessoaId, qtdVideos: videos.length });
+                // Estado normal sem videos
                 setIsLoading(false);
                 return;
             }
