@@ -59,6 +59,15 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger' | 'success'} | null>(null);
 
     useEffect(() => {
+        if (alertConfig?.isOpen) {
+            const timer = setTimeout(() => {
+                setAlertConfig(null);
+            }, 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [alertConfig]);
+
+    useEffect(() => {
         setIsMounted(true);
     }, []);
 
@@ -91,10 +100,10 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     };
 
     useEffect(() => {
-        if (tabAtiva === 'correcoes' && acesso) {
+        if (acesso && isDiretoria) {
             carregarEntregasAdmin();
         }
-    }, [tabAtiva, acesso]);
+    }, [acesso, isDiretoria]);
 
     const handleEnviarTrabalho = async () => {
         if (!fileToUpload || !itemEmEstudo || !acesso.id) return;
@@ -692,7 +701,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     {entregaParaCorrecao && (
                         <ModalCorrecaoEntrega 
                             entrega={entregaParaCorrecao} 
-                            acessoId={getPessoaId(acesso) || 0} 
+                            acessoId={acesso.id || acesso.pessoa_id || 0} 
                             onClose={() => setEntregaParaCorrecao(null)} 
                             onSuccess={() => {
                                 setEntregaParaCorrecao(null);
