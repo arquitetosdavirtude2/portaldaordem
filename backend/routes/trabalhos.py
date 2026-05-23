@@ -323,6 +323,27 @@ def corrigir_trabalho(
     db.commit()
     return {"message": "Trabalho corrigido com sucesso"}
 
+@router.get("/minha-entrega/{conteudo_id}/{pessoa_id}")
+def get_minha_entrega(conteudo_id: int, pessoa_id: int, db: Session = Depends(get_db)):
+    entrega = db.query(EntregaTrabalho).filter(
+        EntregaTrabalho.pessoa_id == pessoa_id,
+        EntregaTrabalho.conteudo_id == conteudo_id
+    ).order_by(EntregaTrabalho.id.desc()).first()
+    
+    if not entrega:
+        return {"existe": False}
+        
+    return {
+        "existe": True,
+        "id": entrega.id,
+        "conteudo_id": entrega.conteudo_id,
+        "pessoa_id": entrega.pessoa_id,
+        "arquivo_url": entrega.arquivo_url,
+        "status": entrega.status,
+        "feedback": entrega.feedback,
+        "data_upload": entrega.data_upload
+    }
+
 @router.get("/entregas/admin")
 def listar_entregas_admin(
     loja_id: int,
