@@ -105,11 +105,13 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-32 bg-yellow-500/5 blur-[80px] pointer-events-none"></div>
 
                 <div className="text-center mb-10 relative z-10">
-                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-yellow-500/20 to-transparent border border-yellow-500/30 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.1)]">
-                        <span className="text-4xl opacity-90">📜</span>
+                    <div className="w-16 h-16 mx-auto mb-5 bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.05)]">
+                        <span className="text-3xl opacity-80 drop-shadow-sm">📜</span>
                     </div>
-                    <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Entrega do Trabalho</h2>
-                    <p className="text-sm text-gray-400 max-w-md mx-auto leading-relaxed">
+                    <h2 className="text-2xl lg:text-[2rem] font-serif font-medium text-white/90 mb-4 tracking-wide drop-shadow-md">
+                        Entrega do Trabalho
+                    </h2>
+                    <p className="text-[15px] text-gray-300/70 max-w-xl mx-auto leading-relaxed font-light">
                         Envie seu trabalho em arquivo PDF ou DOCX para apreciacao das Luzes da Loja.
                         Certifique-se de que o documento esta completo antes do envio.
                     </p>
