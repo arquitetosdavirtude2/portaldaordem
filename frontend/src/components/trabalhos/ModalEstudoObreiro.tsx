@@ -138,10 +138,12 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                             </span>
                         </div>
                         
-                        <h1 className="text-3xl font-bold text-white tracking-tight mb-4 leading-tight">{conteudo.titulo}</h1>
+                        <h1 className="font-serif text-[clamp(1.9rem,2.4vw,2.8rem)] text-[rgba(248,248,252,0.9)] font-medium leading-[1.08] tracking-[0.01em] mb-4 drop-shadow-sm">
+                            {conteudo.titulo}
+                        </h1>
                         
                         {conteudo.descricao_jornada && (
-                            <p className="text-sm text-gray-400 leading-relaxed font-medium">
+                            <p className="font-serif text-[clamp(0.95rem,1vw,1.08rem)] text-[rgba(220,225,235,0.68)] leading-[1.65] font-normal tracking-[0.01em]">
                                 {conteudo.descricao_jornada}
                             </p>
                         )}
@@ -165,45 +167,22 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                 {/* Área Direita (Trilha e Conteúdo) */}
                 <div className="flex-1 flex flex-col relative h-full overflow-hidden bg-black/20">
                     
-                    {/* Trilha de Etapas (Stepper) */}
-                    <div className="px-6 lg:px-12 py-6 bg-black/40 border-b border-white/5 shrink-0 flex justify-center backdrop-blur-md relative z-30">
-                        <div className="w-full max-w-2xl relative">
-                            {/* Linha de Conexão Fundo */}
-                            <div className="absolute top-[20px] left-8 right-8 h-[2px] bg-white/5 z-0"></div>
-                            {/* Linha de Conexão Preenchida */}
-                            <div 
-                                className="absolute top-[20px] left-8 h-[2px] bg-yellow-500 z-0 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(234,179,8,0.5)]"
-                                style={{ width: `calc(${progressPercent}% - 64px)` }}
-                            ></div>
-
-                            <div className="flex justify-between relative z-10">
-                                {availableSteps.map((step, idx) => {
-                                    const isCompleted = completedSteps[step] || availableSteps.indexOf(activeStep) > idx;
-                                    const isActive = activeStep === step;
-                                    
-                                    return (
-                                        <div key={step} className="flex flex-col items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${
-                                                isActive 
-                                                    ? 'bg-[#1a1a1a] border-yellow-500 text-yellow-500 scale-110 shadow-[0_0_20px_rgba(234,179,8,0.4)]' 
-                                                    : isCompleted
-                                                        ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500/80'
-                                                        : 'bg-[#0a0a0a] border-white/10 text-gray-600'
-                                            }`}>
-                                                <span className={`${isActive ? 'opacity-100 text-lg' : 'opacity-80 text-sm'} transition-all`}>
-                                                    {getStepIcon(step)}
-                                                </span>
-                                            </div>
-                                            <span className={`text-[9px] font-bold uppercase tracking-[0.15em] transition-colors duration-300 ${
-                                                isActive ? 'text-yellow-500' : isCompleted ? 'text-gray-400' : 'text-gray-600'
-                                            }`}>
-                                                {getStepLabel(step)}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                    {/* Mini Indicador de Etapa (Substitui a barra gigante) */}
+                    <div className="px-6 lg:px-12 pt-6 lg:pt-8 shrink-0 flex flex-wrap items-center gap-2 relative z-30 opacity-80">
+                        {availableSteps.map((step, idx) => {
+                            const isActive = activeStep === step;
+                            const isCompleted = completedSteps[step] || availableSteps.indexOf(activeStep) > idx;
+                            return (
+                                <div key={step} className="flex items-center gap-2">
+                                    <span className={`text-[10px] uppercase tracking-[0.18em] transition-colors duration-300 ${isActive ? 'text-yellow-500 font-bold' : isCompleted ? 'text-gray-400 font-medium' : 'text-gray-600 font-medium'}`}>
+                                        {getStepLabel(step)}
+                                    </span>
+                                    {idx < availableSteps.length - 1 && (
+                                        <span className="text-gray-700/50 text-[10px] font-bold">→</span>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     {/* Área Principal de Rolagem */}

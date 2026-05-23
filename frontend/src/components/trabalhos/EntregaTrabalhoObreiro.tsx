@@ -108,10 +108,10 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
                     <div className="w-16 h-16 mx-auto mb-5 bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.05)]">
                         <span className="text-3xl opacity-80 drop-shadow-sm">📜</span>
                     </div>
-                    <h2 className="text-2xl lg:text-[2rem] font-serif font-medium text-white/90 mb-4 tracking-wide drop-shadow-md">
+                    <h2 className="font-serif text-[clamp(1.8rem,2.4vw,2.6rem)] font-normal text-[rgba(245,245,250,0.88)] leading-[1.12] tracking-[0.015em] mb-4" style={{ textShadow: '0 0 16px rgba(255,255,255,0.06)' }}>
                         Entrega do Trabalho
                     </h2>
-                    <p className="text-[15px] text-gray-300/70 max-w-xl mx-auto leading-relaxed font-light">
+                    <p className="font-serif text-[clamp(0.95rem,1vw,1.05rem)] text-[rgba(220,225,235,0.66)] max-w-xl mx-auto leading-[1.65] font-normal tracking-[0.01em]">
                         Envie seu trabalho em arquivo PDF ou DOCX para apreciacao das Luzes da Loja.
                         Certifique-se de que o documento esta completo antes do envio.
                     </p>
@@ -131,13 +131,13 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
                     
                     {!file ? (
                         <>
-                            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:bg-yellow-500/10 group-hover:border-yellow-500/30 transition-all duration-300 shadow-lg">
+                            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:bg-yellow-500/10 group-hover:border-yellow-500/20 transition-all duration-300 shadow-lg">
                                 <span className="text-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-300">📤</span>
                             </div>
-                            <p className="text-base font-medium text-gray-300 mb-2">
-                                Arraste o arquivo aqui ou <span className="text-yellow-500 font-semibold group-hover:underline">clique para selecionar</span>
+                            <p className="font-normal text-[rgba(235,238,245,0.82)] mb-2">
+                                Arraste o arquivo aqui ou <span className="text-yellow-500 font-medium group-hover:underline cursor-pointer">clique para selecionar</span>
                             </p>
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-widest">Formatos aceitos: PDF, DOCX (Max: 10MB)</p>
+                            <p className="text-[0.82rem] tracking-[0.12em] uppercase text-[rgba(160,170,190,0.72)] font-normal">Formatos aceitos: PDF, DOCX (Max: 10MB)</p>
                         </>
                     ) : (
                         <div className="flex flex-col items-center animate-fade-in">

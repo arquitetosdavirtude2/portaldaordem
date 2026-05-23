@@ -44,14 +44,23 @@ export function ConfirmDialog({
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <style>{`
+                @keyframes confirmOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes confirmCardIn { from { opacity: 0; transform: translateY(12px) scale(0.96); filter: blur(4px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+            `}</style>
+
             {/* Backdrop */}
             <div 
-                className="absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity" 
+                className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+                style={{ animation: 'confirmOverlayIn 180ms ease-out' }}
                 onClick={() => !loading && onCancel && onCancel()}
             ></div>
 
             {/* Modal Card */}
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b0b0f] p-6 lg:p-8 shadow-2xl relative z-10 animate-fade-in-up">
+            <div 
+                className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b0b0f] p-6 lg:p-8 shadow-2xl relative z-10"
+                style={{ animation: 'confirmCardIn 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+            >
                 
                 {/* Efeito luminoso no topo baseado na variante */}
                 {variant === 'warning' && (
@@ -61,11 +70,11 @@ export function ConfirmDialog({
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[200px] h-20 bg-red-500/10 blur-[40px] pointer-events-none"></div>
                 )}
 
-                <h3 className="font-serif text-xl lg:text-2xl text-white font-bold tracking-tight mb-4 relative z-10">
+                <h3 className="font-serif text-[clamp(1.45rem,2vw,2rem)] text-[rgba(248,248,252,0.9)] font-normal leading-[1.18] tracking-[0.015em] mb-4 relative z-10 drop-shadow-sm">
                     {title}
                 </h3>
 
-                <div className="text-sm leading-relaxed text-gray-400 mb-8 relative z-10 font-medium">
+                <div className="text-[0.95rem] leading-[1.6] text-[rgba(220,225,235,0.68)] font-normal mb-8 relative z-10">
                     {message}
                 </div>
 
