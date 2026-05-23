@@ -31,14 +31,14 @@ export function ConfirmDialog({
     const getConfirmButtonStyles = () => {
         switch (variant) {
             case 'danger':
-                return 'bg-red-500 hover:bg-red-400 text-white shadow-[0_0_15px_rgba(239,68,68,0.2)]';
+                return 'bg-red-500/10 border border-red-500/30 hover:bg-red-500 hover:border-red-500 text-red-500 hover:text-white shadow-[0_0_15px_rgba(239,68,68,0.15)]';
             case 'success':
-                return 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)]';
+                return 'bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500 hover:border-emerald-500 text-emerald-500 hover:text-white shadow-[0_0_15px_rgba(16,185,129,0.15)]';
             case 'info':
-                return 'bg-blue-500 hover:bg-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]';
+                return 'bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500 hover:border-blue-500 text-blue-500 hover:text-white shadow-[0_0_15px_rgba(59,130,246,0.15)]';
             case 'warning':
             default:
-                return 'bg-yellow-500 hover:bg-yellow-400 text-black shadow-[0_0_15px_rgba(234,179,8,0.2)]';
+                return 'bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500 hover:border-yellow-500 text-yellow-500 hover:text-black shadow-[0_0_15px_rgba(234,179,8,0.15)]';
         }
     };
 
@@ -70,7 +70,7 @@ export function ConfirmDialog({
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[200px] h-20 bg-red-500/10 blur-[40px] pointer-events-none"></div>
                 )}
 
-                <h3 className="font-serif text-[clamp(1.45rem,2vw,2rem)] text-[rgba(248,248,252,0.9)] font-normal leading-[1.18] tracking-[0.015em] mb-4 relative z-10 drop-shadow-sm">
+                <h3 className="font-serif text-[clamp(1.2rem,1.8vw,1.6rem)] text-[rgba(248,248,252,0.9)] font-light leading-[1.3] tracking-[0.05em] mb-4 relative z-10 drop-shadow-sm uppercase">
                     {title}
                 </h3>
 
@@ -83,7 +83,7 @@ export function ConfirmDialog({
                         <button 
                             onClick={onCancel}
                             disabled={loading}
-                            className="flex-1 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-widest text-gray-300 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 rounded-xl bg-white/5 border border-white/10 px-5 py-3.5 text-[0.7rem] sm:text-[0.75rem] font-medium uppercase tracking-[0.15em] text-white/60 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {cancelLabel}
                         </button>
@@ -92,7 +92,7 @@ export function ConfirmDialog({
                     <button 
                         onClick={onConfirm}
                         disabled={loading}
-                        className={`flex-1 rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-widest transition-all transform hover:-translate-y-0.5 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${getConfirmButtonStyles()}`}
+                        className={`flex-1 rounded-xl px-5 py-3.5 text-[0.7rem] sm:text-[0.75rem] font-medium uppercase tracking-[0.15em] transition-all transform hover:-translate-y-0.5 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${getConfirmButtonStyles()}`}
                     >
                         {loading ? 'Aguarde...' : confirmLabel}
                     </button>
