@@ -100,7 +100,6 @@ export default function TesourariaPage() {
             
             {/* Optimized Fixed Background */}
             <div className="fixed inset-0 bg-[#0a1536] bg-gradient-to-br from-[#0a1536] via-[#1c3879] to-black -z-10 w-full h-full"></div>
-            <div className="fixed inset-0 bg-[url('/texture-noise.png')] opacity-[0.03] -z-10 pointer-events-none w-full h-full"></div>
 
             <div className="z-10 w-full max-w-7xl mx-auto p-4 sm:p-6 relative">
                 {/* Header Section */}

@@ -42,6 +42,12 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
     // Load progressos do backend
     useEffect(() => {
         const fetchProgresso = async () => {
+            if (!conteudoId || !pessoaId || videos.length === 0) {
+                console.warn("Progresso material não carregado: conteudoId, pessoaId ou videos ausentes", { conteudoId, pessoaId, qtdVideos: videos.length });
+                setIsLoading(false);
+                return;
+            }
+
             setIsLoading(true);
             try {
                 const res = await fetch(`/api/trabalhos/progresso-material/${conteudoId}/${pessoaId}`);

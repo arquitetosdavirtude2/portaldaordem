@@ -37,6 +37,12 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
 
     useEffect(() => {
         const fetchProgresso = async () => {
+            if (!conteudoId || !pessoaId || materiais.length === 0) {
+                console.warn("Progresso material não carregado: conteudoId, pessoaId ou materiais ausentes", { conteudoId, pessoaId, qtdMateriais: materiais.length });
+                setIsLoading(false);
+                return;
+            }
+            
             setIsLoading(true);
             try {
                 const res = await fetch(`/api/trabalhos/progresso-material/${conteudoId}/${pessoaId}`);

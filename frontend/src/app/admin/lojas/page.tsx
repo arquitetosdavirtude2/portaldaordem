@@ -189,7 +189,6 @@ export default function LojasPage() {
 
     return (
         <div className="min-h-screen bg-masonic-blue text-gray-100 font-serif relative overflow-hidden selection:bg-masonic-gold selection:text-masonic-blue">
-            <div className="absolute inset-0 bg-[url('/texture-noise.png')] opacity-5 pointer-events-none"></div>
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-masonic-gold/5 rounded-full blur-[100px] -mr-20 -mt-20 pointer-events-none"></div>
 
             <div className="max-w-7xl mx-auto p-8 relative z-10">

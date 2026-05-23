@@ -474,7 +474,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                 </>
                                             ) : (
                                                 <button 
-                                                    onClick={() => setEstudoObreiroConteudo(item)} 
+                                                    onClick={() => setEstudoObreiroConteudo({ ...item, id: item.id ?? item.conteudo_id })} 
                                                     className={`px-4 py-2 border text-[9px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all ${
                                                         (item.progresso?.status === 'aguardando_correcao') 
                                                             ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 hover:bg-blue-500/20' 
@@ -742,7 +742,7 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     {materiaisModal.ativo && materiaisItem && <ModalMateriaisTrabalho conteudo={materiaisItem} tipoMaterial={materiaisModal.tipo} onClose={() => { setMateriaisModal({ativo: false, tipo: 'video'}); setMateriaisItem(null); }} onSuccess={carregarConteudos} />}
                     {quizModalAtivo && itemEmEstudo && <ModalQuiz conteudoId={itemEmEstudo.id} quizzesIniciais={itemEmEstudo.quizzes || []} onClose={() => setQuizModalAtivo(false)} onSuccess={carregarConteudos} />}
                     {correcaoTrabalho && <ModalCorrecaoTrabalho conteudo={correcaoTrabalho} lojaId={acesso.loja_id || acesso.id_loja} acesso={acesso} onClose={() => setCorrecaoTrabalho(null)} onSuccess={carregarConteudos} />}
-                    {estudoObreiroConteudo && <ModalEstudoObreiro conteudo={estudoObreiroConteudo} pessoaId={acesso.pessoa_id || acesso.id_membro} onClose={() => setEstudoObreiroConteudo(null)} onSuccess={carregarConteudos} />}
+                    {estudoObreiroConteudo && <ModalEstudoObreiro conteudo={estudoObreiroConteudo} pessoaId={acesso.id || acesso.pessoa_id || acesso.id_membro} onClose={() => setEstudoObreiroConteudo(null)} onSuccess={carregarConteudos} />}
                 </>,
                 document.body
             )}
