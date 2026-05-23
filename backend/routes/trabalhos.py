@@ -905,22 +905,55 @@ def obter_arquivo_entrega(entrega_id: int, pessoa_id: int, download: bool = Fals
          raise HTTPException(status_code=403, detail="Você não tem permissão para acessar este arquivo")
 
     # Arquivo existe?
-    file_path = entrega.arquivo_url
+    # O arquivo_url no DB é algo como '/uploads/trabalhos/arquivo.pdf'
+    # Precisamos remover o slash inicial e usar no filesystem relativo a raiz do backend
+    rel_path = entrega.arquivo_url.lstrip("/") if entrega.arquivo_url.startswith("/") else entrega.arquivo_url
+    # file_path vai ser a resolucao absoluta ou relativa a partir do backend root
+    base_dir = os.getcwd()
+    file_path = os.path.join(base_dir, rel_path)
+    
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Arquivo físico não encontrado no servidor")
+        # Tentar sem lstrip ou so a basename se falhar
+        if os.path.exists(rel_path):
+            file_path = rel_path
+        elif os.path.exists(os.path.join(base_dir, 'uploads', 'trabalhos', os.path.basename(entrega.arquivo_url))):
+            file_path = os.path.join(base_dir, 'uploads', 'trabalhos', os.path.basename(entrega.arquivo_url))
+        else:
+            raise HTTPException(status_code=404, detail="Arquivo físico não encontrado no servidor")
 
     # Nome para download
     nome_irmao = dono.nome if dono else "irmao"
     conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == entrega.conteudo_id).first()
     nome_trabalho = conteudo.titulo if conteudo else "trabalho"
     
-    ext = os.path.splitext(file_path)[1]
+    ext = os.path.splitext(file_path)[1].lower()
     filename = f"{nome_irmao} - {nome_trabalho}{ext}"
     
-    if download:
-        return FileResponse(path=file_path, filename=filename, media_type='application/octet-stream')
+    # Determinar media_type básico
+    if ext == '.pdf':
+        media_type = 'application/pdf'
+    elif ext == '.docx':
+        media_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    elif ext == '.doc':
+        media_type = 'application/msword'
+    elif ext in ['.jpg', '.jpeg']:
+        media_type = 'image/jpeg'
+    elif ext == '.png':
+        media_type = 'image/png'
     else:
-        # Se for para visualizar, retornar o FileResponse normal para o iframe
-        # Determinar media_type básico
-        media_type = 'application/pdf' if ext.lower() == '.pdf' else 'application/octet-stream'
-        return FileResponse(path=file_path, media_type=media_type)
+        media_type = 'application/octet-stream'
+
+    if download:
+        return FileResponse(
+            path=file_path, 
+            filename=filename, 
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    else:
+        return FileResponse(
+            path=file_path, 
+            filename=filename,
+            media_type=media_type,
+            headers={"Content-Disposition": f'inline; filename="{filename}"'}
+        )

@@ -127,8 +127,9 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
     };
 
     const handleAbrirListaOuCorrecao = (item: any) => {
-        // Encontra todas as entregas deste trabalho específico
-        const entregasDesteTrabalho = adminDeliveries.filter(ent => ent.conteudo_id === item.id);
+        // Usar getConteudoId e parse para Number para garantir igualdade com o db
+        const cId = Number(getConteudoId(item));
+        const entregasDesteTrabalho = adminDeliveries.filter(ent => Number(ent.conteudo_id) === cId);
         
         if (entregasDesteTrabalho.length === 0) {
             setAlertConfig({

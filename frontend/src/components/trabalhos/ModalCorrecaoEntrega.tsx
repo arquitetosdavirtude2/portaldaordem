@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { renderAsync } from 'docx-preview';
 
 interface ModalCorrecaoEntregaProps {
     entrega: any;
@@ -15,6 +16,8 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger' | 'success'} | null>(null);
+    const docxContainerRef = useRef<HTMLDivElement>(null);
+    const [docxError, setDocxError] = useState(false);
 
     // Identificar tipo de arquivo
     const isDocx = entrega.arquivo_nome?.toLowerCase().endsWith('.docx') || entrega.arquivo_nome?.toLowerCase().endsWith('.doc');
@@ -23,6 +26,24 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
     // URLs usando o novo endpoint (com pessoa_id injetado)
     const urlVisualizar = entrega.arquivo_url ? `${entrega.arquivo_url}&pessoa_id=${acessoId}` : null;
     const urlBaixar = entrega.arquivo_download_url ? `${entrega.arquivo_download_url}&pessoa_id=${acessoId}` : null;
+
+    useEffect(() => {
+        if (showPreview && isDocx && urlVisualizar) {
+            setDocxError(false);
+            fetch(urlVisualizar)
+                .then(async res => {
+                    if (!res.ok) throw new Error("Falha ao carregar DOCX");
+                    const blob = await res.blob();
+                    if (docxContainerRef.current) {
+                        await renderAsync(blob, docxContainerRef.current);
+                    }
+                })
+                .catch(err => {
+                    console.error("Erro ao renderizar DOCX:", err);
+                    setDocxError(true);
+                });
+        }
+    }, [showPreview, isDocx, urlVisualizar]);
 
     const handleCorrecao = async (status: string) => {
         if (!feedback.trim() && status === 'refazer') {
@@ -135,14 +156,43 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                             
                             <div className="flex gap-3">
                                 {urlBaixar && (
-                                    <a 
-                                        href={urlBaixar}
-                                        className="px-5 py-2.5 bg-white/5 border border-white/10 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-white/10 transition-colors inline-flex items-center gap-2"
-                                        download
+                                    <button 
+                                        onClick={async () => {
+                                            try {
+                                                const res = await fetch(urlBaixar);
+                                                if (!res.ok) {
+                                                    const contentType = res.headers.get("content-type") || "";
+                                                    if (contentType.includes("application/json")) {
+                                                        const err = await res.json();
+                                                        setAlertConfig({isOpen: true, title: 'Erro', message: err.detail || 'Arquivo indisponível.', variant: 'danger'});
+                                                        return;
+                                                    }
+                                                    setAlertConfig({isOpen: true, title: 'Erro', message: 'Arquivo não encontrado no servidor.', variant: 'danger'});
+                                                    return;
+                                                }
+                                                const blob = await res.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                const cd = res.headers.get('content-disposition');
+                                                let fileName = entrega.arquivo_nome || 'download';
+                                                if (cd && cd.includes('filename="')) {
+                                                    fileName = cd.split('filename="')[1].split('"')[0];
+                                                }
+                                                a.download = fileName;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                a.remove();
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (e) {
+                                                setAlertConfig({isOpen: true, title: 'Erro', message: 'Falha de comunicação ao tentar baixar o arquivo.', variant: 'danger'});
+                                            }
+                                        }}
+                                        className="px-5 py-2.5 bg-white/5 border border-white/10 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-white/10 transition-colors inline-flex items-center gap-2 cursor-pointer"
                                     >
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                                         Baixar
-                                    </a>
+                                    </button>
                                 )}
                                 {urlVisualizar && (
                                     <button 
@@ -160,17 +210,15 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                         {showPreview && urlVisualizar && (
                             <div className="mt-6 border-t border-white/10 pt-6 animate-fade-in">
                                 {isDocx ? (
-                                    <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-6 text-center">
-                                        <p className="text-orange-400 font-medium mb-4">
-                                            Este arquivo DOCX não possui visualização interna segura no navegador. Baixe o arquivo para realizar a correção.
-                                        </p>
-                                        <a 
-                                            href={urlBaixar || '#'}
-                                            className="px-6 py-3 bg-orange-500 hover:bg-orange-400 text-black text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors inline-block"
-                                            download
-                                        >
-                                            Baixar Arquivo DOCX
-                                        </a>
+                                    <div className="w-full bg-white rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-4 min-h-[400px]">
+                                        <div ref={docxContainerRef} className="docx-preview-area w-full max-w-full overflow-x-auto text-black" />
+                                        {docxError && (
+                                            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-6 text-center mt-4 w-full">
+                                                <p className="text-orange-600 font-medium mb-4">
+                                                    Não foi possível visualizar este DOCX no navegador. Baixe o arquivo para realizar a correção.
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : isPdf ? (
                                     <div className="w-full h-[600px] bg-white rounded-xl overflow-hidden shadow-inner">
