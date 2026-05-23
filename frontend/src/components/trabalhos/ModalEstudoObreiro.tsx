@@ -211,7 +211,7 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                         {/* Textura sutil no fundo */}
                         <div className="absolute inset-0 opacity-[0.015] bg-[url('/img/masonic_pattern.png')] bg-repeat pointer-events-none"></div>
 
-                        <div className="relative z-10 h-full max-w-4xl mx-auto flex flex-col justify-center">
+                        <div className="relative z-10 min-h-full max-w-4xl mx-auto flex flex-col pt-4 lg:pt-8 pb-16">
                             {activeStep === 'videos' && (
                                 <PlayerVideoObreiro 
                                     videos={videos} 
