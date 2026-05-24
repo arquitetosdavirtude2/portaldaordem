@@ -243,39 +243,51 @@ def excluir_conteudo(
 @router.post("/material/upload")
 async def upload_material(
     conteudo_id: int = Form(...),
-    tipo: str = Form(...), # 'video' ou 'pdf'
-    file: UploadFile = File(...),
-    titulo: str = Form(None),
+    tipo: str = Form(...),
+    titulo: str = Form(...),
     descricao: str = Form(None),
     ordem: int = Form(None),
+    file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
     """Faz upload de material (video ou apoio) para um conteudo."""
     try:
+        print("[UPLOAD MATERIAL] inicio")
+        print("[UPLOAD MATERIAL] conteudo_id:", conteudo_id)
+        print("[UPLOAD MATERIAL] tipo:", tipo)
+        print("[UPLOAD MATERIAL] titulo:", titulo)
+        print("[UPLOAD MATERIAL] descricao:", descricao)
+        print("[UPLOAD MATERIAL] ordem:", ordem)
+        print("[UPLOAD MATERIAL] filename:", getattr(file, 'filename', 'sem arquivo'))
+        print("[UPLOAD MATERIAL] content_type:", getattr(file, 'content_type', 'sem content type'))
+
         if not file:
-            raise HTTPException(status_code=400, detail="Arquivo não enviado.")
+            raise HTTPException(status_code=400, detail="Arquivo nao enviado")
 
         # Verifica se conteudo existe
         conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == conteudo_id).first()
         if not conteudo:
-            raise HTTPException(status_code=404, detail="Conteúdo não encontrado.")
+            raise HTTPException(status_code=404, detail="Conteudo nao encontrado")
 
         # Normaliza tipo para 'documento' se vier diferente e não for video
         if tipo != 'video':
             tipo = 'documento'
 
-        diretorio = MATERIAIS_VID_DIR if tipo == 'video' else MATERIAIS_DOC_DIR
-        Path(diretorio).mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        import time
+        from uuid import uuid4
         
-        import uuid
-        extensao = Path(file.filename).suffix
-        if not extensao:
-            extensao = ".bin"
+        ext = Path(file.filename or "").suffix.lower()
+        if ext not in [".pdf", ".doc", ".docx", ".mp4", ".mov", ".webm", ".bin"]:
+            raise HTTPException(status_code=400, detail="Formato de arquivo nao permitido")
+
+        safe_filename = f"material_{conteudo_id}_{int(time.time())}_{uuid4().hex}{ext}"
         
-        # Gerar nome tecnico para evitar erro de acentuacao e caractere especial no cPanel
-        nome_tecnico = f"material_{conteudo_id}_{timestamp}_{uuid.uuid4().hex[:8]}{extensao}"
-        file_path = os.path.join(diretorio, nome_tecnico)
+        base_dir_local = Path(__file__).resolve().parent.parent
+        dir_escolhido = MATERIAIS_VID_DIR if tipo == 'video' else MATERIAIS_DOC_DIR
+        upload_dir_local = base_dir_local / dir_escolhido
+        upload_dir_local.mkdir(parents=True, exist_ok=True)
+        
+        file_path = upload_dir_local / safe_filename
         
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -291,8 +303,8 @@ async def upload_material(
         material = MaterialEstudo(
             conteudo_id=conteudo_id,
             tipo=tipo,
-            nome_arquivo=file.filename, # Salva o original para exibição se precisar, mas a url usará o técnico
-            url=f"/{diretorio}/{nome_tecnico}",
+            nome_arquivo=file.filename,
+            url=f"/{dir_escolhido}/{safe_filename}",
             data_upload=datetime.now().isoformat(),
             titulo=titulo or file.filename,
             descricao=descricao,
@@ -305,21 +317,18 @@ async def upload_material(
         
         return {
             "success": True,
-            "material": {
-                "id": material.id,
-                "conteudo_id": material.conteudo_id,
-                "tipo": material.tipo,
-                "nome_arquivo": material.nome_arquivo,
-                "url": material.url,
-                "titulo": material.titulo,
-                "descricao": material.descricao,
-                "ordem": material.ordem,
-                "data_upload": material.data_upload
-            }
+            "id": material.id,
+            "conteudo_id": material.conteudo_id,
+            "tipo": material.tipo,
+            "titulo": getattr(material, 'titulo', None),
+            "descricao": getattr(material, 'descricao', None),
+            "arquivo_url": material.url,
+            "arquivo_nome_original": file.filename,
+            "ordem": getattr(material, 'ordem', 0)
         }
     except Exception as e:
         import traceback
-        print("[POST /material/upload] erro:", str(e))
+        print("[UPLOAD MATERIAL] ERRO:", str(e))
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
