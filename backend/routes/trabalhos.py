@@ -253,18 +253,19 @@ async def upload_material(
     """Faz upload de material (video ou apoio) para um conteudo."""
     try:
         if not file:
-            return {"success": False, "message": "Arquivo não enviado."}, 400
+            raise HTTPException(status_code=400, detail="Arquivo não enviado.")
 
         # Verifica se conteudo existe
         conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == conteudo_id).first()
         if not conteudo:
-            return {"success": False, "message": "Conteúdo não encontrado."}, 404
+            raise HTTPException(status_code=404, detail="Conteúdo não encontrado.")
 
         # Normaliza tipo para 'documento' se vier diferente e não for video
         if tipo != 'video':
             tipo = 'documento'
 
         diretorio = MATERIAIS_VID_DIR if tipo == 'video' else MATERIAIS_DOC_DIR
+        Path(diretorio).mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         
         import uuid
@@ -319,7 +320,8 @@ async def upload_material(
     except Exception as e:
         import traceback
         print("[POST /material/upload] erro:", str(e))
-        return {"success": False, "message": f"Erro interno: {str(e)}"}, 500
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/quiz")
 async def configurar_quiz(

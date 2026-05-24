@@ -54,27 +54,24 @@ function FormUpload({ conteudoId, tipoMaterial, totalExistente, onUploaded }: {
 
             const res = await fetch('/api/trabalhos/material/upload', { method: 'POST', body: formData });
             
-            if (res.ok) {
-                const data = await res.json().catch(() => null);
-                if (data && data.success === false) {
-                    setFeedback({ msg: 'Não foi possível enviar: ' + (data.message || 'Erro desconhecido'), type: 'error' });
-                } else {
-                    setFile(null);
-                    setTitulo('');
-                    setDescricao('');
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                    setFeedback({ msg: 'Material enviado com sucesso.', type: 'success' });
-                    onUploaded();
-                }
+            const rawText = await res.text();
+            let data: any = null;
+            try {
+                if (rawText) data = JSON.parse(rawText);
+            } catch {
+                data = { message: rawText };
+            }
+
+            if (res.ok && data?.success !== false) {
+                setFile(null);
+                setTitulo('');
+                setDescricao('');
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                setFeedback({ msg: 'Material enviado com sucesso.', type: 'success' });
+                onUploaded();
             } else {
-                let errMsg = 'Erro desconhecido';
-                try {
-                    const errorData = await res.json();
-                    errMsg = errorData.message || errMsg;
-                } catch {
-                    errMsg = await res.text();
-                }
-                setFeedback({ msg: 'Não foi possível enviar o material. Detalhe: ' + errMsg, type: 'error' });
+                const errMsg = data?.message || data?.detail || 'Não foi possível enviar o material. Verifique o arquivo e tente novamente.';
+                setFeedback({ msg: 'Não foi possível enviar: ' + errMsg, type: 'error' });
             }
         } catch (e) {
             console.error(e);
