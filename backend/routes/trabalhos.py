@@ -240,6 +240,24 @@ def excluir_conteudo(
     db.delete(conteudo)
     db.commit()
     return {"message": "Conteúdo e dados relacionados excluídos permanentemente."}
+import unicodedata
+import re
+
+def safe_log(*args):
+    try:
+        text = " ".join(str(a) for a in args)
+        print(text.encode("ascii", errors="replace").decode("ascii"))
+    except Exception:
+        print("[log_error]")
+
+def sanitize_ascii_filename(name: str) -> str:
+    name = name or "arquivo"
+    name = unicodedata.normalize("NFKD", name)
+    name = name.encode("ascii", "ignore").decode("ascii")
+    name = re.sub(r"[^a-zA-Z0-9._-]+", "_", name)
+    name = re.sub(r"_+", "_", name).strip("._-")
+    return name or "arquivo"
+
 @router.post("/material/upload")
 async def upload_material(
     conteudo_id: int = Form(...),
@@ -252,22 +270,22 @@ async def upload_material(
 ):
     """Faz upload de material (video ou apoio) para um conteudo."""
     try:
-        print("[UPLOAD MATERIAL] inicio")
-        print("[UPLOAD MATERIAL] conteudo_id:", conteudo_id)
-        print("[UPLOAD MATERIAL] tipo:", tipo)
-        print("[UPLOAD MATERIAL] titulo:", titulo)
-        print("[UPLOAD MATERIAL] descricao:", descricao)
-        print("[UPLOAD MATERIAL] ordem:", ordem)
-        print("[UPLOAD MATERIAL] filename:", getattr(file, 'filename', 'sem arquivo'))
-        print("[UPLOAD MATERIAL] content_type:", getattr(file, 'content_type', 'sem content type'))
+        safe_log("[UPLOAD MATERIAL] inicio")
+        safe_log("[UPLOAD MATERIAL] conteudo_id:", conteudo_id)
+        safe_log("[UPLOAD MATERIAL] tipo:", tipo)
+        safe_log("[UPLOAD MATERIAL] titulo:", titulo)
+        safe_log("[UPLOAD MATERIAL] descricao:", descricao)
+        safe_log("[UPLOAD MATERIAL] ordem:", ordem)
+        safe_log("[UPLOAD MATERIAL] filename:", getattr(file, 'filename', 'sem arquivo'))
+        safe_log("[UPLOAD MATERIAL] content_type:", getattr(file, 'content_type', 'sem content type'))
 
         if not file:
-            raise HTTPException(status_code=400, detail="Arquivo nao enviado")
+            raise HTTPException(status_code=400, detail="Arquivo nao enviado.")
 
         # Verifica se conteudo existe
         conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == conteudo_id).first()
         if not conteudo:
-            raise HTTPException(status_code=404, detail="Conteudo nao encontrado")
+            raise HTTPException(status_code=404, detail="Conteudo nao encontrado.")
 
         # Normaliza tipo para 'documento' se vier diferente e não for video
         if tipo != 'video':
@@ -276,10 +294,14 @@ async def upload_material(
         import time
         from uuid import uuid4
         
-        ext = Path(file.filename or "").suffix.lower()
-        if ext not in [".pdf", ".doc", ".docx", ".mp4", ".mov", ".webm", ".bin"]:
-            raise HTTPException(status_code=400, detail="Formato de arquivo nao permitido")
+        original_filename = file.filename or "arquivo"
+        ext = Path(original_filename).suffix.lower()
 
+        allowed = [".pdf", ".doc", ".docx", ".mp4", ".mov", ".webm", ".bin"]
+        if ext not in allowed:
+            raise HTTPException(status_code=400, detail="Formato de arquivo nao permitido.")
+
+        safe_base = sanitize_ascii_filename(Path(original_filename).stem)
         safe_filename = f"material_{conteudo_id}_{int(time.time())}_{uuid4().hex}{ext}"
         
         base_dir_local = Path(__file__).resolve().parent.parent
@@ -303,10 +325,10 @@ async def upload_material(
         material = MaterialEstudo(
             conteudo_id=conteudo_id,
             tipo=tipo,
-            nome_arquivo=file.filename,
+            nome_arquivo=original_filename, # Original para o BD
             url=f"/{dir_escolhido}/{safe_filename}",
             data_upload=datetime.now().isoformat(),
-            titulo=titulo or file.filename,
+            titulo=titulo or original_filename,
             descricao=descricao,
             ordem=ordem,
             ativo=1
@@ -323,14 +345,19 @@ async def upload_material(
             "titulo": getattr(material, 'titulo', None),
             "descricao": getattr(material, 'descricao', None),
             "arquivo_url": material.url,
-            "arquivo_nome_original": file.filename,
+            "arquivo_nome_original": original_filename,
             "ordem": getattr(material, 'ordem', 0)
         }
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
-        print("[UPLOAD MATERIAL] ERRO:", str(e))
+        safe_log("[UPLOAD MATERIAL] ERRO:", repr(e))
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Erro interno ao enviar material. Verifique os logs do servidor."
+        )
 
 @router.post("/quiz")
 async def configurar_quiz(
