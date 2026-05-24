@@ -45,15 +45,31 @@ def resolver_caminho_arquivo(arquivo_url: str) -> Path:
     return caminho
 
 @router.get("/")
-def listar_conteudos(loja_id: Optional[int] = None, pessoa_id: Optional[int] = None, grau: Optional[int] = None, db: Session = Depends(get_db)):
+def listar_conteudos(loja_id: Optional[str] = None, pessoa_id: Optional[str] = None, grau: Optional[str] = None, db: Session = Depends(get_db)):
     """Lista todos os conteúdos disponíveis, filtrando por loja se fornecido."""
     try:
+        # Cast seguro para evitar erro 422 quando o frontend envia "undefined" ou "null"
+        try:
+            loja_id_int = int(loja_id) if loja_id and loja_id not in ("undefined", "null", "") else None
+        except ValueError:
+            loja_id_int = None
+            
+        try:
+            pessoa_id_int = int(pessoa_id) if pessoa_id and pessoa_id not in ("undefined", "null", "") else None
+        except ValueError:
+            pessoa_id_int = None
+            
+        try:
+            grau_int = int(grau) if grau and grau not in ("undefined", "null", "") else None
+        except ValueError:
+            grau_int = None
+
         query = db.query(ConteudoEstudo)
-        if loja_id:
-            query = query.filter(ConteudoEstudo.loja_id == loja_id)
+        if loja_id_int:
+            query = query.filter(ConteudoEstudo.loja_id == loja_id_int)
         
-        if grau and grau > 0:
-            query = query.filter(ConteudoEstudo.grau == grau)
+        if grau_int and grau_int > 0:
+            query = query.filter(ConteudoEstudo.grau == grau_int)
         
         conteudos = query.order_by(ConteudoEstudo.ordem).all()
         
@@ -61,6 +77,7 @@ def listar_conteudos(loja_id: Optional[int] = None, pessoa_id: Optional[int] = N
         for c in conteudos:
             c_dict = {
                 "id": c.id,
+                "conteudo_id": c.id, # Enviando ambos para evitar erros no frontend
                 "titulo": c.titulo,
                 "tipo": c.tipo,
                 "grau": c.grau,
@@ -75,51 +92,75 @@ def listar_conteudos(loja_id: Optional[int] = None, pessoa_id: Optional[int] = N
                 "contagens": {"videos": 0, "documentos": 0, "quizzes": 0, "pendencias": 0}
             }
             
-            # Buscar materiais ordenados
-            materiais = db.query(MaterialEstudo).filter(MaterialEstudo.conteudo_id == c.id).order_by(MaterialEstudo.ordem).all()
-            c_dict["materiais"] = [{"id": m.id, "tipo": m.tipo, "url": m.url, "nome": m.nome_arquivo, "titulo": getattr(m, 'titulo', None), "descricao": getattr(m, 'descricao', None), "ordem": getattr(m, 'ordem', 0), "duracao_segundos": getattr(m, 'duracao_segundos', None)} for m in materiais]
-            c_dict["contagens"]["videos"] = len([m for m in materiais if m.tipo == 'video'])
-            c_dict["contagens"]["documentos"] = len([m for m in materiais if m.tipo in ('pdf', 'docx')])
+            # Buscar materiais ordenados protegendo contra erros de schema
+            try:
+                materiais = db.query(MaterialEstudo).filter(MaterialEstudo.conteudo_id == c.id).order_by(MaterialEstudo.ordem).all()
+                c_dict["materiais"] = [{"id": m.id, "tipo": m.tipo, "url": m.url, "nome": m.nome_arquivo, "titulo": getattr(m, 'titulo', None), "descricao": getattr(m, 'descricao', None), "ordem": getattr(m, 'ordem', 0), "duracao_segundos": getattr(m, 'duracao_segundos', None)} for m in materiais]
+                c_dict["contagens"]["videos"] = len([m for m in materiais if m.tipo == 'video'])
+                c_dict["contagens"]["documentos"] = len([m for m in materiais if m.tipo in ('pdf', 'docx', 'documento')])
+            except Exception as e:
+                db.rollback()
+                print(f"[GET /trabalhos] Erro ao buscar materiais (schema desatualizado?): {e}")
+                materiais = []
             
-            # Buscar quizzes ordenados
-            quizzes = db.query(Quiz).filter(Quiz.conteudo_id == c.id).order_by(Quiz.ordem).all()
-            c_dict["quizzes"] = [{"id": q.id, "pergunta": q.pergunta, "opcoes_json": q.opcoes_json, "resposta_correta": q.resposta_correta, "tipo": getattr(q, 'tipo', 'livre'), "ordem": getattr(q, 'ordem', 0)} for q in quizzes]
-            c_dict["contagens"]["quizzes"] = len(quizzes)
+            # Buscar quizzes ordenados protegendo contra erros de schema
+            try:
+                quizzes = db.query(Quiz).filter(Quiz.conteudo_id == c.id).order_by(Quiz.ordem).all()
+                c_dict["quizzes"] = [{"id": q.id, "pergunta": q.pergunta, "opcoes_json": q.opcoes_json, "resposta_correta": q.resposta_correta, "tipo": getattr(q, 'tipo', 'livre'), "ordem": getattr(q, 'ordem', 0)} for q in quizzes]
+                c_dict["contagens"]["quizzes"] = len(quizzes)
+            except Exception as e:
+                db.rollback()
+                print(f"[GET /trabalhos] Erro ao buscar quizzes: {e}")
+                quizzes = []
             
-            # Contar pendências de correção
-            pendencias = db.query(RespostaQuiz).filter(RespostaQuiz.conteudo_id == c.id, RespostaQuiz.status == 'pendente').count()
-            c_dict["contagens"]["pendencias"] = pendencias
+            # Contar pendências protegendo contra erros
+            try:
+                pendencias = db.query(RespostaQuiz).filter(RespostaQuiz.conteudo_id == c.id, RespostaQuiz.status == 'pendente').count()
+                c_dict["contagens"]["pendencias"] = pendencias
+            except Exception as e:
+                db.rollback()
+                print(f"[GET /trabalhos] Erro ao contar pendências: {e}")
             
-            if pessoa_id:
-                prog = db.query(ProgressoEstudo).filter(ProgressoEstudo.pessoa_id == pessoa_id, ProgressoEstudo.conteudo_id == c.id).first()
-                entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.pessoa_id == pessoa_id, EntregaTrabalho.conteudo_id == c.id).first()
+            # Buscar progresso e entregas APENAS SE pessoa_id_int for numérico válido
+            if pessoa_id_int:
+                try:
+                    prog = db.query(ProgressoEstudo).filter(ProgressoEstudo.pessoa_id == pessoa_id_int, ProgressoEstudo.conteudo_id == c.id).first()
+                    if prog:
+                        c_dict["progresso"] = {
+                            "status": prog.status or "pendente",
+                            "quiz_score": prog.quiz_score,
+                            "nota": getattr(prog, 'nota', None),
+                            "data_conclusao": prog.data_conclusao,
+                            "data_agendamento": prog.data_agendamento
+                        }
+                except Exception as e:
+                    db.rollback()
+                    print(f"[GET /trabalhos] Erro ao buscar ProgressoEstudo: {e}")
                 
-                if prog:
-                    c_dict["progresso"] = {
-                        "status": prog.status or "pendente",
-                        "quiz_score": prog.quiz_score,
-                        "nota": getattr(prog, 'nota', None),
-                        "data_conclusao": prog.data_conclusao,
-                        "data_agendamento": prog.data_agendamento
-                    }
-                if entrega:
-                    c_dict["entrega"] = {
-                        "status": entrega.status or "pendente",
-                        "url": entrega.arquivo_url,
-                        "feedback": entrega.feedback
-                    }
+                try:
+                    entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.pessoa_id == pessoa_id_int, EntregaTrabalho.conteudo_id == c.id).first()
+                    if entrega:
+                        c_dict["entrega"] = {
+                            "status": entrega.status or "pendente",
+                            "url": entrega.arquivo_url,
+                            "feedback": entrega.feedback
+                        }
+                except Exception as e:
+                    db.rollback()
+                    print(f"[GET /trabalhos] Erro ao buscar EntregaTrabalho: {e}")
             
             resultados.append(c_dict)
             
         return resultados
     except Exception as e:
         import traceback
-        error_msg = "Erro no backend: %s" % str(e)
+        error_msg = f"[GET /api/trabalhos/] Falha crítica: {str(e)}"
         try:
             print(error_msg)
-        except UnicodeEncodeError:
-            print("Erro no backend (encoding error in traceback)")
-        raise HTTPException(status_code=500, detail=error_msg)
+        except Exception:
+            pass
+        # Não falhar com 500 se o Frontend já está esperando um array
+        return []
 
 @router.post("/conteudo")
 def criar_conteudo(

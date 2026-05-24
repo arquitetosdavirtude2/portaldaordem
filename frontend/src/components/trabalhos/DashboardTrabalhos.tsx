@@ -169,11 +169,13 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             const pId = getPessoaId(acesso);
             const lid = acesso.loja_id || acesso.id_loja;
             
-            let url = `/api/trabalhos/?`;
-            if (lid) url += `loja_id=${lid}`;
-            if (pId) url += `&pessoa_id=${pId}`;
+            const params = new URLSearchParams();
+            if (lid) params.append("loja_id", String(lid));
+            if (pId && String(pId) !== 'undefined' && !isNaN(Number(pId))) {
+                params.append("pessoa_id", String(pId));
+            }
             
-            const res = await fetch(url);
+            const res = await fetch(`/api/trabalhos/?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setConteudos(data);
