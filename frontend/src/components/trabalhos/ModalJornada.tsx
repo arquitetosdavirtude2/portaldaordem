@@ -26,7 +26,7 @@ interface ModalJornadaProps {
 const GRAU_LABELS: Record<number, string> = { 1: 'Aprendiz', 2: 'Companheiro', 3: 'Mestre' };
 
 const IMAGE_MAP: Record<string, string> = {
-    'iniciação': 'https://www.portaldaordem.com.br/initiation_light.png',
+    'iniciação': 'https://www.portaldaordem.com.br/initiation_light.png?v=2',
     'aprendiz': 'https://www.portaldaordem.com.br/rough_stone.png',
     'companheiro': 'https://www.portaldaordem.com.br/polished_stone.png',
     'mestre': 'https://www.portaldaordem.com.br/masonic_temple.png'
