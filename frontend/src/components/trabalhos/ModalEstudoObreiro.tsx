@@ -51,7 +51,7 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
         if (documentos.length > 0) steps.push('materiais');
         if (quizzes.length > 0) steps.push('quiz');
         
-        // Se for um trabalho formal (prancha), a etapa de entrega e obrigatoria e nunca auto-conclui
+        // Se for um trabalho formal, a etapa de entrega é obrigatória e nunca auto-conclui
         if (conteudo.tipo === 'trabalho') {
             steps.push('entrega');
         }

@@ -149,6 +149,11 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             });
             return;
         }
+
+        if (entregasDesteTrabalho.length === 1) {
+            setEntregaParaCorrecao(entregasDesteTrabalho[0]);
+            return;
+        }
         
         setListaEntregasParaSelecao({
             ativo: true,
@@ -708,31 +713,40 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                     )}
                     
                     {listaEntregasParaSelecao.ativo && (
-                        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-8">
                             <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''})}></div>
-                            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden relative z-10 flex flex-col shadow-2xl">
-                                <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-3xl overflow-hidden relative z-10 flex flex-col shadow-2xl">
+                                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                                     <div>
-                                        <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-0.5">Selecione o Irmão</span>
-                                        <h3 className="text-sm font-serif text-white uppercase truncate">{listaEntregasParaSelecao.tituloTrabalho}</h3>
+                                        <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Selecione o Irmão para Correção</span>
+                                        <h3 className="text-xl font-serif text-white uppercase truncate">{listaEntregasParaSelecao.tituloTrabalho}</h3>
                                     </div>
-                                    <button onClick={() => setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''})} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400">✕</button>
+                                    <button onClick={() => setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''})} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-colors">✕</button>
                                 </div>
-                                <div className="p-4 flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
+                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                                     {listaEntregasParaSelecao.entregas.map(ent => (
                                         <button 
                                             key={ent.id}
                                             onClick={() => {
-                                                setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''});
                                                 setEntregaParaCorrecao(ent);
+                                                setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''});
                                             }}
-                                            className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-yellow-500/30 hover:bg-yellow-500/5 transition-all text-left"
+                                            className="p-5 bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-yellow-500/50 rounded-2xl transition-all flex items-center justify-between group cursor-pointer text-left"
                                         >
-                                            <div>
-                                                <p className="text-xs font-medium text-white">{ent.pessoa_nome}</p>
-                                                <p className="text-[9px] text-gray-500 uppercase mt-1">Data: {new Date(ent.data_upload).toLocaleDateString()}</p>
+                                            <div className="flex-1 pr-4">
+                                                <p className="text-base text-white font-medium mb-1 group-hover:text-yellow-500 transition-colors truncate">{ent.pessoa_nome || ent.nome_irmao || 'Irmão'}</p>
+                                                <div className="flex items-center gap-3 mt-2">
+                                                    <span className="text-[10px] text-gray-400 uppercase tracking-widest">
+                                                        DATA: {new Date(ent.data_upload || ent.data_envio).toLocaleDateString('pt-BR')}
+                                                    </span>
+                                                    <span className={`text-[10px] uppercase tracking-widest font-bold ${ent.status === 'pendente' || ent.status === 'aguardando_correcao' ? 'text-yellow-500' : 'text-emerald-500'}`}>
+                                                        {ent.status === 'pendente' || ent.status === 'aguardando_correcao' ? 'Pendente' : ent.status}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <span className="text-xs">➡️</span>
+                                            <div className="w-10 h-10 rounded-xl bg-white/5 group-hover:bg-yellow-500 flex items-center justify-center transition-all shrink-0">
+                                                <svg className="w-5 h-5 text-white/50 group-hover:text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                            </div>
                                         </button>
                                     ))}
                                 </div>

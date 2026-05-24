@@ -25,6 +25,9 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
     const [respostasMultipla, setRespostasMultipla] = useState<Record<number, number>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [hasResponded, setHasResponded] = useState(false);
+    const [statusQuiz, setStatusQuiz] = useState<string>('');
+
     useEffect(() => {
         if (quizzes && quizzes.length > 0) {
             const parsed = quizzes.map(q => {
@@ -41,14 +44,44 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                 } as Pergunta;
             });
             setPerguntas(parsed);
+            
+            // Buscar se já tem resposta para este conteudo e pessoa
+            fetch(`/api/trabalhos/respostas/${conteudoId}/${pessoaId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        setHasResponded(true);
+                        setStatusQuiz(data[0].status);
+                        
+                        // Preencher respostas
+                        const rLivre: any = {};
+                        const rMultipla: any = {};
+                        const rLacunas: any = {};
+                        
+                        data.forEach(r => {
+                            if (r.tipo === 'livre' || r.resposta_texto) rLivre[r.quiz_id] = r.resposta_texto;
+                            if (r.opcao_selecionada !== null) rMultipla[r.quiz_id] = r.opcao_selecionada;
+                            if (r.lacunas_json) {
+                                try { rLacunas[r.quiz_id] = JSON.parse(r.lacunas_json); } catch {}
+                            }
+                        });
+                        
+                        setRespostasLivre(rLivre);
+                        setRespostasMultipla(rMultipla);
+                        setRespostasLacunas(rLacunas);
+                    }
+                })
+                .catch(err => console.error(err));
         }
-    }, [quizzes]);
+    }, [quizzes, conteudoId, pessoaId, onComplete]);
 
     const handleRespostaLivre = (quizId: number, texto: string) => {
+        if (hasResponded) return;
         setRespostasLivre(prev => ({ ...prev, [quizId]: texto }));
     };
 
     const handleRespostaLacuna = (quizId: number, indexLacuna: number, texto: string) => {
+        if (hasResponded) return;
         setRespostasLacunas(prev => ({
             ...prev,
             [quizId]: {
@@ -59,6 +92,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
     };
 
     const handleRespostaMultipla = (quizId: number, indexOpcao: number) => {
+        if (hasResponded) return;
         setRespostasMultipla(prev => ({ ...prev, [quizId]: indexOpcao }));
     };
 
@@ -186,10 +220,11 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                                 
                                 {p.tipo === 'livre' && (
                                     <textarea
-                                        className="w-full mt-4 bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-yellow-500/50 transition-colors min-h-[120px]"
+                                        className={`w-full mt-4 bg-black/40 border rounded-xl p-4 text-sm text-white focus:outline-none transition-colors min-h-[120px] ${hasResponded ? 'border-white/5 opacity-80 cursor-not-allowed' : 'border-white/10 focus:border-yellow-500/50'}`}
                                         placeholder="Digite sua resposta aqui..."
                                         value={respostasLivre[p.id] || ''}
                                         onChange={e => handleRespostaLivre(p.id, e.target.value)}
+                                        readOnly={hasResponded}
                                     />
                                 )}
 
@@ -229,14 +264,32 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                     </div>
                 ))}
 
-                <div className="pt-6 border-t border-white/5 flex justify-end">
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
-                        className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(234,179,8,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isSubmitting ? 'Enviando Respostas...' : 'Enviar respostas do quiz'}
-                    </button>
+                <div className="pt-6 border-t border-white/5 flex justify-end items-center gap-4">
+                    {hasResponded && (
+                        <>
+                            <span className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest mr-auto">
+                                {statusQuiz === 'aprovado' || statusQuiz === 'concluido' ? '✅ Aprovado' : 
+                                 statusQuiz === 'pendente' ? '⏳ Aguardando Correção' : 
+                                 statusQuiz === 'reprovado' || statusQuiz === 'revisar' ? '❌ Ajustes Solicitados' : 'Respondido'}
+                            </span>
+                            <button
+                                onClick={() => onComplete('concluido')}
+                                className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                            >
+                                Próxima Etapa
+                            </button>
+                        </>
+                    )}
+                    
+                    {!hasResponded && (
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                            className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(234,179,8,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? 'Enviando Respostas...' : 'Enviar respostas do quiz'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

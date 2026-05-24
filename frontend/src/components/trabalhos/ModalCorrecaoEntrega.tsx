@@ -26,6 +26,42 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
     // Quiz estado
     const [respostasQuiz, setRespostasQuiz] = useState<any[]>([]);
     const [loadingQuiz, setLoadingQuiz] = useState(false);
+    
+    // Estados de correção individual de quiz
+    const [quizFeedback, setQuizFeedback] = useState<Record<number, string>>({});
+    const [quizNota, setQuizNota] = useState<Record<number, string>>({});
+    const [quizSubmitting, setQuizSubmitting] = useState<Record<number, boolean>>({});
+
+    const handleCorrigirRespostaQuiz = async (respostaId: number, status: 'aprovado' | 'reprovado') => {
+        setQuizSubmitting(prev => ({ ...prev, [respostaId]: true }));
+        try {
+            const res = await fetch('/api/trabalhos/corrigir-resposta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    resposta_id: respostaId,
+                    status: status,
+                    feedback: quizFeedback[respostaId] || '',
+                    nota: parseFloat(quizNota[respostaId] || '0') || 0,
+                    corrigido_por: acessoId
+                })
+            });
+            if (res.ok) {
+                // Atualizar lista localmente
+                setRespostasQuiz(prev => prev.map(r => 
+                    r.id === respostaId ? { ...r, is_correto: status === 'aprovado', status, nota: parseFloat(quizNota[respostaId] || '0') || 0, feedback: quizFeedback[respostaId] || '' } : r
+                ));
+                setAlertConfig({isOpen: true, title: 'Sucesso', message: 'Resposta corrigida com sucesso!', variant: 'success'});
+            } else {
+                setAlertConfig({isOpen: true, title: 'Erro', message: 'Falha ao corrigir resposta.', variant: 'danger'});
+            }
+        } catch (e) {
+            console.error(e);
+            setAlertConfig({isOpen: true, title: 'Erro', message: 'Erro de comunicação com servidor.', variant: 'danger'});
+        } finally {
+            setQuizSubmitting(prev => ({ ...prev, [respostaId]: false }));
+        }
+    };
 
     useEffect(() => {
         if (!entrega?.conteudo_id || !entrega?.pessoa_id) return;
@@ -279,15 +315,78 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                             <div className="space-y-4">
                                 {respostasQuiz.map((resposta, index) => (
                                     <div key={resposta.id || index} className="bg-black/20 border border-white/5 rounded-xl p-5">
-                                        <p className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest mb-2">Pergunta {index + 1}</p>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <p className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">Pergunta {index + 1}</p>
+                                            <span className="text-[9px] text-gray-500 uppercase tracking-widest bg-white/5 px-2 py-1 rounded">
+                                                Tipo: {resposta.tipo === 'livre' ? 'Livre' : resposta.tipo === 'multipla_escolha' ? 'Múltipla Escolha' : 'Lacunas'}
+                                            </span>
+                                        </div>
                                         <p className="text-sm text-gray-200 mb-3">{resposta.pergunta}</p>
                                         <div className="bg-white/[0.02] border border-white/5 rounded-lg p-4">
                                             <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Resposta do irmão:</p>
-                                            <p className="text-sm text-white/90">
+                                            <p className="text-sm text-white/90 mb-3">
                                                 {resposta.tipo === 'livre' ? resposta.resposta_texto : 
                                                  resposta.tipo === 'multipla_escolha' ? `Alternativa selecionada: ${resposta.opcao_selecionada}` :
-                                                 resposta.lacunas_json ? `Lacunas: ${resposta.lacunas_json}` : 'Nenhuma resposta registrada'}
+                                                 resposta.lacunas_json ? `Lacunas preenchidas: ${resposta.lacunas_json}` : 'Nenhuma resposta registrada'}
                                             </p>
+                                            
+                                            <div className="border-t border-white/5 pt-4 mt-4">
+                                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Sua Correção (Luz):</p>
+                                                
+                                                {resposta.tipo !== 'livre' && (
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <span className="text-[10px] text-gray-400 uppercase tracking-widest">Correção Automática:</span>
+                                                        {resposta.is_correto ? (
+                                                            <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">✅ Correta (Nota Original: {resposta.nota})</span>
+                                                        ) : (
+                                                            <span className="text-[10px] text-red-500 font-bold uppercase tracking-widest">❌ Incorreta (Nota Original: {resposta.nota})</span>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                                                    <div className="w-full md:w-32 shrink-0">
+                                                        <label className="text-[9px] text-gray-400 uppercase tracking-widest block mb-1">Nota</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.5"
+                                                            min="0"
+                                                            max="10"
+                                                            value={quizNota[resposta.id] ?? resposta.nota ?? ''}
+                                                            onChange={e => setQuizNota(prev => ({ ...prev, [resposta.id]: e.target.value }))}
+                                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500/50 transition-colors"
+                                                            placeholder="0.0"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="text-[9px] text-gray-400 uppercase tracking-widest block mb-1">Feedback Específico</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={quizFeedback[resposta.id] ?? resposta.feedback ?? ''}
+                                                            onChange={e => setQuizFeedback(prev => ({ ...prev, [resposta.id]: e.target.value }))}
+                                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500/50 transition-colors"
+                                                            placeholder="Opcional. Ex: Faltou citar o autor X."
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        onClick={() => handleCorrigirRespostaQuiz(resposta.id, 'aprovado')}
+                                                        disabled={quizSubmitting[resposta.id]}
+                                                        className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all border ${resposta.status === 'aprovado' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-white/5 border-white/10 text-white hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-500'} disabled:opacity-50`}
+                                                    >
+                                                        {quizSubmitting[resposta.id] ? 'Salvando...' : 'Aprovar / Certo'}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleCorrigirRespostaQuiz(resposta.id, 'reprovado')}
+                                                        disabled={quizSubmitting[resposta.id]}
+                                                        className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all border ${resposta.status === 'reprovado' ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-white/5 border-white/10 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-500'} disabled:opacity-50`}
+                                                    >
+                                                        {quizSubmitting[resposta.id] ? 'Salvando...' : 'Reprovar / Errado'}
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
