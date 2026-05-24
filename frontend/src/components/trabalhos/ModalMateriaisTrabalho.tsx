@@ -32,14 +32,17 @@ function FormUpload({ conteudoId, tipoMaterial, totalExistente, onUploaded }: {
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const [feedback, setFeedback] = useState<{msg: string, type: 'error'|'success'}|null>(null);
+
     const isVideo = tipoMaterial === 'video';
 
     const handleSubmit = async () => {
         if (!file || !titulo.trim()) {
-            alert('Titulo e arquivo sao obrigatorios.');
+            setFeedback({ msg: 'Título e arquivo são obrigatórios.', type: 'error' });
             return;
         }
         setLoading(true);
+        setFeedback(null);
         try {
             const formData = new FormData();
             formData.append('conteudo_id', conteudoId.toString());
@@ -50,21 +53,35 @@ function FormUpload({ conteudoId, tipoMaterial, totalExistente, onUploaded }: {
             formData.append('ordem', (totalExistente + 1).toString());
 
             const res = await fetch('/api/trabalhos/material/upload', { method: 'POST', body: formData });
+            
             if (res.ok) {
-                setFile(null);
-                setTitulo('');
-                setDescricao('');
-                if (fileInputRef.current) fileInputRef.current.value = '';
-                onUploaded();
+                const data = await res.json().catch(() => null);
+                if (data && data.success === false) {
+                    setFeedback({ msg: 'Não foi possível enviar: ' + (data.message || 'Erro desconhecido'), type: 'error' });
+                } else {
+                    setFile(null);
+                    setTitulo('');
+                    setDescricao('');
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                    setFeedback({ msg: 'Material enviado com sucesso.', type: 'success' });
+                    onUploaded();
+                }
             } else {
-                const err = await res.text();
-                alert('Erro ao enviar: ' + err);
+                let errMsg = 'Erro desconhecido';
+                try {
+                    const errorData = await res.json();
+                    errMsg = errorData.message || errMsg;
+                } catch {
+                    errMsg = await res.text();
+                }
+                setFeedback({ msg: 'Não foi possível enviar o material. Detalhe: ' + errMsg, type: 'error' });
             }
         } catch (e) {
             console.error(e);
-            alert('Erro de conexao ao enviar o arquivo.');
+            setFeedback({ msg: 'Não foi possível enviar o material. Verifique sua conexão e tente novamente.', type: 'error' });
         } finally {
             setLoading(false);
+            setTimeout(() => setFeedback(null), 5000);
         }
     };
 
@@ -94,6 +111,12 @@ function FormUpload({ conteudoId, tipoMaterial, totalExistente, onUploaded }: {
                     />
                 </div>
             </div>
+
+            {feedback && (
+                <div className={`text-[10px] px-4 py-2 rounded-lg border font-bold uppercase tracking-wider ${feedback.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-green-500/10 border-green-500/30 text-green-400'}`}>
+                    {feedback.msg}
+                </div>
+            )}
 
             <div className="flex items-center gap-4">
                 <div
@@ -132,16 +155,25 @@ function FormEditarMaterial({ material, onSaved, onCancel }: { material: Materia
     const [descricao, setDescricao] = useState(material.descricao || '');
     const [saving, setSaving] = useState(false);
 
+    const [feedback, setFeedback] = useState<{msg: string, type: 'error'|'success'}|null>(null);
+
     const handleSave = async () => {
         setSaving(true);
+        setFeedback(null);
         try {
             const formData = new FormData();
             formData.append('titulo', titulo.trim());
             formData.append('descricao', descricao.trim());
             const res = await fetch(`/api/trabalhos/material/${material.id}`, { method: 'PUT', body: formData });
-            if (res.ok) onSaved();
-            else alert('Erro ao salvar.');
-        } catch (e) { console.error(e); alert('Erro de conexao.'); }
+            if (res.ok) {
+                onSaved();
+            } else {
+                setFeedback({ msg: 'Erro ao salvar as alterações.', type: 'error' });
+            }
+        } catch (e) {
+            console.error(e);
+            setFeedback({ msg: 'Erro de conexão.', type: 'error' });
+        }
         setSaving(false);
     };
 
@@ -157,6 +189,9 @@ function FormEditarMaterial({ material, onSaved, onCancel }: { material: Materia
                     <input value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500" />
                 </div>
             </div>
+            {feedback && (
+                <div className="text-[9px] text-red-400 mt-2 font-bold uppercase">{feedback.msg}</div>
+            )}
             <div className="flex gap-2 justify-end">
                 <button onClick={onCancel} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[8px] font-bold uppercase text-gray-400 cursor-pointer transition-all">Cancelar</button>
                 <button onClick={handleSave} disabled={saving} className="px-4 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-[8px] font-bold uppercase cursor-pointer transition-all disabled:opacity-50">
@@ -174,6 +209,7 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
     const [loading, setLoading] = useState(true);
     const [editandoId, setEditandoId] = useState<number | null>(null);
     const [excluindoId, setExcluindoId] = useState<number | null>(null);
+    const [feedbackModal, setFeedbackModal] = useState<{msg: string, type: 'error'|'success'}|null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewType, setPreviewType] = useState<'video' | 'pdf'>('video');
 
@@ -226,10 +262,17 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
             const res = await fetch(`/api/trabalhos/material/${materialId}`, { method: 'DELETE' });
             if (res.ok) {
                 setExcluindoId(null);
+                setFeedbackModal({ msg: 'Material excluído com sucesso.', type: 'success' });
                 await loadMateriais();
                 onSuccess();
-            } else alert('Erro ao excluir material.');
-        } catch (e) { console.error(e); alert('Erro de conexao.'); }
+            } else {
+                setFeedbackModal({ msg: 'Erro ao excluir material.', type: 'error' });
+            }
+        } catch (e) {
+            console.error(e);
+            setFeedbackModal({ msg: 'Erro de conexão.', type: 'error' });
+        }
+        setTimeout(() => setFeedbackModal(null), 3000);
     };
 
     const formatDate = (d: string | null) => {
@@ -264,6 +307,18 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
                         <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 cursor-pointer transition-all">✕</button>
                     </div>
                 </div>
+
+                {/* Feedback Toast do Modal Principal */}
+                {feedbackModal && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl border font-bold uppercase tracking-widest text-[10px] shadow-2xl backdrop-blur-md animate-fade-in"
+                         style={{ 
+                             backgroundColor: feedbackModal.type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
+                             borderColor: feedbackModal.type === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)',
+                             color: feedbackModal.type === 'error' ? '#f87171' : '#4ade80'
+                         }}>
+                        {feedbackModal.msg}
+                    </div>
+                )}
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-5">

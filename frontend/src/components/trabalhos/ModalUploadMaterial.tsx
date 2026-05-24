@@ -10,6 +10,7 @@ interface ModalUploadMaterialProps {
 export default function ModalUploadMaterial({ conteudoId, tipo, onClose, onSuccess }: ModalUploadMaterialProps) {
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
+    const [feedback, setFeedback] = useState<{msg: string, type: 'error'|'success'}|null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -17,6 +18,7 @@ export default function ModalUploadMaterial({ conteudoId, tipo, onClose, onSucce
         if (!file) return;
         
         setLoading(true);
+        setFeedback(null);
         try {
             const formData = new FormData();
             formData.append('conteudo_id', conteudoId.toString());
@@ -29,16 +31,22 @@ export default function ModalUploadMaterial({ conteudoId, tipo, onClose, onSucce
             });
 
             if (res.ok) {
-                onSuccess();
-                onClose();
+                const data = await res.json().catch(() => null);
+                if (data && data.success === false) {
+                    setFeedback({ msg: 'Erro ao enviar: ' + (data.message || 'Erro desconhecido'), type: 'error' });
+                } else {
+                    onSuccess();
+                    onClose();
+                }
             } else {
-                alert('Erro ao enviar arquivo');
+                setFeedback({ msg: 'Erro ao enviar arquivo', type: 'error' });
             }
         } catch (error) {
             console.error(error);
-            alert('Erro ao enviar arquivo');
+            setFeedback({ msg: 'Erro ao enviar arquivo. Verifique sua conexão.', type: 'error' });
         } finally {
             setLoading(false);
+            setTimeout(() => setFeedback(null), 5000);
         }
     };
 
@@ -49,6 +57,12 @@ export default function ModalUploadMaterial({ conteudoId, tipo, onClose, onSucce
                 <h3 className="text-xl font-bold text-white uppercase tracking-widest mb-6">
                     Enviar {tipo === 'video' ? 'Vídeo' : 'Material de Apoio'}
                 </h3>
+
+                {feedback && (
+                    <div className={`text-[10px] px-4 py-2 mb-4 rounded-lg border font-bold uppercase tracking-wider ${feedback.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-green-500/10 border-green-500/30 text-green-400'}`}>
+                        {feedback.msg}
+                    </div>
+                )}
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div 

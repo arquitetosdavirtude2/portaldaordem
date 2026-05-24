@@ -199,6 +199,7 @@ class MaterialEstudo(Base):
     descricao = Column(String(500), nullable=True)     # Descrição curta
     ordem = Column(Integer, default=0)                 # Ordem de exibição
     duracao_segundos = Column(Integer, nullable=True)  # Duração do vídeo (se aplicável)
+    ativo = Column(Integer, default=1)                 # 1=ativo, 0=soft delete
 
     conteudo = relationship("ConteudoEstudo")
 

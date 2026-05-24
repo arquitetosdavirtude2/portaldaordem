@@ -15,9 +15,13 @@ router = APIRouter(prefix="/api/trabalhos", tags=["trabalhos"])
 
 UPLOAD_DIR = "uploads/trabalhos"
 VIDEO_DIR = "uploads/videos"
+MATERIAIS_DOC_DIR = "uploads/materiais/documentos"
+MATERIAIS_VID_DIR = "uploads/materiais/videos"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(VIDEO_DIR, exist_ok=True)
+os.makedirs(MATERIAIS_DOC_DIR, exist_ok=True)
+os.makedirs(MATERIAIS_VID_DIR, exist_ok=True)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 UPLOADS_DIR_RESOLVED = BASE_DIR / "uploads"
@@ -206,46 +210,71 @@ async def upload_material(
     db: Session = Depends(get_db)
 ):
     """Faz upload de material (video ou apoio) para um conteudo."""
-    diretorio = VIDEO_DIR if tipo == 'video' else UPLOAD_DIR
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{timestamp}_{file.filename}"
-    file_path = os.path.join(diretorio, filename)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    try:
+        # Verifica se conteudo existe
+        conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == conteudo_id).first()
+        if not conteudo:
+            return {"success": False, "message": "Conteúdo não encontrado."}, 404
 
-    # Se ordem nao foi informada, colocar no final da sequencia
-    if ordem is None:
-        max_ordem = db.query(MaterialEstudo).filter(
-            MaterialEstudo.conteudo_id == conteudo_id,
-            MaterialEstudo.tipo == tipo
-        ).count()
-        ordem = max_ordem + 1
-    
-    material = MaterialEstudo(
-        conteudo_id=conteudo_id,
-        tipo=tipo,
-        nome_arquivo=file.filename,
-        url=f"/{diretorio}/{filename}",
-        data_upload=datetime.now().isoformat(),
-        titulo=titulo or file.filename,
-        descricao=descricao,
-        ordem=ordem
-    )
-    db.add(material)
-    db.commit()
-    db.refresh(material)
-    return {
-        "id": material.id,
-        "conteudo_id": material.conteudo_id,
-        "tipo": material.tipo,
-        "nome_arquivo": material.nome_arquivo,
-        "url": material.url,
-        "titulo": material.titulo,
-        "descricao": material.descricao,
-        "ordem": material.ordem,
-        "data_upload": material.data_upload
-    }
+        if not file:
+            return {"success": False, "message": "Arquivo não enviado."}, 400
+
+        # Normaliza tipo para 'documento' se vier diferente e não for video
+        if tipo != 'video':
+            tipo = 'documento'
+
+        diretorio = MATERIAIS_VID_DIR if tipo == 'video' else MATERIAIS_DOC_DIR
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        
+        # Sanitizar nome do arquivo
+        safe_filename = "".join([c for c in file.filename if c.isalpha() or c.isdigit() or c in (' ', '.', '-', '_')]).rstrip()
+        filename = f"{timestamp}_{safe_filename}"
+        file_path = os.path.join(diretorio, filename)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Se ordem nao foi informada, colocar no final da sequencia
+        if ordem is None:
+            max_ordem = db.query(MaterialEstudo).filter(
+                MaterialEstudo.conteudo_id == conteudo_id,
+                MaterialEstudo.tipo == tipo
+            ).count()
+            ordem = max_ordem + 1
+        
+        material = MaterialEstudo(
+            conteudo_id=conteudo_id,
+            tipo=tipo,
+            nome_arquivo=file.filename,
+            url=f"/{diretorio}/{filename}",
+            data_upload=datetime.now().isoformat(),
+            titulo=titulo or file.filename,
+            descricao=descricao,
+            ordem=ordem,
+            ativo=1
+        )
+        db.add(material)
+        db.commit()
+        db.refresh(material)
+        
+        return {
+            "success": True,
+            "material": {
+                "id": material.id,
+                "conteudo_id": material.conteudo_id,
+                "tipo": material.tipo,
+                "nome_arquivo": material.nome_arquivo,
+                "url": material.url,
+                "titulo": material.titulo,
+                "descricao": material.descricao,
+                "ordem": material.ordem,
+                "data_upload": material.data_upload
+            }
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc() # Loga no console do uvicorn para debugar
+        return {"success": False, "message": f"Erro interno: {str(e)}"}, 500
 
 @router.post("/quiz")
 async def configurar_quiz(
@@ -564,6 +593,45 @@ def editar_material(
     
     db.commit()
     return {"message": "Material atualizado com sucesso"}
+
+
+@router.get("/material/{material_id}/arquivo")
+def visualizar_arquivo_material(material_id: int, download: bool = False, db: Session = Depends(get_db)):
+    """Retorna o arquivo físico do material (download ou visualização inline)."""
+    material = db.query(MaterialEstudo).filter(MaterialEstudo.id == material_id).first()
+    if not material or not material.url:
+        raise HTTPException(status_code=404, detail="Material não encontrado")
+    
+    # Resolver o caminho absoluto usando a funcão já existente no trabalhos.py
+    try:
+        caminho_arquivo = resolver_caminho_arquivo(material.url)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+        
+    if not caminho_arquivo.exists():
+        raise HTTPException(status_code=404, detail="Arquivo físico não encontrado no servidor")
+
+    # Determinar mimetype simples para videos e pdfs
+    ext = caminho_arquivo.suffix.lower()
+    media_type = "application/octet-stream"
+    if ext == ".pdf":
+        media_type = "application/pdf"
+    elif ext in [".mp4", ".mov", ".m4v"]:
+        media_type = "video/mp4"
+    elif ext == ".webm":
+        media_type = "video/webm"
+    
+    headers = {}
+    if download:
+        headers["Content-Disposition"] = f"attachment; filename=\"{material.nome_arquivo}\""
+    else:
+        headers["Content-Disposition"] = f"inline; filename=\"{material.nome_arquivo}\""
+        
+    return FileResponse(
+        path=caminho_arquivo, 
+        media_type=media_type, 
+        headers=headers
+    )
 
 
 @router.delete("/material/{material_id}")

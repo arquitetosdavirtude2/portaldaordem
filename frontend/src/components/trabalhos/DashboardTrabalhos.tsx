@@ -123,13 +123,13 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                 setFileToUpload(null);
                 await carregarConteudos();
                 setItemEmEstudo(null);
-                alert('Trabalho enviado com sucesso para correção!');
+                setAlertConfig({ isOpen: true, title: 'Sucesso', message: 'Trabalho enviado com sucesso para correção!', variant: 'success' });
             } else {
-                alert('Falha ao enviar o trabalho.');
+                setAlertConfig({ isOpen: true, title: 'Erro', message: 'Falha ao enviar o trabalho.', variant: 'danger' });
             }
         } catch (e) {
             console.error(e);
-            alert('Erro de conexão ao enviar o trabalho.');
+            setAlertConfig({ isOpen: true, title: 'Erro de conexão', message: 'Não foi possível enviar o trabalho.', variant: 'danger' });
         } finally {
             setIsUploading(false);
         }
@@ -497,8 +497,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                                 <button 
                                                     onClick={() => {
                                                         const cid = getConteudoId(item);
-                                                        if (!cid) {
-                                                            alert("Trabalho sem ID: Não foi possível identificar este conteúdo.");
+                                                        if (!getConteudoId(item)) {
+                                                            setAlertConfig({ isOpen: true, title: 'Atenção', message: 'Trabalho sem ID: Não foi possível identificar este conteúdo.', variant: 'warning' });
                                                             return;
                                                         }
                                                         setEstudoObreiroConteudo({ ...item, id: cid, conteudo_id: cid });
