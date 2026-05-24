@@ -252,13 +252,13 @@ async def upload_material(
 ):
     """Faz upload de material (video ou apoio) para um conteudo."""
     try:
+        if not file:
+            return {"success": False, "message": "Arquivo não enviado."}, 400
+
         # Verifica se conteudo existe
         conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == conteudo_id).first()
         if not conteudo:
             return {"success": False, "message": "Conteúdo não encontrado."}, 404
-
-        if not file:
-            return {"success": False, "message": "Arquivo não enviado."}, 400
 
         # Normaliza tipo para 'documento' se vier diferente e não for video
         if tipo != 'video':
@@ -267,10 +267,14 @@ async def upload_material(
         diretorio = MATERIAIS_VID_DIR if tipo == 'video' else MATERIAIS_DOC_DIR
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         
-        # Sanitizar nome do arquivo
-        safe_filename = "".join([c for c in file.filename if c.isalpha() or c.isdigit() or c in (' ', '.', '-', '_')]).rstrip()
-        filename = f"{timestamp}_{safe_filename}"
-        file_path = os.path.join(diretorio, filename)
+        import uuid
+        extensao = Path(file.filename).suffix
+        if not extensao:
+            extensao = ".bin"
+        
+        # Gerar nome tecnico para evitar erro de acentuacao e caractere especial no cPanel
+        nome_tecnico = f"material_{conteudo_id}_{timestamp}_{uuid.uuid4().hex[:8]}{extensao}"
+        file_path = os.path.join(diretorio, nome_tecnico)
         
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -286,8 +290,8 @@ async def upload_material(
         material = MaterialEstudo(
             conteudo_id=conteudo_id,
             tipo=tipo,
-            nome_arquivo=file.filename,
-            url=f"/{diretorio}/{filename}",
+            nome_arquivo=file.filename, # Salva o original para exibição se precisar, mas a url usará o técnico
+            url=f"/{diretorio}/{nome_tecnico}",
             data_upload=datetime.now().isoformat(),
             titulo=titulo or file.filename,
             descricao=descricao,
@@ -314,7 +318,7 @@ async def upload_material(
         }
     except Exception as e:
         import traceback
-        traceback.print_exc() # Loga no console do uvicorn para debugar
+        print("[POST /material/upload] erro:", str(e))
         return {"success": False, "message": f"Erro interno: {str(e)}"}, 500
 
 @router.post("/quiz")
@@ -594,22 +598,44 @@ def registrar_progresso_json(body: ProgressoBody, db: Session = Depends(get_db))
 @router.get("/materiais/{conteudo_id}")
 def listar_materiais(conteudo_id: int, db: Session = Depends(get_db)):
     """Lista materiais de um conteúdo ordenados por posição."""
-    materiais = db.query(MaterialEstudo).filter(
-        MaterialEstudo.conteudo_id == conteudo_id
-    ).order_by(MaterialEstudo.ordem).all()
-    
-    return [{
-        "id": m.id,
-        "conteudo_id": m.conteudo_id,
-        "tipo": m.tipo,
-        "nome_arquivo": m.nome_arquivo,
-        "url": m.url,
-        "titulo": getattr(m, 'titulo', None),
-        "descricao": getattr(m, 'descricao', None),
-        "ordem": getattr(m, 'ordem', 0),
-        "duracao_segundos": getattr(m, 'duracao_segundos', None),
-        "data_upload": m.data_upload
-    } for m in materiais]
+    try:
+        materiais = db.query(MaterialEstudo).filter(
+            MaterialEstudo.conteudo_id == conteudo_id
+        ).order_by(MaterialEstudo.ordem).all()
+        
+        resultados = []
+        for m in materiais:
+            # Padronizando o tipo baseado na extensão ou mantendo video
+            tipo_final = m.tipo
+            if m.nome_arquivo:
+                nome_lower = m.nome_arquivo.lower()
+                if m.tipo != 'video':
+                    if nome_lower.endswith('.pdf'):
+                        tipo_final = 'pdf'
+                    elif nome_lower.endswith('.docx'):
+                        tipo_final = 'docx'
+                    elif nome_lower.endswith('.doc'):
+                        tipo_final = 'doc'
+            
+            resultados.append({
+                "id": m.id,
+                "conteudo_id": m.conteudo_id,
+                "tipo": tipo_final,
+                "titulo": getattr(m, 'titulo', None),
+                "descricao": getattr(m, 'descricao', None),
+                "arquivo_nome": m.nome_arquivo,
+                "arquivo_url": f"/api/trabalhos/material/{m.id}/arquivo?download=false",
+                "download_url": f"/api/trabalhos/material/{m.id}/arquivo?download=true",
+                "ordem": getattr(m, 'ordem', 0),
+                "data_upload": m.data_upload,
+                "ativo": bool(getattr(m, 'ativo', 1))
+            })
+            
+        return resultados
+    except Exception as e:
+        db.rollback()
+        print("[GET /materiais] erro:", str(e))
+        return []
 
 
 @router.put("/material/{material_id}")
