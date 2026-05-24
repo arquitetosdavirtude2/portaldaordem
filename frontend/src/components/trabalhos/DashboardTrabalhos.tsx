@@ -150,15 +150,11 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             return;
         }
         
-        if (entregasDesteTrabalho.length === 1) {
-            setEntregaParaCorrecao(entregasDesteTrabalho[0]);
-        } else {
-            setListaEntregasParaSelecao({
-                ativo: true,
-                tituloTrabalho: item.titulo,
-                entregas: entregasDesteTrabalho
-            });
-        }
+        setListaEntregasParaSelecao({
+            ativo: true,
+            tituloTrabalho: item.titulo,
+            entregas: entregasDesteTrabalho
+        });
     };
 
 

@@ -8,6 +8,8 @@ import os
 import shutil
 import json
 from datetime import datetime
+from pathlib import Path
+from urllib.parse import unquote
 
 router = APIRouter(prefix="/api/trabalhos", tags=["trabalhos"])
 
@@ -16,6 +18,27 @@ VIDEO_DIR = "uploads/videos"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(VIDEO_DIR, exist_ok=True)
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+UPLOADS_DIR_RESOLVED = BASE_DIR / "uploads"
+
+def resolver_caminho_arquivo(arquivo_url: str) -> Path:
+    if not arquivo_url:
+        raise HTTPException(status_code=404, detail="Entrega sem arquivo_url")
+
+    arquivo_url = unquote(arquivo_url).replace("\\", "/").lstrip("/")
+
+    if arquivo_url.startswith("uploads/"):
+        caminho = BASE_DIR / arquivo_url
+    else:
+        caminho = UPLOADS_DIR_RESOLVED / arquivo_url
+
+    caminho = caminho.resolve()
+
+    if "uploads" not in str(caminho):
+        raise HTTPException(status_code=400, detail="Caminho de arquivo inválido")
+
+    return caminho
 
 @router.get("/")
 def listar_conteudos(loja_id: Optional[int] = None, pessoa_id: Optional[int] = None, grau: Optional[int] = None, db: Session = Depends(get_db)):
@@ -714,19 +737,25 @@ def listar_respostas_obreiro(conteudo_id: int, pessoa_id: int, db: Session = Dep
         RespostaQuiz.pessoa_id == pessoa_id
     ).all()
     
-    return [{
-        "id": r.id,
-        "quiz_id": r.quiz_id,
-        "resposta_texto": r.resposta_texto,
-        "opcao_selecionada": r.opcao_selecionada,
-        "lacunas_json": r.lacunas_json,
-        "is_correto": r.is_correto,
-        "nota": r.nota,
-        "feedback": r.feedback,
-        "status": r.status,
-        "data_resposta": r.data_resposta,
-        "data_correcao": r.data_correcao
-    } for r in respostas]
+    resultado = []
+    for r in respostas:
+        quiz = db.query(Quiz).filter(Quiz.id == r.quiz_id).first()
+        resultado.append({
+            "id": r.id,
+            "quiz_id": r.quiz_id,
+            "pergunta": quiz.pergunta if quiz else "Pergunta não encontrada",
+            "tipo": quiz.tipo if quiz else "desconhecido",
+            "resposta_texto": r.resposta_texto,
+            "opcao_selecionada": r.opcao_selecionada,
+            "lacunas_json": r.lacunas_json,
+            "is_correto": r.is_correto,
+            "nota": r.nota,
+            "feedback": r.feedback,
+            "status": r.status,
+            "data_resposta": r.data_resposta,
+            "data_correcao": r.data_correcao
+        })
+    return resultado
 
 
 class CorrecaoRespostaBody(BaseModel):
@@ -889,56 +918,48 @@ def obter_arquivo_entrega(entrega_id: int, download: bool = False, db: Session =
     if not entrega.arquivo_url:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado para esta entrega")
 
-    # Arquivo existe?
-    # O arquivo_url no DB é algo como '/uploads/trabalhos/arquivo.pdf'
-    # Precisamos remover o slash inicial e usar no filesystem relativo a raiz do backend
-    rel_path = entrega.arquivo_url.lstrip("/") if entrega.arquivo_url.startswith("/") else entrega.arquivo_url
-    # file_path vai ser a resolucao absoluta ou relativa a partir do backend root
-    base_dir = os.getcwd()
-    file_path = os.path.join(base_dir, rel_path)
-    
-    if not os.path.exists(file_path):
-        # Tentar sem lstrip ou so a basename se falhar
-        if os.path.exists(rel_path):
-            file_path = rel_path
-        elif os.path.exists(os.path.join(base_dir, 'uploads', 'trabalhos', os.path.basename(entrega.arquivo_url))):
-            file_path = os.path.join(base_dir, 'uploads', 'trabalhos', os.path.basename(entrega.arquivo_url))
-        else:
-            raise HTTPException(status_code=404, detail="Arquivo físico não encontrado no servidor")
+    caminho = resolver_caminho_arquivo(entrega.arquivo_url)
 
-    # Nome para download
+    if not caminho.exists():
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "Arquivo físico não encontrado",
+                "arquivo_url": entrega.arquivo_url,
+                "caminho_tentado": str(caminho)
+            }
+        )
+
+    filename = caminho.name
+    
+    dono = db.query(Pessoa).filter(Pessoa.id == entrega.pessoa_id).first()
     nome_irmao = dono.nome if dono else "irmao"
     conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == entrega.conteudo_id).first()
     nome_trabalho = conteudo.titulo if conteudo else "trabalho"
     
-    ext = os.path.splitext(file_path)[1].lower()
-    filename = f"{nome_irmao} - {nome_trabalho}{ext}"
+    ext = caminho.suffix.lower()
     
-    # Determinar media_type básico
-    if ext == '.pdf':
-        media_type = 'application/pdf'
-    elif ext == '.docx':
-        media_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    elif ext == '.doc':
-        media_type = 'application/msword'
+    # Adicionar o nome do irmão e trabalho no download (opcional mas útil)
+    download_filename = f"{nome_irmao} - {nome_trabalho}{ext}"
+
+    media_type = "application/octet-stream"
+    if ext == ".pdf":
+        media_type = "application/pdf"
+    elif ext == ".docx":
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif ext == ".doc":
+        media_type = "application/msword"
     elif ext in ['.jpg', '.jpeg']:
         media_type = 'image/jpeg'
     elif ext == '.png':
         media_type = 'image/png'
-    else:
         media_type = 'application/octet-stream'
 
-    if download:
-        return FileResponse(
-            path=file_path, 
-            filename=filename, 
-            media_type=media_type,
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
-        )
-    else:
-        return FileResponse(
-            path=file_path, 
-            filename=filename,
-            media_type=media_type,
-            headers={"Content-Disposition": f'inline; filename="{filename}"'}
-        )
+    return FileResponse(
+        path=str(caminho),
+        filename=download_filename,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'{"attachment" if download else "inline"}; filename="{download_filename}"'
+        }
+    )

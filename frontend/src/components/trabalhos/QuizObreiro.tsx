@@ -182,7 +182,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                                 <span className="text-yellow-500 text-sm font-bold">{idx + 1}</span>
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-[15px] font-normal text-gray-200 mb-2 font-sans">{p.pergunta}</h3>
+                                <h3 className="text-[15px] font-normal text-gray-200 mb-2 font-sans normal-case tracking-normal leading-relaxed">{p.pergunta}</h3>
                                 
                                 {p.tipo === 'livre' && (
                                     <textarea

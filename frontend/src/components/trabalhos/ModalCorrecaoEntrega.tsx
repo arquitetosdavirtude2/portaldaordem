@@ -23,6 +23,22 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
     const isDocx = entrega.arquivo_nome?.toLowerCase().endsWith('.docx') || entrega.arquivo_nome?.toLowerCase().endsWith('.doc');
     const isPdf = entrega.arquivo_nome?.toLowerCase().endsWith('.pdf');
 
+    // Quiz estado
+    const [respostasQuiz, setRespostasQuiz] = useState<any[]>([]);
+    const [loadingQuiz, setLoadingQuiz] = useState(false);
+
+    useEffect(() => {
+        if (!entrega?.conteudo_id || !entrega?.pessoa_id) return;
+        setLoadingQuiz(true);
+        fetch(`/api/trabalhos/respostas/${entrega.conteudo_id}/${entrega.pessoa_id}`)
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) setRespostasQuiz(data);
+            })
+            .catch(err => console.error("Erro ao buscar respostas do quiz:", err))
+            .finally(() => setLoadingQuiz(false));
+    }, [entrega?.conteudo_id, entrega?.pessoa_id]);
+
     // URLs usando apenas o id da entrega (sem pessoa_id=0)
     const idDaEntrega = entrega.id || entrega.entrega_id;
     const urlVisualizar = idDaEntrega ? `/api/trabalhos/entregas/${idDaEntrega}/arquivo?download=false` : null;
@@ -253,10 +269,32 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                         )}
                     </div>
 
-                    {/* Respostas de Quiz (se houver, deixado fixo e discreto) */}
-                    <div className="pt-4">
-                        <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Respostas de Quiz (se houver)</label>
-                        <p className="text-[13px] text-white/40 italic">Este trabalho não possui respostas de quiz registradas no momento.</p>
+                    {/* Respostas de Quiz */}
+                    <div className="pt-4 border-t border-white/5">
+                        <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-4">Respostas do Quiz</label>
+                        
+                        {loadingQuiz ? (
+                            <p className="text-[13px] text-white/40 italic">Carregando respostas...</p>
+                        ) : respostasQuiz.length > 0 ? (
+                            <div className="space-y-4">
+                                {respostasQuiz.map((resposta, index) => (
+                                    <div key={resposta.id || index} className="bg-black/20 border border-white/5 rounded-xl p-5">
+                                        <p className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest mb-2">Pergunta {index + 1}</p>
+                                        <p className="text-sm text-gray-200 mb-3">{resposta.pergunta}</p>
+                                        <div className="bg-white/[0.02] border border-white/5 rounded-lg p-4">
+                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Resposta do irmão:</p>
+                                            <p className="text-sm text-white/90">
+                                                {resposta.tipo === 'livre' ? resposta.resposta_texto : 
+                                                 resposta.tipo === 'multipla_escolha' ? `Alternativa selecionada: ${resposta.opcao_selecionada}` :
+                                                 resposta.lacunas_json ? `Lacunas: ${resposta.lacunas_json}` : 'Nenhuma resposta registrada'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[13px] text-white/40 italic">Este trabalho não possui respostas de quiz registradas no momento.</p>
+                        )}
                     </div>
 
                     {/* Decisão / Feedback */}
