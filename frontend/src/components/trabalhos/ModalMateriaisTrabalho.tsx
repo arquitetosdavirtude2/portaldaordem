@@ -207,8 +207,8 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
     const [editandoId, setEditandoId] = useState<number | null>(null);
     const [excluindoId, setExcluindoId] = useState<number | null>(null);
     const [feedbackModal, setFeedbackModal] = useState<{msg: string, type: 'error'|'success'}|null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [previewType, setPreviewType] = useState<'video' | 'pdf'>('video');
+    const [previewItem, setPreviewItem] = useState<Material | null>(null);
+    const [previewKind, setPreviewKind] = useState<'video' | 'pdf' | 'docx' | null>(null);
 
     const isVideo = tipoMaterial === 'video';
     const tituloModal = isVideo ? 'Gestao de Videos' : 'Gestao de Materiais de Apoio';
@@ -384,19 +384,20 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
 
                                         {/* Actions */}
                                         <div className="flex items-center gap-1 shrink-0">
-                                            {/* Preview (apenas para pdf ou video) */}
-                                            {(!m.nome_arquivo?.toLowerCase().endsWith('.docx') && !m.nome_arquivo?.toLowerCase().endsWith('.doc')) && (
-                                                <button
-                                                    onClick={() => { setPreviewUrl(`/api/trabalhos/materiais/${m.id}/arquivo?download=false`); setPreviewType(m.tipo === 'video' ? 'video' : 'pdf'); }}
-                                                    className="p-1.5 bg-white/[0.03] hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 rounded-lg cursor-pointer transition-all"
-                                                    title="Visualizar"
-                                                >
-                                                    <svg className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                    </svg>
-                                                </button>
-                                            )}
+                                            {/* Preview */}
+                                            <button
+                                                onClick={() => {
+                                                    setPreviewItem(m);
+                                                    setPreviewKind(m.tipo === 'video' ? 'video' : ((m.nome_arquivo || '').toLowerCase().includes('.doc') ? 'docx' : 'pdf'));
+                                                }}
+                                                className="p-1.5 bg-white/[0.03] hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 rounded-lg cursor-pointer transition-all"
+                                                title="Visualizar"
+                                            >
+                                                <svg className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
                                             {/* Download */}
                                             <a
                                                 href={`/api/trabalhos/materiais/${m.id}/arquivo?download=true`}
@@ -494,25 +495,64 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
             </div>
 
             {/* Preview Modal */}
-            {previewUrl && (
-                <div className="fixed inset-0 z-[350] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md">
-                    <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden w-full h-full flex flex-col relative">
-                        <div className="p-4 flex justify-between items-center bg-white/[0.03] border-b border-white/5 shrink-0">
-                            <h4 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest ml-2">
-                                {previewType === 'video' ? '🎬 Preview do Video' : '📄 Leitor de Documentos'}
-                            </h4>
-                            <button onClick={() => setPreviewUrl(null)} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">✕</button>
+            {previewItem && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+                    <div className="w-full max-w-6xl max-h-[90vh] rounded-2xl border border-white/10 bg-[#0b0b0d] shadow-2xl overflow-hidden flex flex-col">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+                            <div>
+                                <p className="text-[10px] uppercase tracking-[0.28em] text-yellow-500">
+                                    {previewKind === 'video' ? 'Preview do Vídeo' : 'Leitor de Documentos'}
+                                </p>
+                                <h3 className="mt-1 text-xl font-normal text-white">
+                                    {previewItem.titulo || previewItem.nome_arquivo}
+                                </h3>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => { setPreviewItem(null); setPreviewKind(null); }}
+                                className="h-11 w-11 rounded-full bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition cursor-pointer flex items-center justify-center text-xl"
+                            >
+                                ×
+                            </button>
                         </div>
-                        <div className="flex-1 w-full">
-                            {previewType === 'video' ? (
+
+                        <div className="flex-1 bg-black flex items-center justify-center p-4 min-h-0">
+                            {previewKind === 'video' ? (
                                 <video
-                                    src={previewUrl}
+                                    src={`/api/trabalhos/materiais/${previewItem.id}/arquivo?download=false`}
                                     controls
-                                    autoPlay
-                                    className="w-full h-full bg-black"
+                                    preload="metadata"
+                                    className="w-full max-h-[72vh] object-contain rounded-xl bg-black"
+                                />
+                            ) : previewKind === 'pdf' ? (
+                                <iframe 
+                                    src={`/api/trabalhos/materiais/${previewItem.id}/arquivo?download=false`} 
+                                    className="w-full h-full rounded-xl bg-white border-none" 
+                                    title="Leitor de documentos" 
                                 />
                             ) : (
-                                <iframe src={previewUrl} className="w-full h-full border-none bg-white" />
+                                <div className="text-center space-y-4">
+                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+                                        <svg className="w-8 h-8 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                    <p className="text-white/80 text-sm max-w-sm mx-auto">
+                                        Este documento DOCX não possui pré-visualização interna. 
+                                        Use o botão Baixar para abrir no Word ou editor compatível.
+                                    </p>
+                                    <a
+                                        href={`/api/trabalhos/materiais/${previewItem.id}/arquivo?download=true`}
+                                        download
+                                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold uppercase tracking-wider rounded-lg transition-colors mt-4"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        Baixar Arquivo
+                                    </a>
+                                </div>
                             )}
                         </div>
                     </div>
