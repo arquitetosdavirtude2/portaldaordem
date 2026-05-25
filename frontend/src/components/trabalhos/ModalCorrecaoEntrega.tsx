@@ -150,7 +150,7 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8">
             <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose}></div>
             
-            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative z-10 flex flex-col custom-scrollbar">
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-[calc(100vw-24px)] sm:w-[calc(100vw-64px)] max-w-[1180px] max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-64px)] overflow-y-auto shadow-2xl relative z-10 flex flex-col custom-scrollbar">
                 
                 {/* Header Elegante */}
                 <div className="sticky top-0 z-20 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 p-6 flex justify-between items-center">

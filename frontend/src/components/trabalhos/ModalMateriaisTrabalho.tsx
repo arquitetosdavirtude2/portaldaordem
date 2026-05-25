@@ -288,7 +288,7 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
     return (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose}></div>
-            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col relative z-10">
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-[calc(100vw-24px)] sm:w-[calc(100vw-64px)] max-w-[1180px] max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-64px)] flex flex-col relative z-10">
                 {/* Header */}
                 <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02] shrink-0">
                     <div className="flex items-center gap-3">

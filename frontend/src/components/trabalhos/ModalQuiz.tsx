@@ -157,7 +157,7 @@ export default function ModalQuiz({ conteudoId, quizzesIniciais, onClose, onSucc
             )}
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose}></div>
-            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative z-10">
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-[calc(100vw-24px)] sm:w-[calc(100vw-64px)] max-w-[1000px] max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-64px)] flex flex-col relative z-10">
                 <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                     <h3 className="text-xl font-bold text-white uppercase tracking-widest font-sans tracking-normal">
                         Configuracao de Quiz

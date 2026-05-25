@@ -13,6 +13,7 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
     const [grau, setGrau] = useState(1);
     const [descricaoJornada, setDescricaoJornada] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [feedback, setFeedback] = useState<{msg: string, type: 'error'|'success'} | null>(null);
 
     useEffect(() => {
         if (conteudo) {
@@ -28,12 +29,12 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
     const handleSalvar = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setFeedback(null);
         try {
             const formData = new FormData();
             formData.append('titulo', titulo);
             formData.append('grau', grau.toString());
             formData.append('descricao_jornada', descricaoJornada);
-            // O tipo não é mais enviado para edição para evitar bagunça
 
             const res = await fetch(`/api/trabalhos/conteudo/${conteudo.id}`, {
                 method: 'PUT',
@@ -44,11 +45,11 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
                 onSuccess();
                 onClose();
             } else {
-                alert('Erro ao atualizar o conteúdo.');
+                setFeedback({msg: 'Erro ao atualizar o conteúdo.', type: 'error'});
             }
         } catch (e) {
             console.error(e);
-            alert('Erro de conexão.');
+            setFeedback({msg: 'Erro de conexão.', type: 'error'});
         } finally {
             setIsSubmitting(false);
         }
@@ -56,7 +57,7 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-[#0f1219] w-full max-w-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-[#0f1219] w-[calc(100vw-24px)] sm:w-[calc(100vw-64px)] max-w-[1180px] max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-64px)] rounded-2xl border border-white/10 shadow-2xl overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}
                 <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
@@ -66,10 +67,18 @@ export default function ModalEditarConteudo({ isOpen, onClose, conteudo, onSucce
                             DADOS GERAIS - {tipo === 'trabalho' ? 'TRABALHO' : 'PRELEÇÃO'}
                         </h2>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-gray-400 transition-colors">
-                        ✕
+                    <button onClick={onClose} className="p-2 bg-white/5 hover:bg-white/10 rounded-full cursor-pointer transition-all">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
+
+                {feedback && (
+                    <div className={`mx-6 mt-4 p-3 rounded-lg text-xs font-bold uppercase ${feedback.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'}`}>
+                        {feedback.msg}
+                    </div>
+                )}
 
                 {/* Form */}
                 <form onSubmit={handleSalvar} className="p-6 space-y-5">
