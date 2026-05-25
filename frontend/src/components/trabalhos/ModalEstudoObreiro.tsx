@@ -312,7 +312,7 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                                                 <EntregaTrabalhoObreiro 
                                                     pessoaId={pessoaId} 
                                                     conteudoId={conteudo.id} 
-                                                    onSuccess={handleStepComplete}
+                                                    onComplete={handleStepComplete}
                                                 />
                                             </div>
                                         )}
