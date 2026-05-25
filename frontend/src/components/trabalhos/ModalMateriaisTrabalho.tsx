@@ -360,11 +360,11 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-0.5">
                                                 <h5 className="text-[11px] font-bold text-gray-200 truncate">
-                                                    {m.titulo || m.nome_arquivo}
+                                                    {m.titulo || m.nome_arquivo || (m as any).arquivo_nome || (m as any).nome}
                                                 </h5>
                                             </div>
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="text-[8px] text-gray-600 uppercase">{m.nome_arquivo}</span>
+                                                <span className="text-[8px] text-gray-600 uppercase">{m.nome_arquivo || (m as any).arquivo_nome || (m as any).nome}</span>
                                                 {m.duracao_segundos && (
                                                     <>
                                                         <span className="text-gray-700">·</span>
@@ -388,7 +388,8 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
                                             <button
                                                 onClick={() => {
                                                     setPreviewItem(m);
-                                                    setPreviewKind(m.tipo === 'video' ? 'video' : ((m.nome_arquivo || '').toLowerCase().includes('.doc') ? 'docx' : 'pdf'));
+                                                    const fileName = m.nome_arquivo || (m as any).arquivo_nome || (m as any).nome || '';
+                                                    setPreviewKind(m.tipo === 'video' ? 'video' : (fileName.toLowerCase().includes('.doc') ? 'docx' : 'pdf'));
                                                 }}
                                                 className="p-1.5 bg-white/[0.03] hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 rounded-lg cursor-pointer transition-all"
                                                 title="Visualizar"
@@ -471,7 +472,7 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
                                             <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 space-y-3">
                                                 <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">Confirmar Exclusao</p>
                                                 <p className="text-xs text-gray-300">
-                                                    Tem certeza que deseja remover <strong className="text-white">{m.titulo || m.nome_arquivo}</strong>?
+                                                    Tem certeza que deseja remover <strong className="text-white">{m.titulo || m.nome_arquivo || (m as any).arquivo_nome || (m as any).nome}</strong>?
                                                 </p>
                                                 <p className="text-[9px] text-gray-500">
                                                     Essa acao removera o arquivo da sequencia de estudo deste trabalho.
@@ -504,7 +505,7 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
                                     {previewKind === 'video' ? 'Preview do Vídeo' : 'Leitor de Documentos'}
                                 </p>
                                 <h3 className="mt-1 text-xl font-normal text-white">
-                                    {previewItem.titulo || previewItem.nome_arquivo}
+                                    {previewItem.titulo || previewItem.nome_arquivo || (previewItem as any).arquivo_nome || (previewItem as any).nome}
                                 </h3>
                             </div>
 
