@@ -356,6 +356,40 @@ async def upload_material(
             detail=f"{type(e).__name__}: {str(e)}"
         )
 
+@router.get("/materiais/{material_id}/arquivo")
+async def baixar_material(material_id: int, download: bool = False, db: Session = Depends(get_db)):
+    """Retorna o arquivo fisico do material para download ou preview inline."""
+    material = db.query(MaterialEstudo).filter(MaterialEstudo.id == material_id).first()
+    if not material or not material.url:
+        raise HTTPException(status_code=404, detail="Material não encontrado ou sem arquivo")
+        
+    caminho = resolver_caminho_arquivo(material.url)
+    if not caminho.exists():
+        raise HTTPException(status_code=404, detail="Arquivo físico não encontrado no servidor")
+        
+    ext = caminho.suffix.lower()
+    media_type = "application/octet-stream"
+    if ext == ".pdf":
+        media_type = "application/pdf"
+    elif ext in [".mp4", ".mov", ".webm"]:
+        media_type = f"video/{ext.strip('.')}"
+    elif ext in [".docx", ".doc"]:
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        
+    headers = {}
+    from urllib.parse import quote
+    nome_seguro = quote(material.nome_arquivo or caminho.name)
+
+    if download:
+        headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{nome_seguro}"
+    else:
+        headers["Content-Disposition"] = f"inline; filename*=UTF-8''{nome_seguro}"
+        
+    return FileResponse(
+        path=caminho, 
+        media_type=media_type, 
+        headers=headers
+    )
 @router.post("/quiz")
 async def configurar_quiz(
     conteudo_id: int = Form(...),

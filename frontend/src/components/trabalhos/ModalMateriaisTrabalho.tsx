@@ -384,17 +384,30 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
 
                                         {/* Actions */}
                                         <div className="flex items-center gap-1 shrink-0">
-                                            {/* Preview */}
-                                            <button
-                                                onClick={() => { setPreviewUrl(m.url); setPreviewType(m.tipo === 'video' ? 'video' : 'pdf'); }}
-                                                className="p-1.5 bg-white/[0.03] hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 rounded-lg cursor-pointer transition-all"
-                                                title="Preview"
+                                            {/* Preview (apenas para pdf ou video) */}
+                                            {(!m.nome_arquivo?.toLowerCase().endsWith('.docx') && !m.nome_arquivo?.toLowerCase().endsWith('.doc')) && (
+                                                <button
+                                                    onClick={() => { setPreviewUrl(`/api/trabalhos/materiais/${m.id}/arquivo?download=false`); setPreviewType(m.tipo === 'video' ? 'video' : 'pdf'); }}
+                                                    className="p-1.5 bg-white/[0.03] hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 rounded-lg cursor-pointer transition-all"
+                                                    title="Visualizar"
+                                                >
+                                                    <svg className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                            {/* Download */}
+                                            <a
+                                                href={`/api/trabalhos/materiais/${m.id}/arquivo?download=true`}
+                                                download
+                                                className="p-1.5 bg-white/[0.03] hover:bg-green-500/10 border border-transparent hover:border-green-500/20 rounded-lg cursor-pointer transition-all flex items-center justify-center text-gray-400 group/down"
+                                                title="Baixar Arquivo"
                                             >
-                                                <svg className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                <svg className="w-3.5 h-3.5 opacity-50 group-hover/down:opacity-100 group-hover/down:text-green-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                 </svg>
-                                            </button>
+                                            </a>
                                             {/* Edit */}
                                             <button
                                                 onClick={() => setEditandoId(editandoId === m.id ? null : m.id)}
