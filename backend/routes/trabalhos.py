@@ -1051,6 +1051,153 @@ def consultar_progresso_materiais(conteudo_id: int, pessoa_id: int, db: Session 
     return resultado
 
 
+@router.get("/progresso-conteudo/{conteudo_id}")
+def obter_progresso_consolidado(conteudo_id: int, pessoa_id: int, db: Session = Depends(get_db)):
+    """Retorna o estado consolidado do conteúdo para o usuário."""
+    conteudo = db.query(ConteudoEstudo).filter(ConteudoEstudo.id == conteudo_id).first()
+    if not conteudo:
+        raise HTTPException(status_code=404, detail="Conteúdo não encontrado")
+
+    materiais = db.query(MaterialEstudo).filter(MaterialEstudo.conteudo_id == conteudo_id).order_by(MaterialEstudo.ordem).all()
+    
+    videos_list = []
+    materiais_list = []
+    
+    for m in materiais:
+        prog = db.query(ProgressoMaterial).filter(
+            ProgressoMaterial.pessoa_id == pessoa_id,
+            ProgressoMaterial.material_id == m.id
+        ).first()
+        
+        is_concluido = prog.concluido == 1 if prog else False
+        
+        item = {
+            "id": m.id,
+            "titulo": getattr(m, 'titulo', None) or m.nome_arquivo,
+            "tipo": m.tipo,
+            "concluido": is_concluido,
+            "data_conclusao": prog.data_conclusao if prog else None,
+            "max_segundos_assistidos": prog.max_segundos_assistidos if prog else 0
+        }
+        
+        if m.tipo == 'video':
+            item['assistido'] = is_concluido
+            videos_list.append(item)
+        else:
+            item['visualizado'] = is_concluido
+            materiais_list.append(item)
+
+    quizzes = db.query(Quiz).filter(Quiz.conteudo_id == conteudo_id).all()
+    quiz_data = {"existe": len(quizzes) > 0, "respondido": False, "respostas": []}
+    
+    if quiz_data["existe"]:
+        todas_respondidas = True
+        for q in quizzes:
+            resp = db.query(RespostaQuiz).filter(
+                RespostaQuiz.pessoa_id == pessoa_id,
+                RespostaQuiz.quiz_id == q.id
+            ).first()
+            if not resp:
+                todas_respondidas = False
+            else:
+                quiz_data["respostas"].append({
+                    "quiz_id": q.id,
+                    "pergunta": q.pergunta,
+                    "resposta_texto": resp.resposta_texto,
+                    "opcao_selecionada": resp.opcao_selecionada,
+                    "status": resp.status,
+                    "feedback": resp.feedback
+                })
+        # So consideramos respondido se tiver resposta para tudo
+        # Mas para simplificar, se tiver ao menos 1 ja consideramos "respondido" para travar tela de resposta livre
+        quiz_data["respondido"] = len(quiz_data["respostas"]) == len(quizzes) if len(quizzes) > 0 else False
+
+    entrega = db.query(EntregaTrabalho).filter(
+        EntregaTrabalho.pessoa_id == pessoa_id,
+        EntregaTrabalho.conteudo_id == conteudo_id
+    ).order_by(EntregaTrabalho.id.desc()).first()
+
+    trabalho_data = {
+        "existe": conteudo.tipo == 'trabalho',
+        "enviado": entrega is not None,
+        "status": entrega.status if entrega else "nao_enviado",
+        "arquivo_nome": os.path.basename(entrega.arquivo_url) if entrega and entrega.arquivo_url else None,
+        "data_upload": entrega.data_upload if entrega else None,
+        "feedback": entrega.feedback if entrega else None
+    }
+
+    # Calcula proxima etapa / modo
+    videos_pendentes = any(not v['assistido'] for v in videos_list) if len(videos_list) > 0 else False
+    materiais_pendentes = any(not m['visualizado'] for m in materiais_list) if len(materiais_list) > 0 else False
+    
+    # Tratamento de nomenclaturas: 'revisar' no banco = 'ajustes_solicitados' no front
+    status_trab = trabalho_data['status']
+    if status_trab == 'pendente' and trabalho_data['enviado']:
+        status_trab = 'aguardando_correcao'
+    elif status_trab == 'revisar':
+        status_trab = 'ajustes_solicitados'
+    trabalho_data['status'] = status_trab
+
+    is_revisao = False
+    if trabalho_data['existe'] and status_trab in ['aguardando_correcao', 'aprovado', 'ajustes_solicitados', 'reprovado']:
+        is_revisao = True
+
+    modo = "revisao" if is_revisao else "estudo"
+
+    etapa_atual = 'videos'
+    if status_trab == 'aprovado':
+        etapa_atual = 'resultado'
+    elif status_trab in ['aguardando_correcao', 'ajustes_solicitados', 'reprovado']:
+        etapa_atual = 'entrega'
+    elif len(videos_list) > 0 and videos_pendentes:
+        etapa_atual = 'videos'
+    elif len(materiais_list) > 0 and materiais_pendentes:
+        etapa_atual = 'materiais'
+    elif quiz_data['existe'] and not quiz_data['respondido']:
+        etapa_atual = 'perguntas'
+    elif trabalho_data['existe'] and status_trab == 'nao_enviado':
+        etapa_atual = 'entrega'
+    else:
+        etapa_atual = 'resultado'
+
+    abas = {
+        "videos": {
+            "liberada": True,
+            "concluida": not videos_pendentes
+        },
+        "materiais": {
+            "liberada": True if not videos_pendentes or is_revisao else False,
+            "concluida": not materiais_pendentes
+        },
+        "perguntas": {
+            "liberada": True if (not videos_pendentes and not materiais_pendentes) or is_revisao else False,
+            "concluida": quiz_data['respondido']
+        },
+        "entrega": {
+            "liberada": True if (not videos_pendentes and not materiais_pendentes and (not quiz_data['existe'] or quiz_data['respondido'])) or is_revisao else False,
+            "concluida": status_trab in ['aguardando_correcao', 'aprovado', 'reprovado']
+        },
+        "resultado": {
+            "liberada": True if status_trab in ['aguardando_correcao', 'aprovado', 'reprovado', 'ajustes_solicitados'] else False,
+            "concluida": status_trab == 'aprovado'
+        }
+    }
+
+    return {
+        "conteudo_id": conteudo_id,
+        "pessoa_id": pessoa_id,
+        "modo": modo,
+        "etapa_atual": etapa_atual,
+        "videos_concluidos": not videos_pendentes,
+        "materiais_concluidos": not materiais_pendentes,
+        "quiz_respondido": quiz_data["respondido"],
+        "videos": videos_list,
+        "materiais": materiais_list,
+        "quiz": quiz_data,
+        "entrega": trabalho_data,
+        "abas": abas
+    }
+
 # --- Painel Geral de Correções ---
 
 @router.get("/painel-correcoes")
