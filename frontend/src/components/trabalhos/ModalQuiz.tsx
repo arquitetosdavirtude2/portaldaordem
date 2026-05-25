@@ -21,6 +21,7 @@ const EMPTY_PERGUNTA: Pergunta = { tipo: 'livre', pergunta: '', texto: '', lacun
 export default function ModalQuiz({ conteudoId, quizzesIniciais, onClose, onSuccess }: ModalQuizProps) {
     const [perguntas, setPerguntas] = useState<Pergunta[]>([]);
     const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     useEffect(() => {
         if (quizzesIniciais && quizzesIniciais.length > 0) {
@@ -77,17 +78,17 @@ export default function ModalQuiz({ conteudoId, quizzesIniciais, onClose, onSucc
         for (let i = 0; i < perguntas.length; i++) {
             const p = perguntas[i];
             if (!p.pergunta.trim()) {
-                alert(`Pergunta ${i + 1}: o enunciado esta vazio.`);
+                setErrorMsg(`Pergunta ${i + 1}: o enunciado esta vazio.`);
                 return;
             }
             if (p.tipo === 'multipla_escolha') {
                 const vazias = p.alternativas.filter(a => !a.trim());
                 if (vazias.length > 0) {
-                    alert(`Pergunta ${i + 1}: todas as 5 alternativas devem estar preenchidas.`);
+                    setErrorMsg(`Pergunta ${i + 1}: todas as 5 alternativas devem estar preenchidas.`);
                     return;
                 }
                 if (p.resposta_correta < 0 || p.resposta_correta > 4) {
-                    alert(`Pergunta ${i + 1}: selecione a alternativa correta.`);
+                    setErrorMsg(`Pergunta ${i + 1}: selecione a alternativa correta.`);
                     return;
                 }
             }
@@ -123,16 +124,37 @@ export default function ModalQuiz({ conteudoId, quizzesIniciais, onClose, onSucc
 
             const res = await fetch('/api/trabalhos/quiz', { method: 'POST', body: formData });
             if (res.ok) { onSuccess(); onClose(); }
-            else alert('Erro ao salvar quiz');
+            else setErrorMsg('Erro ao salvar quiz. Tente novamente.');
         } catch (error) {
             console.error(error);
-            alert('Erro ao salvar quiz');
+            setErrorMsg('Erro ao salvar quiz. Verifique sua conexão e tente novamente.');
         } finally { setLoading(false); }
     };
 
     const LETRAS = ['A', 'B', 'C', 'D', 'E'];
 
     return (
+        <>
+            {errorMsg && (
+                <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setErrorMsg(null)}></div>
+                    <div className="bg-[#111] border border-red-500/30 rounded-xl w-full max-w-sm p-6 relative z-10 shadow-2xl flex flex-col items-center text-center animate-fade-in">
+                        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                            <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">Atenção</h3>
+                        <p className="text-sm text-gray-400 mb-6">{errorMsg}</p>
+                        <button 
+                            onClick={() => setErrorMsg(null)}
+                            className="w-full py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
+                        >
+                            Entendi
+                        </button>
+                    </div>
+                </div>
+            )}
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose}></div>
             <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative z-10">
@@ -281,5 +303,6 @@ export default function ModalQuiz({ conteudoId, quizzesIniciais, onClose, onSucc
                 </div>
             </div>
         </div>
+        </>
     );
 }
