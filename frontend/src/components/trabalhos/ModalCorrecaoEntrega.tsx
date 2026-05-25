@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { renderAsync } from 'docx-preview';
+import DocxViewer from './DocxViewer';
 
 interface ModalCorrecaoEntregaProps {
     entrega: any;
@@ -257,17 +257,7 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                         {showPreview && urlVisualizar && (
                             <div className="mt-6 border-t border-white/10 pt-6 animate-fade-in">
                                 {isDocx ? (
-                                    <div className="w-full bg-black/40 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-8 min-h-[300px] border border-white/5">
-                                        <div className="w-16 h-16 mb-4 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                                            <svg className="w-8 h-8 text-yellow-500/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                            </svg>
-                                        </div>
-                                        <p className="text-yellow-500/90 font-medium mb-2 text-lg">Visualização Indisponível</p>
-                                        <p className="text-gray-400 text-sm max-w-md text-center">
-                                            Não há visualização segura para arquivos DOCX no navegador. Por favor, clique no botão <strong>Baixar</strong> acima para realizar a correção do documento em seu computador.
-                                        </p>
-                                    </div>
+                                    <DocxViewer url={urlVisualizar} />
                                 ) : isPdf ? (
                                     <div className="w-full h-[600px] bg-white rounded-xl overflow-hidden shadow-inner">
                                         <iframe 

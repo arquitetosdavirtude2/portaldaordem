@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import DocxViewer from './DocxViewer';
 
 interface ModalMateriaisTrabalhoProps {
     conteudo: any;
@@ -532,6 +533,8 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
                                     className="w-full h-full rounded-xl bg-white border-none" 
                                     title="Leitor de documentos" 
                                 />
+                            ) : previewKind === 'docx' ? (
+                                <DocxViewer url={`/api/trabalhos/materiais/${previewItem.id}/arquivo?download=false`} />
                             ) : (
                                 <div className="text-center space-y-4">
                                     <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
@@ -540,8 +543,8 @@ export default function ModalMateriaisTrabalho({ conteudo, tipoMaterial, onClose
                                         </svg>
                                     </div>
                                     <p className="text-white/80 text-sm max-w-sm mx-auto">
-                                        Este documento DOCX não possui pré-visualização interna. 
-                                        Use o botão Baixar para abrir no Word ou editor compatível.
+                                        Este tipo de arquivo não possui pré-visualização interna. 
+                                        Use o botão Baixar para abrir no programa compatível.
                                     </p>
                                     <a
                                         href={`/api/trabalhos/materiais/${previewItem.id}/arquivo?download=true`}

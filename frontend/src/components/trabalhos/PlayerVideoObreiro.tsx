@@ -229,7 +229,7 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                 <div className="bg-black border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative group">
                     <video
                         ref={videoRef}
-                        src={videoAtual?.url}
+                        src={videoAtual?.id ? `/api/trabalhos/materiais/${videoAtual.id}/arquivo?download=false` : undefined}
                         controls
                         controlsList="nodownload"
                         className="w-full aspect-video bg-black"
