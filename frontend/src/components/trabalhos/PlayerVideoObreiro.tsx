@@ -144,6 +144,7 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             conteudo_id: conteudoId,
+                            pessoa_id: pessoaId,
                             material_id: videoAtual.id,
                             percentual: percent,
                             segundos_assistidos: Math.floor(maxWatched),
@@ -179,6 +180,7 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     conteudo_id: conteudoId,
+                    pessoa_id: pessoaId,
                     material_id: videoAtual.id,
                     percentual: 100,
                     segundos_assistidos: Math.floor(duration),

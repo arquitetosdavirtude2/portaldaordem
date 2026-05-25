@@ -1028,6 +1028,7 @@ def salvar_progresso_material(body: ProgressoMaterialBody, db: Session = Depends
 class ProgressoVideoBody(BaseModel):
     conteudo_id: int
     material_id: int
+    pessoa_id: int
     percentual: float
     segundos_assistidos: int
     duracao_segundos: int = None
@@ -1035,14 +1036,7 @@ class ProgressoVideoBody(BaseModel):
 @router.post("/progresso-video")
 def salvar_progresso_video(body: ProgressoVideoBody, request: Request, db: Session = Depends(get_db)):
     """Salva o progresso de um video e decide automaticamente se esta concluido no backend."""
-    from backend.auth import get_current_user_from_request
-    
-    # pessoa_id deve vir do usuario logado (nunca do frontend se houver sessao)
-    user_info = get_current_user_from_request(request)
-    if not user_info or not getattr(user_info, 'pessoa_id', None):
-        raise HTTPException(status_code=401, detail="Usuário não autenticado")
-        
-    pessoa_id = user_info.pessoa_id
+    pessoa_id = body.pessoa_id
     
     prog = db.query(ProgressoMaterial).filter(
         ProgressoMaterial.pessoa_id == pessoa_id,
