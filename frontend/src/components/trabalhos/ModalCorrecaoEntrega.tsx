@@ -81,32 +81,11 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
     const urlBaixar = idDaEntrega ? `/api/trabalhos/entregas/${idDaEntrega}/arquivo?download=true` : null;
 
     useEffect(() => {
-        if (showPreview && isDocx && urlVisualizar) {
-            setDocxError(false);
-            fetch(urlVisualizar)
-                .then(async res => {
-                    if (!res.ok) {
-                        const text = await res.text();
-                        console.error("Erro ao carregar DOCX:", res.status, text);
-                        throw new Error("Falha ao carregar DOCX");
-                    }
-                    const contentType = res.headers.get("content-type") || "";
-                    if (contentType.includes("application/json")) {
-                        const err = await res.json();
-                        console.error("Erro ao carregar DOCX (JSON retornou):", err);
-                        throw new Error("Falha ao carregar DOCX");
-                    }
-                    const blob = await res.blob();
-                    if (docxContainerRef.current) {
-                        await renderAsync(blob, docxContainerRef.current);
-                    }
-                })
-                .catch(err => {
-                    console.error("Erro ao renderizar DOCX:", err);
-                    setDocxError(true);
-                });
+        if (showPreview && isDocx) {
+            // Apenas exibe o aviso que precisa baixar, sem tentar renderizar
+            setDocxError(true);
         }
-    }, [showPreview, isDocx, urlVisualizar]);
+    }, [showPreview, isDocx]);
 
     const handleCorrecao = async (status: string) => {
         if (!feedback.trim() && status === 'refazer') {
@@ -278,15 +257,16 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                         {showPreview && urlVisualizar && (
                             <div className="mt-6 border-t border-white/10 pt-6 animate-fade-in">
                                 {isDocx ? (
-                                    <div className="w-full bg-white rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-4 min-h-[400px]">
-                                        <div ref={docxContainerRef} className="docx-preview-area w-full max-w-full overflow-x-auto text-black" />
-                                        {docxError && (
-                                            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-6 text-center mt-4 w-full">
-                                                <p className="text-orange-600 font-medium mb-4">
-                                                    Não foi possível visualizar este DOCX no navegador. Baixe o arquivo para realizar a correção.
-                                                </p>
-                                            </div>
-                                        )}
+                                    <div className="w-full bg-black/40 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-8 min-h-[300px] border border-white/5">
+                                        <div className="w-16 h-16 mb-4 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                                            <svg className="w-8 h-8 text-yellow-500/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                        </div>
+                                        <p className="text-yellow-500/90 font-medium mb-2 text-lg">Visualização Indisponível</p>
+                                        <p className="text-gray-400 text-sm max-w-md text-center">
+                                            Não há visualização segura para arquivos DOCX no navegador. Por favor, clique no botão <strong>Baixar</strong> acima para realizar a correção do documento em seu computador.
+                                        </p>
                                     </div>
                                 ) : isPdf ? (
                                     <div className="w-full h-[600px] bg-white rounded-xl overflow-hidden shadow-inner">
