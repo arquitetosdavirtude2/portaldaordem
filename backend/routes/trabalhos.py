@@ -243,12 +243,11 @@ def excluir_conteudo(
 import unicodedata
 import re
 
-def safe_log(*args):
+def safe_print(label, value):
     try:
-        text = " ".join(str(a) for a in args)
-        print(text.encode("ascii", errors="replace").decode("ascii"))
+        print(label, str(value).encode("utf-8", errors="replace").decode("utf-8"))
     except Exception:
-        print("[log_error]")
+        print(label, "[erro ao imprimir]")
 
 def sanitize_ascii_filename(name: str) -> str:
     name = name or "arquivo"
@@ -270,14 +269,12 @@ async def upload_material(
 ):
     """Faz upload de material (video ou apoio) para um conteudo."""
     try:
-        safe_log("[UPLOAD MATERIAL] inicio")
-        safe_log("[UPLOAD MATERIAL] conteudo_id:", conteudo_id)
-        safe_log("[UPLOAD MATERIAL] tipo:", tipo)
-        safe_log("[UPLOAD MATERIAL] titulo:", titulo)
-        safe_log("[UPLOAD MATERIAL] descricao:", descricao)
-        safe_log("[UPLOAD MATERIAL] ordem:", ordem)
-        safe_log("[UPLOAD MATERIAL] filename:", getattr(file, 'filename', 'sem arquivo'))
-        safe_log("[UPLOAD MATERIAL] content_type:", getattr(file, 'content_type', 'sem content type'))
+        safe_print("conteudo_id:", conteudo_id)
+        safe_print("tipo:", tipo)
+        safe_print("titulo:", titulo)
+        safe_print("descricao:", descricao)
+        safe_print("ordem:", ordem)
+        safe_print("filename:", file.filename)
 
         if not file:
             raise HTTPException(status_code=400, detail="Arquivo nao enviado.")
@@ -322,11 +319,13 @@ async def upload_material(
             ).count()
             ordem = max_ordem + 1
         
+        arquivo_url = f"/{dir_escolhido}/{safe_filename}"
+        
         material = MaterialEstudo(
             conteudo_id=conteudo_id,
             tipo=tipo,
             nome_arquivo=original_filename, # Original para o BD
-            url=f"/{dir_escolhido}/{safe_filename}",
+            url=arquivo_url,
             data_upload=datetime.now().isoformat(),
             titulo=titulo or original_filename,
             descricao=descricao,
@@ -339,24 +338,22 @@ async def upload_material(
         
         return {
             "success": True,
-            "id": material.id,
-            "conteudo_id": material.conteudo_id,
-            "tipo": material.tipo,
-            "titulo": getattr(material, 'titulo', None),
-            "descricao": getattr(material, 'descricao', None),
-            "arquivo_url": material.url,
-            "arquivo_nome_original": original_filename,
-            "ordem": getattr(material, 'ordem', 0)
+            "message": "Material enviado com sucesso.",
+            "arquivo_url": arquivo_url,
+            "nome_arquivo": original_filename,
+            "titulo": titulo,
+            "descricao": descricao,
+            "ordem": ordem
         }
     except HTTPException:
         raise
     except Exception as e:
         import traceback
-        safe_log("[UPLOAD MATERIAL] ERRO:", repr(e))
+        print("ERRO REAL NO UPLOAD DE MATERIAL:")
         traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail="Erro interno ao enviar material. Verifique os logs do servidor."
+            detail=f"{type(e).__name__}: {str(e)}"
         )
 
 @router.post("/quiz")
