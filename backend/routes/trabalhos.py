@@ -1025,6 +1025,54 @@ def salvar_progresso_material(body: ProgressoMaterialBody, db: Session = Depends
     db.commit()
     return {"message": "Progresso do material salvo", "concluido": prog.concluido}
 
+class ProgressoVideoBody(BaseModel):
+    conteudo_id: int
+    material_id: int
+    percentual: float
+    segundos_assistidos: int
+    duracao_segundos: int = None
+
+@router.post("/progresso-video")
+def salvar_progresso_video(body: ProgressoVideoBody, request: Request, db: Session = Depends(get_db)):
+    """Salva o progresso de um video e decide automaticamente se esta concluido no backend."""
+    from backend.auth import get_current_user_from_request
+    
+    # pessoa_id deve vir do usuario logado (nunca do frontend se houver sessao)
+    user_info = get_current_user_from_request(request)
+    if not user_info or not getattr(user_info, 'pessoa_id', None):
+        raise HTTPException(status_code=401, detail="Usuário não autenticado")
+        
+    pessoa_id = user_info.pessoa_id
+    
+    prog = db.query(ProgressoMaterial).filter(
+        ProgressoMaterial.pessoa_id == pessoa_id,
+        ProgressoMaterial.material_id == body.material_id
+    ).first()
+    
+    if not prog:
+        prog = ProgressoMaterial(pessoa_id=pessoa_id, material_id=body.material_id)
+        db.add(prog)
+    
+    # ON DUPLICATE KEY UPDATE logic:
+    if body.segundos_assistidos > prog.max_segundos_assistidos:
+        prog.max_segundos_assistidos = body.segundos_assistidos
+        
+    if body.percentual > prog.progresso_percentual:
+        prog.progresso_percentual = int(body.percentual)
+        
+    # Se percentual >= 95 ou chegou no final, marcar como concluido
+    is_completed = body.percentual >= 95 or (body.duracao_segundos and body.segundos_assistidos >= body.duracao_segundos - 2)
+    
+    if is_completed and not prog.concluido:
+        prog.concluido = 1
+        prog.data_conclusao = datetime.now().isoformat()
+        
+    db.commit()
+    
+    return {
+        "message": "Progresso do video salvo com sucesso", 
+        "concluido": prog.concluido == 1
+    }
 
 @router.get("/progresso-material/{conteudo_id}/{pessoa_id}")
 def consultar_progresso_materiais(conteudo_id: int, pessoa_id: int, db: Session = Depends(get_db)):
@@ -1082,6 +1130,8 @@ def obter_progresso_consolidado(conteudo_id: int, pessoa_id: int, db: Session = 
         
         if m.tipo == 'video':
             item['assistido'] = is_concluido
+            item['percentual'] = prog.progresso_percentual if prog else 0
+            item['segundos_assistidos'] = prog.max_segundos_assistidos if prog else 0
             videos_list.append(item)
         else:
             item['visualizado'] = is_concluido
@@ -1183,18 +1233,47 @@ def obter_progresso_consolidado(conteudo_id: int, pessoa_id: int, db: Session = 
         }
     }
 
+    # Montar resposta conforme padrao exigido
+    videos_obj = {
+        "total": len(videos_list),
+        "concluidos": sum(1 for v in videos_list if v['assistido']),
+        "concluido": not videos_pendentes if len(videos_list) > 0 else True,
+        "items": videos_list
+    }
+
+    materiais_obj = {
+        "total": len(materiais_list),
+        "lidos": sum(1 for m in materiais_list if m['visualizado']),
+        "concluido": not materiais_pendentes if len(materiais_list) > 0 else True,
+        "items": materiais_list
+    }
+
+    quiz_obj = {
+        "existe": quiz_data['existe'],
+        "total": len(quizzes),
+        "respondidas": len(quiz_data['respostas']),
+        "concluido": quiz_data['respondido'] if quiz_data['existe'] else True,
+        "respostas": quiz_data['respostas']
+    }
+
+    entrega_obj = {
+        "existe": trabalho_data['existe'],
+        "enviada": trabalho_data['enviado'],
+        "status": trabalho_data['status'] if trabalho_data['enviado'] else None,
+        "arquivo_nome": trabalho_data['arquivo_nome'],
+        "data_upload": trabalho_data['data_upload'],
+        "feedback": trabalho_data['feedback']
+    }
+
     return {
         "conteudo_id": conteudo_id,
         "pessoa_id": pessoa_id,
         "modo": modo,
         "etapa_atual": etapa_atual,
-        "videos_concluidos": not videos_pendentes,
-        "materiais_concluidos": not materiais_pendentes,
-        "quiz_respondido": quiz_data["respondido"],
-        "videos": videos_list,
-        "materiais": materiais_list,
-        "quiz": quiz_data,
-        "entrega": trabalho_data,
+        "videos": videos_obj,
+        "materiais": materiais_obj,
+        "quiz": quiz_obj,
+        "entrega": entrega_obj,
         "abas": abas
     }
 

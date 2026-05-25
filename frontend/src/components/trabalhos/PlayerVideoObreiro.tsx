@@ -108,9 +108,9 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
         const current = videoRef.current.currentTime;
         const duration = videoRef.current.duration || 1;
         const prog = progressos[videoAtual.id];
-        const isConcluido = prog?.concluido === 1;
+        const videoJaConcluido = prog?.concluido === 1 || prog?.progresso_percentual >= 95;
 
-        if (!isConcluido) {
+        if (!videoJaConcluido) {
             // Anti-skip logic
             if (current > maxWatched + 2) {
                 videoRef.current.currentTime = maxWatched;
@@ -132,21 +132,22 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
             
             const current = videoRef.current.currentTime;
             const duration = videoRef.current.duration || 1;
-            const isConcluido = progressos[videoAtual.id]?.concluido === 1;
+            const prog = progressos[videoAtual.id];
+            const videoJaConcluido = prog?.concluido === 1 || prog?.progresso_percentual >= 95;
             
-            if (!isConcluido && maxWatched > 0) {
+            if (!videoJaConcluido && maxWatched > 0) {
                 const percent = Math.floor((maxWatched / duration) * 100);
                 
                 try {
-                    await fetch('/api/trabalhos/progresso-material', {
+                    await fetch('/api/trabalhos/progresso-video', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            pessoa_id: pessoaId,
+                            conteudo_id: conteudoId,
                             material_id: videoAtual.id,
-                            max_segundos_assistidos: Math.floor(maxWatched),
-                            progresso_percentual: percent,
-                            concluido: 0
+                            percentual: percent,
+                            segundos_assistidos: Math.floor(maxWatched),
+                            duracao_segundos: Math.floor(duration)
                         })
                     });
                     
@@ -173,15 +174,15 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
         const duration = videoRef.current?.duration || 1;
 
         try {
-            await fetch('/api/trabalhos/progresso-material', {
+            await fetch('/api/trabalhos/progresso-video', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    pessoa_id: pessoaId,
+                    conteudo_id: conteudoId,
                     material_id: videoAtual.id,
-                    max_segundos_assistidos: Math.floor(duration),
-                    progresso_percentual: 100,
-                    concluido: 1
+                    percentual: 100,
+                    segundos_assistidos: Math.floor(duration),
+                    duracao_segundos: Math.floor(duration)
                 })
             });
 

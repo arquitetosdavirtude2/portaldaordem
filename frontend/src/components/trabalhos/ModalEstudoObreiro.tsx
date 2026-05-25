@@ -73,8 +73,8 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
         const abas = progresso.abas;
         
         const tabsConfig = [
-            { id: 'videos', label: 'Vídeos', icon: '🎬', show: progresso.videos.length > 0 },
-            { id: 'materiais', label: 'Materiais', icon: '📄', show: progresso.materiais.length > 0 },
+            { id: 'videos', label: 'Vídeos', icon: '🎬', show: progresso.videos.total > 0 },
+            { id: 'materiais', label: 'Materiais', icon: '📄', show: progresso.materiais.total > 0 },
             { id: 'perguntas', label: 'Perguntas', icon: '🧩', show: progresso.quiz.existe },
             { id: 'entrega', label: 'Entrega', icon: '📤', show: progresso.entrega.existe },
             { id: 'resultado', label: 'Resultado', icon: '✅', show: progresso.entrega.existe || progresso.quiz.existe }
@@ -273,42 +273,50 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                                 {renderTabs()}
 
                                 <div className="flex-1 flex flex-col">
-                                    {activeStep === 'videos' && (
-                                        <PlayerVideoObreiro 
-                                            videos={conteudo.materiais?.filter((m: any) => m.tipo === 'video') || []} 
-                                            pessoaId={pessoaId} 
-                                            conteudoId={conteudo.id} 
-                                            onComplete={handleStepComplete}
-                                        />
-                                    )}
+                                    <div className={`mt-2 transition-all duration-500 delay-200 ${activeStep === 'videos' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 hidden'}`}>
+                                        {activeStep === 'videos' && (
+                                            <PlayerVideoObreiro
+                                                conteudoId={conteudo.id}
+                                                pessoaId={pessoaId}
+                                                videos={progresso.videos.items}
+                                                onComplete={handleStepComplete}
+                                            />
+                                        )}
+                                    </div>
+                    
+                                    <div className={`mt-2 transition-all duration-500 delay-200 ${activeStep === 'materiais' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 hidden'}`}>
+                                        {activeStep === 'materiais' && (
+                                            <LeitorMateriaisObreiro
+                                                conteudoId={conteudo.id}
+                                                pessoaId={pessoaId}
+                                                materiais={progresso.materiais.items}
+                                                onComplete={handleStepComplete}
+                                            />
+                                        )}
+                                    </div>
 
-                                    {activeStep === 'materiais' && (
-                                        <LeitorMateriaisObreiro 
-                                            materiais={conteudo.materiais?.filter((m: any) => m.tipo === 'pdf' || m.tipo === 'docx') || []} 
-                                            pessoaId={pessoaId} 
-                                            conteudoId={conteudo.id} 
-                                            onComplete={handleStepComplete}
-                                        />
-                                    )}
-
-                                    {activeStep === 'perguntas' && (
-                                        <QuizObreiro 
-                                            quizzes={conteudo.quizzes || []} 
-                                            pessoaId={pessoaId} 
-                                            conteudoId={conteudo.id} 
-                                            onComplete={handleStepComplete}
-                                        />
-                                    )}
-
-                                    {activeStep === 'entrega' && (
-                                        <div className="animate-fade-in flex-1">
-                                            <EntregaTrabalhoObreiro 
+                                    <div className={`mt-2 transition-all duration-500 delay-200 ${activeStep === 'perguntas' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 hidden'}`}>
+                                        {activeStep === 'perguntas' && (
+                                            <QuizObreiro 
+                                                quizzes={conteudo.quizzes || []} 
                                                 pessoaId={pessoaId} 
                                                 conteudoId={conteudo.id} 
                                                 onComplete={handleStepComplete}
                                             />
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+
+                                    <div className={`mt-2 transition-all duration-500 delay-200 ${activeStep === 'entrega' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 hidden'}`}>
+                                        {activeStep === 'entrega' && (
+                                            <div className="flex-1">
+                                                <EntregaTrabalhoObreiro 
+                                                    pessoaId={pessoaId} 
+                                                    conteudoId={conteudo.id} 
+                                                    onSuccess={handleStepComplete}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
 
                                     {activeStep === 'resultado' && (
                                         <div className="animate-fade-in flex-1">
