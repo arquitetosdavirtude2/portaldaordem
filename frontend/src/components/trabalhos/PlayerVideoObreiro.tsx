@@ -36,8 +36,9 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
     const [isLoading, setIsLoading] = useState(true);
 
     // Ref que rastreia o máximo assistido EM TEMPO REAL (independente do banco)
-    // É o "teto" do anti-skip e é o que mandamos para o banco a cada 5s
     const maxWatchedRef = useRef(0);
+    // Ref com o tempo para retomar quando o vídeo carregar
+    const resumeAtRef = useRef(0);
 
     // Refs para o intervalo usar sem causar re-render
     const progressosRef = useRef<Record<number, Progresso>>({});
@@ -102,21 +103,9 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                         const progAtual = progMap[vidAtual.id];
                         const tempoSalvo = progAtual?.max_segundos_assistidos || 0;
                         maxWatchedRef.current = progAtual?.concluido ? 999999 : tempoSalvo;
-
-                        // Setar o currentTime agora que temos os dados — com listener caso o vídeo não carregou ainda
-                        if (tempoSalvo > 0 && !progAtual?.concluido) {
-                            const applyTime = () => {
-                                if (videoRef.current) {
-                                    videoRef.current.currentTime = tempoSalvo;
-                                    console.log(`▶️ Retomando vídeo em ${tempoSalvo}s`);
-                                }
-                            };
-                            if (videoRef.current && videoRef.current.readyState >= 2) {
-                                applyTime();
-                            } else if (videoRef.current) {
-                                videoRef.current.addEventListener('loadeddata', applyTime, { once: true });
-                            }
-                        }
+                        // Guardar o tempo para retomar — o onCanPlay vai aplicar
+                        resumeAtRef.current = (tempoSalvo > 0 && !progAtual?.concluido) ? tempoSalvo : 0;
+                        console.log(`📌 Vai retomar em ${resumeAtRef.current}s`);
                     }
                 }
             } catch (e) {
@@ -297,6 +286,13 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                         className="w-full aspect-video bg-black"
                         onTimeUpdate={handleTimeUpdate}
                         onEnded={handleVideoEnded}
+                        onCanPlay={() => {
+                            if (resumeAtRef.current > 0 && videoRef.current) {
+                                console.log(`▶️ onCanPlay: retomando em ${resumeAtRef.current}s`);
+                                videoRef.current.currentTime = resumeAtRef.current;
+                                resumeAtRef.current = 0; // Resetar para não aplicar de novo
+                            }
+                        }}
                     />
                     {!progressos[videoAtual?.id]?.concluido && (
                         <div className="absolute top-4 left-4 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
