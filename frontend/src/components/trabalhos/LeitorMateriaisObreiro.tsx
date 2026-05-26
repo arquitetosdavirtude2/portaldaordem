@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import DocxViewer from './DocxViewer';
 
 interface Material {
     id: number;
@@ -176,7 +177,25 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                             );
                         }
 
-                        // DOCX, DOC e outros formatos não visualizáveis no browser
+                        if (isWord) {
+                            return (
+                                <div className="absolute inset-0">
+                                    <div className="absolute top-4 right-8 z-20">
+                                        <a
+                                            href={`/api/trabalhos/materiais/${materialAtual?.id}/arquivo?download=true`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-4 py-2 bg-black/50 hover:bg-black/80 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all backdrop-blur-sm border border-white/10 flex items-center gap-2"
+                                        >
+                                            ⬇ Baixar Original
+                                        </a>
+                                    </div>
+                                    <DocxViewer url={`/api/trabalhos/materiais/${materialAtual.id}/arquivo?download=false`} />
+                                </div>
+                            );
+                        }
+
+                        // Outros formatos não visualizáveis no browser
                         const ext = (nomeArq.split('.').pop() || 'arquivo').toUpperCase();
                         return (
                             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-[#0a0a0a]">
