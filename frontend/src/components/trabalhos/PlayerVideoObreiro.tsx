@@ -135,8 +135,8 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
             const prog = progressos[videoAtual.id];
             const videoJaConcluido = prog?.concluido === 1 || prog?.progresso_percentual >= 95;
             
-            if (!videoJaConcluido && maxWatched > 0) {
-                const percent = Math.floor((maxWatched / duration) * 100);
+            if (!videoJaConcluido && current > 0) {
+                const percent = Math.floor((current / duration) * 100);
                 
                 try {
                     await fetch('/api/trabalhos/progresso-video', {
@@ -147,17 +147,17 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                             pessoa_id: pessoaId,
                             material_id: videoAtual.id,
                             percentual: percent,
-                            segundos_assistidos: Math.floor(maxWatched),
+                            segundos_assistidos: Math.floor(current),
                             duracao_segundos: Math.floor(duration)
                         })
                     });
                     
-                    // Update local state
+                    // Update local state usando setProgressos com callback para evitar stale state
                     setProgressos(prev => ({
                         ...prev,
                         [videoAtual.id]: {
                             ...prev[videoAtual.id],
-                            max_segundos_assistidos: Math.floor(maxWatched),
+                            max_segundos_assistidos: Math.max(prev[videoAtual.id]?.max_segundos_assistidos || 0, Math.floor(current)),
                             progresso_percentual: percent
                         } as Progresso
                     }));
