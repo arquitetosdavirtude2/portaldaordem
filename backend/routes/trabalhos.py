@@ -1012,10 +1012,12 @@ def salvar_progresso_material(body: ProgressoMaterialBody, db: Session = Depends
         db.add(prog)
     
     # Para vídeos: só atualizar se o novo valor for maior (evitar regresso)
-    if body.max_segundos_assistidos > prog.max_segundos_assistidos:
+    prog_max_seg = prog.max_segundos_assistidos or 0
+    if body.max_segundos_assistidos > prog_max_seg:
         prog.max_segundos_assistidos = body.max_segundos_assistidos
     
-    if body.progresso_percentual > prog.progresso_percentual:
+    prog_percent = prog.progresso_percentual or 0
+    if body.progresso_percentual > prog_percent:
         prog.progresso_percentual = body.progresso_percentual
     
     if body.concluido and not prog.concluido:
