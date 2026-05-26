@@ -421,24 +421,34 @@ async def upload_entrega(
     db: Session = Depends(get_db)
 ):
     """Membro faz o upload de sua prancha."""
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{timestamp}_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        import re
+        # Sanitizar nome do arquivo para evitar problemas de encoding ou caracteres inválidos no Linux/Windows
+        safe_filename = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', file.filename or "arquivo.docx")
+        filename = f"{timestamp}_{safe_filename}"
+        file_path = os.path.join(UPLOAD_DIR, filename)
         
-    entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.pessoa_id == pessoa_id, EntregaTrabalho.conteudo_id == conteudo_id).first()
-    if not entrega:
-        entrega = EntregaTrabalho(pessoa_id=pessoa_id, conteudo_id=conteudo_id)
-        db.add(entrega)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        entrega = db.query(EntregaTrabalho).filter(EntregaTrabalho.pessoa_id == pessoa_id, EntregaTrabalho.conteudo_id == conteudo_id).first()
+        if not entrega:
+            entrega = EntregaTrabalho(pessoa_id=pessoa_id, conteudo_id=conteudo_id)
+            db.add(entrega)
+            
+        entrega.arquivo_url = f"/{UPLOAD_DIR}/{filename}"
+        entrega.data_upload = datetime.now().isoformat()
+        entrega.status = "aguardando_correcao"
         
-    entrega.arquivo_url = f"/{UPLOAD_DIR}/{filename}"
-    entrega.data_upload = datetime.now().isoformat()
-    entrega.status = "aguardando_correcao"
-    
-    db.commit()
-    return {"message": "Trabalho enviado com sucesso"}
+        db.commit()
+        return {"message": "Trabalho enviado com sucesso"}
+    except Exception as e:
+        import traceback
+        trace = traceback.format_exc()
+        print("Erro no upload_entrega:", trace)
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content={"message": f"Erro interno no servidor: {str(e)}", "trace": trace})
 
 @router.post("/corrigir")
 def corrigir_trabalho(
