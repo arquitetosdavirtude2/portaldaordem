@@ -239,7 +239,6 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                         className="w-full aspect-video bg-black"
                         onTimeUpdate={handleTimeUpdate}
                         onEnded={handleVideoEnded}
-                        autoPlay
                     />
                     
                     {!progressos[videoAtual?.id]?.concluido && (
