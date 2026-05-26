@@ -96,11 +96,27 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                     setVideoAtualIdx(startIdx);
                     videoAtualIdxRef.current = startIdx;
 
-                    // Inicializar maxWatchedRef com o valor do banco para o vídeo atual
+                    // Inicializar maxWatchedRef e posicionar o vídeo com os dados REAIS do banco
                     const vidAtual = sorted[startIdx];
                     if (vidAtual) {
                         const progAtual = progMap[vidAtual.id];
-                        maxWatchedRef.current = progAtual?.concluido ? 999999 : (progAtual?.max_segundos_assistidos || 0);
+                        const tempoSalvo = progAtual?.max_segundos_assistidos || 0;
+                        maxWatchedRef.current = progAtual?.concluido ? 999999 : tempoSalvo;
+
+                        // Setar o currentTime agora que temos os dados — com listener caso o vídeo não carregou ainda
+                        if (tempoSalvo > 0 && !progAtual?.concluido) {
+                            const applyTime = () => {
+                                if (videoRef.current) {
+                                    videoRef.current.currentTime = tempoSalvo;
+                                    console.log(`▶️ Retomando vídeo em ${tempoSalvo}s`);
+                                }
+                            };
+                            if (videoRef.current && videoRef.current.readyState >= 2) {
+                                applyTime();
+                            } else if (videoRef.current) {
+                                videoRef.current.addEventListener('loadeddata', applyTime, { once: true });
+                            }
+                        }
                     }
                 }
             } catch (e) {
