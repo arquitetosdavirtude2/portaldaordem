@@ -161,48 +161,48 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                 </div>
 
                 <div className="flex-1 bg-black border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative min-h-[400px]">
-                    {(materialAtual?.tipo === 'pdf' || materialAtual?.tipo === 'documento') ? (
-                        <iframe
-                            src={`/api/trabalhos/materiais/${materialAtual.id}/arquivo?download=false`}
-                            className="w-full h-full border-none bg-white"
-                            title={materialAtual.titulo || materialAtual.nome_arquivo || "Documento"}
-                        />
-                    ) : materialAtual?.tipo === 'docx' ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-[#0a0a0a]">
-                            <span className="text-5xl opacity-50 mb-4">📝</span>
-                            <h3 className="text-lg font-bold text-gray-200 mb-2">{materialAtual.titulo || materialAtual.nome_arquivo}</h3>
-                            <p className="text-sm text-gray-500 max-w-md">
-                                A visualização direta de arquivos Word (DOCX) será implementada em uma etapa futura.
-                            </p>
-                            <p className="text-xs text-yellow-500/70 mt-4 px-4 py-2 border border-yellow-500/20 rounded-lg bg-yellow-500/5">
-                                Você pode marcar este material como lido para prosseguir com o estudo.
-                            </p>
-                            <a
-                                href={`/api/trabalhos/materiais/${materialAtual.id}/arquivo?download=true`}
-                                download
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-6 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-gray-300 transition-all border border-white/10"
-                            >
-                                Baixar Arquivo DOCX
-                            </a>
-                        </div>
-                    ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
-                            <span className="text-5xl opacity-30">📎</span>
-                            <p className="text-gray-400 font-semibold">{materialAtual?.titulo || materialAtual?.nome_arquivo}</p>
-                            <p className="text-gray-600 text-xs">Formato não suportado para visualização interna.</p>
-                            <a
-                                href={`/api/trabalhos/materiais/${materialAtual?.id}/arquivo?download=true`}
-                                download
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-gray-300 transition-all border border-white/10"
-                            >
-                                Baixar Arquivo
-                            </a>
-                        </div>
-                    )}
+                    {(() => {
+                        const nomeArq = (materialAtual?.nome_arquivo || '').toLowerCase();
+                        const isPdf = nomeArq.endsWith('.pdf') || materialAtual?.tipo === 'pdf';
+                        const isWord = nomeArq.endsWith('.docx') || nomeArq.endsWith('.doc') || materialAtual?.tipo === 'docx';
+
+                        if (isPdf) {
+                            return (
+                                <iframe
+                                    src={`/api/trabalhos/materiais/${materialAtual.id}/arquivo?download=false`}
+                                    className="w-full h-full border-none bg-white"
+                                    title={materialAtual.titulo || materialAtual.nome_arquivo || "PDF"}
+                                />
+                            );
+                        }
+
+                        // DOCX, DOC e outros formatos não visualizáveis no browser
+                        const ext = (nomeArq.split('.').pop() || 'arquivo').toUpperCase();
+                        return (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-[#0a0a0a]">
+                                <div className="w-20 h-20 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-5">
+                                    <span className="text-3xl">📄</span>
+                                </div>
+                                <h3 className="text-white font-bold text-base mb-2">
+                                    {materialAtual?.titulo || materialAtual?.nome_arquivo}
+                                </h3>
+                                <p className="text-gray-500 text-xs mb-1">
+                                    Arquivos {ext} não podem ser visualizados diretamente no navegador.
+                                </p>
+                                <p className="text-gray-600 text-xs max-w-xs mb-6">
+                                    Baixe o arquivo para abrir no seu computador. Após ler o material, clique em <strong className="text-yellow-500">Marcar Material como Lido</strong> para avançar.
+                                </p>
+                                <a
+                                    href={`/api/trabalhos/materiais/${materialAtual?.id}/arquivo?download=true`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                                >
+                                    ⬇ Baixar {ext}
+                                </a>
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
 
