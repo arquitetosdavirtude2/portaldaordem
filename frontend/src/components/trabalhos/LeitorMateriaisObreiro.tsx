@@ -137,9 +137,9 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
     const materialAtualConcluido = progressos[materialAtual?.id]?.concluido === 1;
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[80vh]">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-auto lg:h-[80vh]">
             {/* Leitor Principal */}
-            <div className="lg:col-span-3 flex flex-col space-y-4 h-full">
+            <div className="lg:col-span-3 flex flex-col space-y-4">
                 <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-4 shrink-0">
                     <div className="min-w-0 flex-1">
                         <h2 className="text-white font-bold text-lg leading-tight" title={materialAtual?.titulo || materialAtual?.nome_arquivo}>
@@ -175,7 +175,7 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                     </div>
                 </div>
 
-                <div className="flex-1 bg-black border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative min-h-[400px]">
+                <div className="flex-1 bg-black border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative min-h-[500px] lg:min-h-[400px]">
                     {(() => {
                         const nomeArq = (materialAtual?.nome_arquivo || '').toLowerCase();
                         const isPdf = nomeArq.endsWith('.pdf') || materialAtual?.tipo === 'pdf';
@@ -230,7 +230,7 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
             </div>
 
             {/* Lista Lateral */}
-            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col h-full overflow-hidden">
+            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col h-[300px] lg:h-full overflow-hidden">
                 <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-4 shrink-0">
                     Materiais de Apoio ({sortedMateriais.length})
                 </h3>

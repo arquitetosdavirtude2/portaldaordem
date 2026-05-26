@@ -27,9 +27,9 @@ export default function DocxViewer({ url }: { url: string }) {
                 
                 await renderAsync(blob, containerRef.current, undefined, {
                     className: 'docx-viewer-document',
-                    inWrapper: true,
+                    inWrapper: false, // Remove gray wrapper completely
                     ignoreWidth: true, // Ignite width to make it responsive
-                    ignoreHeight: false,
+                    ignoreHeight: true, // Make height continuous
                     ignoreFonts: false,
                     breakPages: true,
                     ignoreLastRenderedPageBreak: true,
@@ -59,25 +59,23 @@ export default function DocxViewer({ url }: { url: string }) {
     return (
         <div className="w-full h-full lg:h-[600px] bg-white rounded-xl overflow-y-auto shadow-inner relative custom-scrollbar docx-preview-container">
             <style>{`
-                .docx-preview-container .docx-wrapper {
-                    background: transparent !important;
-                    padding: 20px !important;
+                .docx-preview-container {
+                    background: #ffffff !important;
                 }
                 .docx-preview-container .docx-viewer-document {
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-                    margin: 0 auto 20px auto !important;
+                    width: 100% !important;
+                    min-width: 0 !important;
                     max-width: 100% !important;
+                    margin: 0 !important;
+                    padding: 40px !important;
+                    box-shadow: none !important;
                     overflow-wrap: break-word !important;
                     word-wrap: break-word !important;
                 }
                 /* Responsividade para mobile */
                 @media (max-width: 768px) {
-                    .docx-preview-container .docx-wrapper {
-                        padding: 10px !important;
-                    }
                     .docx-preview-container .docx-viewer-document {
-                        padding: 15px !important;
-                        width: 100% !important;
+                        padding: 20px !important;
                     }
                 }
             `}</style>
