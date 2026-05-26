@@ -50,7 +50,7 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                     const data: any[] = await res.json();
                     const progMap: Record<number, Progresso> = {};
                     data.forEach(p => {
-                        if (p.tipo === 'pdf' || p.tipo === 'docx') {
+                        if (p.tipo === 'pdf' || p.tipo === 'docx' || p.tipo === 'documento') {
                             progMap[p.material_id] = {
                                 material_id: p.material_id,
                                 tipo: p.tipo,
@@ -161,11 +161,11 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                 </div>
 
                 <div className="flex-1 bg-black border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative min-h-[400px]">
-                    {materialAtual?.tipo === 'pdf' ? (
-                        <iframe 
-                            src={`${materialAtual.url}#toolbar=0`} 
+                    {(materialAtual?.tipo === 'pdf' || materialAtual?.tipo === 'documento') ? (
+                        <iframe
+                            src={`/api/trabalhos/materiais/${materialAtual.id}/arquivo?download=false`}
                             className="w-full h-full border-none bg-white"
-                            title={materialAtual.titulo || "PDF Viewer"}
+                            title={materialAtual.titulo || materialAtual.nome_arquivo || "Documento"}
                         />
                     ) : materialAtual?.tipo === 'docx' ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-[#0a0a0a]">
@@ -177,10 +177,10 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                             <p className="text-xs text-yellow-500/70 mt-4 px-4 py-2 border border-yellow-500/20 rounded-lg bg-yellow-500/5">
                                 Você pode marcar este material como lido para prosseguir com o estudo.
                             </p>
-                            <a 
-                                href={materialAtual.url} 
+                            <a
+                                href={`/api/trabalhos/materiais/${materialAtual.id}/arquivo?download=true`}
                                 download
-                                target="_blank" 
+                                target="_blank"
                                 rel="noreferrer"
                                 className="mt-6 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-gray-300 transition-all border border-white/10"
                             >
@@ -188,8 +188,19 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                             </a>
                         </div>
                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <p className="text-gray-500">Formato não suportado para visualização interna.</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
+                            <span className="text-5xl opacity-30">📎</span>
+                            <p className="text-gray-400 font-semibold">{materialAtual?.titulo || materialAtual?.nome_arquivo}</p>
+                            <p className="text-gray-600 text-xs">Formato não suportado para visualização interna.</p>
+                            <a
+                                href={`/api/trabalhos/materiais/${materialAtual?.id}/arquivo?download=true`}
+                                download
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-gray-300 transition-all border border-white/10"
+                            >
+                                Baixar Arquivo
+                            </a>
                         </div>
                     )}
                 </div>
@@ -234,8 +245,11 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-xs font-bold truncate ${isAtivo ? 'text-cyan-500' : 'text-gray-300'}`}>
-                                            {m.titulo || `Material ${idx + 1}`}
+                                        <p
+                                            className={`text-xs font-bold truncate ${isAtivo ? 'text-cyan-500' : 'text-gray-300'}`}
+                                            title={m.titulo || m.nome_arquivo || `Material ${idx + 1}`}
+                                        >
+                                            {m.titulo || m.nome_arquivo || `Material ${idx + 1}`}
                                         </p>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <span className="text-[8px] text-gray-500 uppercase tracking-widest">
