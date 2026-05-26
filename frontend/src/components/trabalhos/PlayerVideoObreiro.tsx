@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 interface Material {
     id: number;
@@ -26,24 +26,32 @@ interface PlayerVideoObreiroProps {
     videos: Material[];
     pessoaId: number;
     conteudoId: number;
-    onComplete: () => void; // Called when ALL videos are completed
+    onComplete: () => void;
 }
 
 export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onComplete }: PlayerVideoObreiroProps) {
     const [progressos, setProgressos] = useState<Record<number, Progresso>>({});
     const [videoAtualIdx, setVideoAtualIdx] = useState(0);
     const videoRef = useRef<HTMLVideoElement>(null);
-    const [maxWatched, setMaxWatched] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Refs para uso dentro do setInterval sem causar re-render loops
+    const progressosRef = useRef<Record<number, Progresso>>({});
+    const videoAtualIdxRef = useRef(0);
+    const pessoaIdRef = useRef(pessoaId);
+    const conteudoIdRef = useRef(conteudoId);
 
     const sortedVideos = [...videos].sort((a, b) => a.ordem - b.ordem);
     const videoAtual = sortedVideos[videoAtualIdx];
+
+    // Manter refs atualizados
+    useEffect(() => { progressosRef.current = progressos; }, [progressos]);
+    useEffect(() => { videoAtualIdxRef.current = videoAtualIdx; }, [videoAtualIdx]);
 
     // Load progressos do backend
     useEffect(() => {
         const fetchProgresso = async () => {
             if (!conteudoId || !pessoaId || videos.length === 0) {
-                // Estado normal sem videos
                 setIsLoading(false);
                 return;
             }
@@ -66,20 +74,23 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                         }
                     });
                     setProgressos(progMap);
-                    
-                    // Encontrar o ultimo video disponivel (nao concluido) que tem o anterior concluido
+                    progressosRef.current = progMap;
+
+                    // Encontrar o ultimo video nao concluido
                     let startIdx = 0;
-                    for (let i = 0; i < sortedVideos.length; i++) {
-                        const prog = progMap[sortedVideos[i].id];
+                    const sorted = [...videos].sort((a, b) => a.ordem - b.ordem);
+                    for (let i = 0; i < sorted.length; i++) {
+                        const prog = progMap[sorted[i].id];
                         if (!prog || !prog.concluido) {
                             startIdx = i;
                             break;
                         }
-                        if (i === sortedVideos.length - 1 && prog.concluido) {
-                            startIdx = i; // Todos concluidos, mostra o ultimo
+                        if (i === sorted.length - 1 && prog.concluido) {
+                            startIdx = i;
                         }
                     }
                     setVideoAtualIdx(startIdx);
+                    videoAtualIdxRef.current = startIdx;
                 }
             } catch (e) {
                 console.error("Erro ao buscar progresso:", e);
@@ -87,89 +98,98 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
             setIsLoading(false);
         };
         fetchProgresso();
-    }, [conteudoId, pessoaId]);
+    }, [conteudoId, pessoaId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Reset maxWatched when video changes
+    // Quando muda o vídeo, posicionar no tempo correto
     useEffect(() => {
-        if (videoAtual) {
-            const prog = progressos[videoAtual.id];
-            setMaxWatched(prog?.max_segundos_assistidos || 0);
-            if (videoRef.current && prog?.max_segundos_assistidos) {
-                // Ao carregar, se o video nao esta concluido, comeca do maximo assistido.
-                // Se concluido, comeca do 0.
-                videoRef.current.currentTime = prog.concluido ? 0 : prog.max_segundos_assistidos;
-            }
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [videoAtual?.id]);
-
-    const handleTimeUpdate = () => {
-        if (!videoRef.current || !videoAtual) return;
-        
-        const current = videoRef.current.currentTime;
-        const duration = videoRef.current.duration || 1;
-        const prog = progressos[videoAtual.id];
-        const videoJaConcluido = prog?.concluido === 1 || prog?.progresso_percentual >= 95;
-
-        if (!videoJaConcluido) {
-            // Anti-skip logic
-            if (current > maxWatched + 2) {
-                videoRef.current.currentTime = maxWatched;
-                return;
-            }
-
-            if (current > maxWatched) {
-                setMaxWatched(current);
-            }
-        }
-    };
-
-    // Save progress periodically (e.g., every 5 seconds)
-    useEffect(() => {
-        if (!videoAtual) return;
-        
-        const saveInterval = setInterval(async () => {
-            if (!videoRef.current || videoRef.current.paused) return;
-            
-            const current = videoRef.current.currentTime;
-            const duration = videoRef.current.duration || 1;
-            const prog = progressos[videoAtual.id];
-            const videoJaConcluido = prog?.concluido === 1 || prog?.progresso_percentual >= 95;
-            
-            if (!videoJaConcluido && current > 0) {
-                const percent = Math.floor((current / duration) * 100);
-                
-                try {
-                    await fetch('/api/trabalhos/progresso-video', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            conteudo_id: conteudoId,
-                            pessoa_id: pessoaId,
-                            material_id: videoAtual.id,
-                            percentual: percent,
-                            segundos_assistidos: Math.floor(current),
-                            duracao_segundos: Math.floor(duration)
-                        })
-                    });
-                    
-                    // Update local state usando setProgressos com callback para evitar stale state
-                    setProgressos(prev => ({
-                        ...prev,
-                        [videoAtual.id]: {
-                            ...prev[videoAtual.id],
-                            max_segundos_assistidos: Math.max(prev[videoAtual.id]?.max_segundos_assistidos || 0, Math.floor(current)),
-                            progresso_percentual: percent
-                        } as Progresso
-                    }));
-                } catch (e) {
-                    console.error("Erro ao salvar progresso periodico:", e);
+        if (!videoAtual || !videoRef.current) return;
+        const prog = progressosRef.current[videoAtual.id];
+        if (prog && prog.max_segundos_assistidos > 0 && !prog.concluido) {
+            // Aguardar o video carregar para setar o currentTime
+            const setTime = () => {
+                if (videoRef.current) {
+                    videoRef.current.currentTime = prog.max_segundos_assistidos;
                 }
+            };
+            if (videoRef.current.readyState >= 2) {
+                setTime();
+            } else {
+                videoRef.current.addEventListener('loadeddata', setTime, { once: true });
+            }
+        }
+    }, [videoAtual?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Intervalo de salvamento — usa SOMENTE refs, nunca recria o intervalo
+    useEffect(() => {
+        const saveInterval = setInterval(async () => {
+            const video = videoRef.current;
+            if (!video || video.paused || video.ended) return;
+
+            const sorted = [...videos].sort((a, b) => a.ordem - b.ordem);
+            const idx = videoAtualIdxRef.current;
+            const currentVideo = sorted[idx];
+            if (!currentVideo) return;
+
+            const current = video.currentTime;
+            const duration = video.duration || 1;
+            if (current <= 0) return;
+
+            const prog = progressosRef.current[currentVideo.id];
+            const jaConcluido = prog?.concluido === 1 || prog?.progresso_percentual >= 95;
+            if (jaConcluido) return;
+
+            const percent = Math.floor((current / duration) * 100);
+
+            try {
+                const resp = await fetch('/api/trabalhos/progresso-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        conteudo_id: conteudoIdRef.current,
+                        pessoa_id: pessoaIdRef.current,
+                        material_id: currentVideo.id,
+                        percentual: percent,
+                        segundos_assistidos: Math.floor(current),
+                        duracao_segundos: Math.floor(duration)
+                    })
+                });
+
+                if (resp.ok) {
+                    // Atualizar ref e state
+                    const novoProg: Progresso = {
+                        ...(progressosRef.current[currentVideo.id] || { material_id: currentVideo.id, tipo: 'video', max_segundos_assistidos: 0, progresso_percentual: 0, concluido: 0 }),
+                        max_segundos_assistidos: Math.max(progressosRef.current[currentVideo.id]?.max_segundos_assistidos || 0, Math.floor(current)),
+                        progresso_percentual: percent
+                    };
+                    progressosRef.current = { ...progressosRef.current, [currentVideo.id]: novoProg };
+                    setProgressos(prev => ({ ...prev, [currentVideo.id]: novoProg }));
+                    console.log(`✅ Progresso salvo: ${Math.floor(current)}s (${percent}%)`);
+                } else {
+                    console.error(`❌ Erro ao salvar progresso: HTTP ${resp.status}`);
+                }
+            } catch (e) {
+                console.error("❌ Erro de rede ao salvar progresso:", e);
             }
         }, 5000);
 
         return () => clearInterval(saveInterval);
-    }, [videoAtual, maxWatched, pessoaId, progressos]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps — NUNCA recriar o intervalo
+
+    const handleTimeUpdate = () => {
+        if (!videoRef.current || !videoAtual) return;
+
+        const current = videoRef.current.currentTime;
+        const prog = progressosRef.current[videoAtual.id];
+        const videoJaConcluido = prog?.concluido === 1 || prog?.progresso_percentual >= 95;
+
+        if (!videoJaConcluido) {
+            const maxWatched = prog?.max_segundos_assistidos || 0;
+            // Anti-skip: não deixar avançar mais de 2s além do máximo já assistido
+            if (current > maxWatched + 2) {
+                videoRef.current.currentTime = maxWatched;
+            }
+        }
+    };
 
     const handleVideoEnded = async () => {
         if (!videoAtual) return;
@@ -189,21 +209,18 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                 })
             });
 
-            setProgressos(prev => ({
-                ...prev,
-                [videoAtual.id]: {
-                    ...prev[videoAtual.id],
-                    max_segundos_assistidos: Math.floor(duration),
-                    progresso_percentual: 100,
-                    concluido: 1
-                } as Progresso
-            }));
+            const novoProg: Progresso = {
+                ...(progressosRef.current[videoAtual.id] || { material_id: videoAtual.id, tipo: 'video', max_segundos_assistidos: 0, progresso_percentual: 0, concluido: 0 }),
+                max_segundos_assistidos: Math.floor(duration),
+                progresso_percentual: 100,
+                concluido: 1
+            };
+            progressosRef.current = { ...progressosRef.current, [videoAtual.id]: novoProg };
+            setProgressos(prev => ({ ...prev, [videoAtual.id]: novoProg }));
 
-            // Check if there are more videos
             if (videoAtualIdx < sortedVideos.length - 1) {
                 setVideoAtualIdx(videoAtualIdx + 1);
             } else {
-                // All videos completed
                 onComplete();
             }
         } catch (e) {
@@ -224,7 +241,7 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
         );
     }
 
-    const todosConcluidos = sortedVideos.every(v => progressos[v.id]?.concluido);
+    const todosConcluidos = sortedVideos.every(v => progressosRef.current[v.id]?.concluido);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -240,7 +257,7 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                         onTimeUpdate={handleTimeUpdate}
                         onEnded={handleVideoEnded}
                     />
-                    
+
                     {!progressos[videoAtual?.id]?.concluido && (
                         <div className="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
                             <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/20 px-3 py-1.5 rounded-lg">
@@ -250,114 +267,74 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                     )}
                 </div>
 
-                <div className="bg-white/[0.02] border border-white/5 rounded-xl p-5">
-                    <h2 className="text-white font-bold text-lg mb-1">{videoAtual?.titulo || videoAtual?.nome_arquivo}</h2>
-                    {videoAtual?.descricao && (
-                        <p className="text-gray-400 text-xs">{videoAtual.descricao}</p>
-                    )}
-                    
+                {/* Titulo e status */}
+                <div className="space-y-3">
+                    <h3 className="text-white font-bold text-lg">{videoAtual?.titulo || videoAtual?.nome_arquivo}</h3>
+
                     {!progressos[videoAtual?.id]?.concluido && (
-                        <div className="mt-4 flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-3 py-2 rounded-lg">
-                            <span className="text-yellow-500">ℹ️</span>
-                            <span className="text-yellow-500/80 text-[10px] font-bold uppercase tracking-widest">
-                                Assista ao video completo para liberar a proxima etapa.
-                            </span>
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
+                            <span className="text-yellow-500 text-sm flex-shrink-0">ℹ</span>
+                            <p className="text-yellow-400/80 text-[11px] uppercase tracking-widest font-bold">
+                                Assista ao vídeo completo para liberar a próxima etapa.
+                            </p>
                         </div>
                     )}
+
                     {progressos[videoAtual?.id]?.concluido === 1 && (
-                        <div className="mt-4 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 rounded-lg">
-                            <span className="text-emerald-500">✅</span>
-                            <span className="text-emerald-500/80 text-[10px] font-bold uppercase tracking-widest">
-                                Video assistido e concluido.
-                            </span>
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
+                            <span className="text-green-400 text-lg">✅</span>
+                            <p className="text-green-400/80 text-[11px] uppercase tracking-widest font-bold">
+                                Vídeo concluído.
+                            </p>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Lista Lateral */}
-            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col h-full max-h-[600px]">
-                <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-4">
-                    Sequencia de Videos ({sortedVideos.length})
-                </h3>
-                
-                <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {/* Lista de Videos */}
+            <div className="space-y-3">
+                <h4 className="text-gray-400 text-[10px] uppercase tracking-widest font-bold">Sequência de Vídeos ({sortedVideos.length})</h4>
+                <div className="space-y-2">
                     {sortedVideos.map((v, idx) => {
                         const prog = progressos[v.id];
-                        const isConcluido = prog?.concluido === 1;
-                        
-                        // O video esta liberado se for o primeiro, se estiver concluido, ou se o anterior estiver concluido
-                        const isLiberado = idx === 0 || isConcluido || progressos[sortedVideos[idx - 1]?.id]?.concluido === 1;
-                        const isAtivo = idx === videoAtualIdx;
+                        const concluido = prog?.concluido === 1;
+                        const isAtual = idx === videoAtualIdx;
+                        const podeAcessar = idx === 0 || progressos[sortedVideos[idx - 1]?.id]?.concluido === 1;
 
                         return (
-                            <div 
+                            <button
                                 key={v.id}
-                                onClick={() => {
-                                    if (isLiberado) setVideoAtualIdx(idx);
-                                }}
-                                className={`p-3 rounded-xl border transition-all ${
-                                    isAtivo 
-                                        ? 'bg-yellow-500/10 border-yellow-500/30 cursor-default' 
-                                        : isLiberado 
-                                            ? 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04] cursor-pointer' 
-                                            : 'bg-black/20 border-transparent opacity-40 cursor-not-allowed'
+                                onClick={() => podeAcessar && setVideoAtualIdx(idx)}
+                                disabled={!podeAcessar}
+                                className={`w-full text-left p-3 rounded-xl border transition-all ${
+                                    isAtual
+                                        ? 'bg-yellow-500/15 border-yellow-500/40'
+                                        : podeAcessar
+                                            ? 'bg-white/[0.03] border-white/10 hover:bg-white/[0.06]'
+                                            : 'bg-white/[0.01] border-white/5 opacity-40 cursor-not-allowed'
                                 }`}
                             >
-                                <div className="flex gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center shrink-0">
-                                        {isConcluido ? (
-                                            <span className="text-emerald-500 text-xs">✅</span>
-                                        ) : isLiberado ? (
-                                            <span className={isAtivo ? 'text-yellow-500 text-xs' : 'text-gray-400 text-xs'}>▶</span>
-                                        ) : (
-                                            <span className="text-gray-600 text-xs">🔒</span>
-                                        )}
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0 ${
+                                        concluido ? 'bg-green-500/20 text-green-400' :
+                                        isAtual ? 'bg-yellow-500/20 text-yellow-400' :
+                                        'bg-white/5 text-gray-500'
+                                    }`}>
+                                        {concluido ? '✓' : isAtual ? '▶' : '○'}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`text-xs font-bold truncate ${isAtivo ? 'text-yellow-500' : 'text-gray-300'}`}>
-                                            {v.titulo || `Video ${idx + 1}`}
+                                    <div className="min-w-0">
+                                        <p className={`text-xs font-semibold truncate ${isAtual ? 'text-yellow-300' : 'text-gray-300'}`}>
+                                            {v.titulo || v.nome_arquivo}
                                         </p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-[8px] text-gray-500 uppercase tracking-widest">
-                                                Video {idx + 1}
-                                            </span>
-                                            {v.duracao_segundos && (
-                                                <>
-                                                    <span className="text-gray-700">·</span>
-                                                    <span className="text-[8px] text-gray-500">
-                                                        {Math.floor(v.duracao_segundos / 60)}:{(v.duracao_segundos % 60).toString().padStart(2, '0')}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">
+                                            Vídeo {idx + 1}
+                                        </p>
                                     </div>
                                 </div>
-                                {isAtivo && !isConcluido && (
-                                    <div className="mt-3 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-yellow-500 transition-all duration-300" 
-                                            style={{ width: `${prog?.progresso_percentual || 0}%` }}
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            </button>
                         );
                     })}
                 </div>
-
-                {todosConcluidos && (
-                    <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center">
-                        <span className="block text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-1">Modulo Concluido</span>
-                        <span className="block text-emerald-500/70 text-[9px]">Avance para a proxima etapa</span>
-                        <button 
-                            onClick={onComplete}
-                            className="mt-3 w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all"
-                        >
-                            Avancar
-                        </button>
-                    </div>
-                )}
             </div>
         </div>
     );
