@@ -146,18 +146,31 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                         {materialAtual?.descricao && <p className="text-gray-400 text-xs mt-1">{materialAtual.descricao}</p>}
                     </div>
                     <div>
-                        {materialAtualConcluido ? (
-                            <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg text-[9px] font-bold uppercase tracking-widest flex items-center gap-2">
-                                <span>✅</span> Lido
-                            </div>
-                        ) : (
-                            <button
-                                onClick={handleMarcarLido}
-                                className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                        {/* Botão de Download sempre disponível se não for fallback */}
+                        <div className="flex items-center gap-3">
+                            <a
+                                href={`/api/trabalhos/materiais/${materialAtual?.id}/arquivo?download=true`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border border-white/10 flex items-center gap-2"
+                                title="Baixar Arquivo Original"
                             >
-                                Marcar Material como Lido
-                            </button>
-                        )}
+                                ⬇ Baixar Arquivo
+                            </a>
+
+                            {materialAtualConcluido ? (
+                                <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 h-[38px]">
+                                    <span>✅</span> Lido
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={handleMarcarLido}
+                                    className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                                >
+                                    Marcar Material como Lido
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -165,7 +178,7 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                     {(() => {
                         const nomeArq = (materialAtual?.nome_arquivo || '').toLowerCase();
                         const isPdf = nomeArq.endsWith('.pdf') || materialAtual?.tipo === 'pdf';
-                        const isWord = nomeArq.endsWith('.docx') || nomeArq.endsWith('.doc') || materialAtual?.tipo === 'docx';
+                        const isWord = nomeArq.endsWith('.docx') || nomeArq.endsWith('.doc') || materialAtual?.tipo === 'docx' || materialAtual?.tipo === 'documento';
 
                         if (isPdf) {
                             return (
@@ -180,16 +193,6 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                         if (isWord) {
                             return (
                                 <div className="absolute inset-0">
-                                    <div className="absolute top-4 right-8 z-20">
-                                        <a
-                                            href={`/api/trabalhos/materiais/${materialAtual?.id}/arquivo?download=true`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="px-4 py-2 bg-black/50 hover:bg-black/80 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all backdrop-blur-sm border border-white/10 flex items-center gap-2"
-                                        >
-                                            ⬇ Baixar Original
-                                        </a>
-                                    </div>
                                     <DocxViewer url={`/api/trabalhos/materiais/${materialAtual.id}/arquivo?download=false`} />
                                 </div>
                             );
