@@ -100,7 +100,8 @@ export default function PlayerVideoObreiro({ videos, pessoaId, conteudoId, onCom
                 videoRef.current.currentTime = prog.concluido ? 0 : prog.max_segundos_assistidos;
             }
         }
-    }, [videoAtualIdx, progressos, videoAtual]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [videoAtual?.id]);
 
     const handleTimeUpdate = () => {
         if (!videoRef.current || !videoAtual) return;

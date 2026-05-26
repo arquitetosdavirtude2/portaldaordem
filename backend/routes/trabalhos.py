@@ -1044,11 +1044,18 @@ def salvar_progresso_video(body: ProgressoVideoBody, request: Request, db: Sessi
     ).first()
     
     if not prog:
-        prog = ProgressoMaterial(pessoa_id=pessoa_id, material_id=body.material_id)
+        prog = ProgressoMaterial(
+            pessoa_id=pessoa_id, 
+            material_id=body.material_id,
+            max_segundos_assistidos=0,
+            progresso_percentual=0,
+            concluido=0
+        )
         db.add(prog)
     
     # ON DUPLICATE KEY UPDATE logic:
-    if body.segundos_assistidos > prog.max_segundos_assistidos:
+    atual_max_seg = prog.max_segundos_assistidos or 0
+    if body.segundos_assistidos > atual_max_seg:
         prog.max_segundos_assistidos = body.segundos_assistidos
         
     if body.percentual > prog.progresso_percentual:
