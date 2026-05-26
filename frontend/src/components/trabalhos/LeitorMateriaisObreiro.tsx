@@ -140,34 +140,35 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[80vh]">
             {/* Leitor Principal */}
             <div className="lg:col-span-3 flex flex-col space-y-4 h-full">
-                <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex justify-between items-center shrink-0">
-                    <div>
-                        <h2 className="text-white font-bold text-lg">{materialAtual?.titulo || materialAtual?.nome_arquivo}</h2>
+                <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-4 shrink-0">
+                    <div className="min-w-0 flex-1">
+                        <h2 className="text-white font-bold text-lg leading-tight" title={materialAtual?.titulo || materialAtual?.nome_arquivo}>
+                            {materialAtual?.titulo || materialAtual?.nome_arquivo}
+                        </h2>
                         {materialAtual?.descricao && <p className="text-gray-400 text-xs mt-1">{materialAtual.descricao}</p>}
                     </div>
-                    <div>
-                        {/* Botão de Download sempre disponível se não for fallback */}
-                        <div className="flex items-center gap-3">
+                    <div className="shrink-0 w-full sm:w-auto">
+                        <div className="flex flex-wrap items-center gap-3">
                             <a
                                 href={`/api/trabalhos/materiais/${materialAtual?.id}/arquivo?download=true`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border border-white/10 flex items-center gap-2"
+                                className="flex-1 sm:flex-none justify-center px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border border-white/10 flex items-center gap-2 whitespace-nowrap"
                                 title="Baixar Arquivo Original"
                             >
-                                ⬇ Baixar Arquivo
+                                ⬇ Baixar
                             </a>
 
                             {materialAtualConcluido ? (
-                                <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 h-[38px]">
+                                <div className="flex-1 sm:flex-none justify-center px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 h-[38px] whitespace-nowrap">
                                     <span>✅</span> Lido
                                 </div>
                             ) : (
                                 <button
                                     onClick={handleMarcarLido}
-                                    className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                                    className="flex-1 sm:flex-none justify-center px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-[0_0_15px_rgba(234,179,8,0.2)] whitespace-nowrap"
                                 >
-                                    Marcar Material como Lido
+                                    Marcar como Lido
                                 </button>
                             )}
                         </div>
