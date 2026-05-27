@@ -150,10 +150,8 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             return;
         }
 
-        if (entregasDesteTrabalho.length === 1) {
-            setEntregaParaCorrecao(entregasDesteTrabalho[0]);
-            return;
-        }
+        // Removido o atalho que abria o modal automaticamente se houvesse apenas 1 entrega,
+        // garantindo que a listagem de irmãos sempre seja exibida.
         
         setListaEntregasParaSelecao({
             ativo: true,
@@ -449,29 +447,38 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h4 className="text-[11px] font-bold text-gray-200 uppercase truncate">{item.titulo}</h4>
-                                                {isConcluido && <span className="text-emerald-500 text-xs">✓</span>}
+                                                {!isDiretoria && isConcluido && <span className="text-emerald-500 text-xs">✓</span>}
                                             </div>
-                                            <div className="flex items-center gap-1 flex-wrap">
-                                                <span className="text-[8px] text-gray-600 uppercase">
-                                                    {item.grau === 1 ? 'Aprendiz' : item.grau === 2 ? 'Companheiro' : 'Mestre'}
-                                                </span>
-                                                <span className="text-gray-700">·</span>
-                                                <span className="text-[8px] text-gray-600 uppercase">{item.tipo}</span>
-                                                {isDiretoria && (
+                                            <div className="flex items-center gap-1 flex-wrap mt-1">
+                                                {!isDiretoria && grauAtivo === 0 && (
                                                     <>
-                                                        <span className="text-gray-700 ml-2">|</span>
-                                                        <span className="text-[8px] text-blue-400/60 ml-1">{ct.videos} vid</span>
+                                                        <span className="text-[10px] text-gray-500 uppercase font-medium">
+                                                            {item.grau === 1 ? 'Aprendiz' : item.grau === 2 ? 'Companheiro' : 'Mestre'}
+                                                        </span>
+                                                        <span className="text-gray-700 mx-1">·</span>
+                                                    </>
+                                                )}
+                                                
+                                                {isDiretoria ? (
+                                                    <div className="flex items-center gap-2 text-[10px] font-medium">
+                                                        <span className="text-blue-400/80">{ct.videos} vídeos</span>
                                                         <span className="text-gray-700">·</span>
-                                                        <span className="text-[8px] text-cyan-400/60">{ct.documentos} doc</span>
+                                                        <span className="text-cyan-400/80">{ct.documentos} docs</span>
                                                         <span className="text-gray-700">·</span>
-                                                        <span className="text-[8px] text-purple-400/60">{ct.quizzes} quiz</span>
+                                                        <span className="text-purple-400/80">{ct.quizzes} quiz</span>
+                                                        <span className="text-gray-700 mx-1">|</span>
+                                                        
+                                                        <span className="text-emerald-500/90 font-bold">{adminDeliveries.filter((ent:any) => Number(ent.conteudo_id) === Number(item.id)).length} entregas realizadas</span>
+                                                        
                                                         {ct.pendencias > 0 && (
                                                             <>
-                                                                <span className="text-gray-700">·</span>
-                                                                <span className="px-1.5 py-0.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[7px] font-bold uppercase rounded">{ct.pendencias} pend.</span>
+                                                                <span className="text-gray-700 mx-1">·</span>
+                                                                <span className="px-1.5 py-0.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[9px] font-bold uppercase rounded">{ct.pendencias} pendentes</span>
                                                             </>
                                                         )}
-                                                    </>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[10px] text-gray-500 uppercase font-medium">{item.tipo}</span>
                                                 )}
                                             </div>
                                         </div>
