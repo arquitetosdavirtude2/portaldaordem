@@ -320,12 +320,18 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                                             {resposta.tipo === 'multipla_escolha' && resposta.alternativas && (
                                                 <div className="mt-3 space-y-2">
                                                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Alternativas:</p>
-                                                    {resposta.alternativas.map((alt: string, i: number) => (
-                                                        <p key={i} className="text-xs text-white/70 bg-white/[0.02] p-2 rounded border border-white/5">
-                                                            <span className="font-bold text-gray-400 mr-2">{['A', 'B', 'C', 'D', 'E'][i]}.</span> 
-                                                            {alt}
-                                                        </p>
-                                                    ))}
+                                                    {resposta.alternativas.map((alt: string, i: number) => {
+                                                        const isSelected = resposta.resposta_irmao?.includes(`${['A', 'B', 'C', 'D', 'E'][i]}.`);
+                                                        const isCorrect = resposta.resposta_correta?.includes(`${['A', 'B', 'C', 'D', 'E'][i]}.`);
+                                                        
+                                                        return (
+                                                            <div key={i} className={`flex items-center p-2 rounded-lg border ${isSelected && isCorrect ? 'bg-emerald-500/10 border-emerald-500/30' : isSelected && !isCorrect ? 'bg-red-500/10 border-red-500/30' : isCorrect && !isSelected ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.02] border-white/5'}`}>
+                                                                <span className={`font-bold mr-3 ${isSelected && isCorrect ? 'text-emerald-500' : isSelected && !isCorrect ? 'text-red-500' : isCorrect && !isSelected ? 'text-emerald-500' : 'text-gray-400'}`}>{['A', 'B', 'C', 'D', 'E'][i]}.</span> 
+                                                                <p className={`text-xs ${isSelected && isCorrect ? 'text-emerald-500' : isSelected && !isCorrect ? 'text-red-400' : isCorrect && !isSelected ? 'text-emerald-500' : 'text-white/70'}`}>{alt}</p>
+                                                                {isSelected && <span className={`ml-auto text-[9px] uppercase tracking-wider font-bold ${isCorrect ? 'text-emerald-500' : 'text-red-500'}`}>(Resp. do Irmão)</span>}
+                                                            </div>
+                                                        )
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
