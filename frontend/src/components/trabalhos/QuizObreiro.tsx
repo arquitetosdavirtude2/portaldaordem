@@ -266,19 +266,13 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
 
                 <div className="pt-6 border-t border-white/5 flex justify-end items-center gap-4">
                     {hasResponded && (
-                        <>
-                            <span className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest mr-auto">
-                                {statusQuiz === 'aprovado' || statusQuiz === 'concluido' ? '✅ Aprovado' : 
+                        <div className="mr-auto px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                            <span className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">
+                                Status: {statusQuiz === 'aprovado' || statusQuiz === 'concluido' ? '✅ Aprovado' : 
                                  statusQuiz === 'pendente' ? '⏳ Aguardando Correção' : 
                                  statusQuiz === 'reprovado' || statusQuiz === 'revisar' ? '❌ Ajustes Solicitados' : 'Respondido'}
                             </span>
-                            <button
-                                onClick={() => onComplete('concluido')}
-                                className="px-8 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 hover:border-emerald-500/40 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
-                            >
-                                Próxima Etapa
-                            </button>
-                        </>
+                        </div>
                     )}
                     
                     {!hasResponded && (

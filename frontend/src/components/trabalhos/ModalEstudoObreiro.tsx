@@ -73,15 +73,15 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
         const abas = progresso.abas;
         
         const tabsConfig = [
-            { id: 'videos', label: 'Vídeos', icon: '🎬', show: progresso.videos.total > 0 },
-            { id: 'materiais', label: 'Materiais', icon: '📄', show: progresso.materiais.total > 0 },
-            { id: 'perguntas', label: 'Perguntas', icon: '🧩', show: progresso.quiz.existe },
-            { id: 'entrega', label: 'Entrega', icon: '📤', show: progresso.entrega.existe },
-            { id: 'resultado', label: 'Resultado', icon: '✅', show: progresso.entrega.existe || progresso.quiz.existe }
+            { id: 'videos', label: 'Vídeos', show: progresso.videos.total > 0 },
+            { id: 'materiais', label: 'Materiais', show: progresso.materiais.total > 0 },
+            { id: 'perguntas', label: 'Perguntas', show: progresso.quiz.existe },
+            { id: 'entrega', label: 'Entrega', show: progresso.entrega.existe },
+            { id: 'resultado', label: 'Resultado', show: progresso.entrega.existe || progresso.quiz.existe }
         ];
 
         return (
-            <div className="flex flex-wrap gap-2 mb-8 justify-center border-b border-white/10 pb-4">
+            <div className="flex flex-wrap gap-3 mb-10 justify-center border-b border-white/5 pb-6">
                 {tabsConfig.filter(t => t.show).map(tab => {
                     const isLiberada = abas[tab.id]?.liberada;
                     const isConcluida = abas[tab.id]?.concluida;
@@ -92,18 +92,17 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                             key={tab.id}
                             onClick={() => handleTabClick(tab.id as StepType)}
                             disabled={!isLiberada}
-                            className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
+                            className={`px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2.5 transition-all border ${
                                 isActive 
-                                    ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.4)]' 
+                                    ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.15)]' 
                                     : isLiberada 
-                                        ? 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white cursor-pointer' 
-                                        : 'bg-transparent text-gray-600 cursor-not-allowed border border-white/5'
+                                        ? 'bg-transparent border-white/10 text-gray-400 hover:border-white/30 hover:bg-white/5 hover:text-white cursor-pointer' 
+                                        : 'bg-transparent border-white/5 text-gray-600/50 cursor-not-allowed'
                             }`}
                         >
-                            <span>{tab.icon}</span>
                             <span>{tab.label}</span>
-                            {isConcluida && <span className="ml-1 text-green-500">✓</span>}
-                            {!isLiberada && <span className="ml-1 text-gray-600 opacity-50">🔒</span>}
+                            {isConcluida && <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>}
+                            {!isLiberada && <svg className="w-3.5 h-3.5 text-gray-600/50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
                         </button>
                     );
                 })}

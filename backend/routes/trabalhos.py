@@ -414,6 +414,29 @@ async def configurar_quiz(
     db.commit()
     return {"message": "Quiz salvo com sucesso"}
 
+@router.get("/respostas/{conteudo_id}/{pessoa_id}")
+def obter_respostas_quiz(conteudo_id: int, pessoa_id: int, db: Session = Depends(get_db)):
+    """Obtém as respostas de um obreiro para os quizzes de um conteúdo."""
+    respostas = db.query(RespostaQuiz).filter(
+        RespostaQuiz.pessoa_id == pessoa_id,
+        RespostaQuiz.conteudo_id == conteudo_id
+    ).all()
+    
+    return [
+        {
+            "id": r.id,
+            "quiz_id": r.quiz_id,
+            "resposta_texto": r.resposta_texto,
+            "opcao_selecionada": r.opcao_selecionada,
+            "lacunas_json": r.lacunas_json,
+            "is_correto": r.is_correto,
+            "nota": r.nota,
+            "feedback": r.feedback,
+            "status": r.status,
+            "tipo": db.query(Quiz).filter(Quiz.id == r.quiz_id).first().tipo if db.query(Quiz).filter(Quiz.id == r.quiz_id).first() else 'livre'
+        } for r in respostas
+    ]
+
 @router.post("/entrega")
 async def upload_entrega(
     pessoa_id: int = Form(...),

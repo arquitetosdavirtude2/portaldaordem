@@ -289,13 +289,7 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                 {todosConcluidos && (
                     <div className="mt-4 shrink-0 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center">
                         <span className="block text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-1">Materiais Lidos</span>
-                        <span className="block text-emerald-500/70 text-[9px]">Você concluiu esta etapa</span>
-                        <button 
-                            onClick={onComplete}
-                            className="mt-3 w-full py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 hover:border-emerald-500/40 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all"
-                        >
-                            Ir para o Quiz
-                        </button>
+                        <span className="block text-emerald-500/70 text-[9px]">Você concluiu esta etapa, pode prosseguir pelas abas acima.</span>
                     </div>
                 )}
             </div>
