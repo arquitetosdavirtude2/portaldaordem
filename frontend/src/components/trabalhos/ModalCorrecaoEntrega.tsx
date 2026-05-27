@@ -15,7 +15,7 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
     const [feedback, setFeedback] = useState(entrega.feedback || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
-    const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger' | 'success'} | null>(null);
+    const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger' | 'success', closeOnSuccess?: boolean} | null>(null);
     const docxContainerRef = useRef<HTMLDivElement>(null);
     const [docxError, setDocxError] = useState(false);
 
@@ -126,7 +126,8 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                 isOpen: true,
                 title: 'Sucesso',
                 message: `Trabalho ${status === 'aprovado' ? 'aprovado' : 'retornado para ajustes'} com sucesso!`,
-                variant: 'success'
+                variant: 'success',
+                closeOnSuccess: true
             });
 
             setTimeout(() => {
@@ -481,7 +482,7 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                 confirmLabel="OK"
                 onConfirm={() => {
                     setAlertConfig(null);
-                    if (alertConfig?.variant === 'success') {
+                    if (alertConfig?.closeOnSuccess) {
                         onSuccess();
                     }
                 }}
