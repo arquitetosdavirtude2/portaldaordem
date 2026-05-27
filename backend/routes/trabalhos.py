@@ -1286,7 +1286,7 @@ def obter_progresso_consolidado(conteudo_id: int, pessoa_id: int, db: Session = 
     status_trab = trabalho_data['status']
     if status_trab == 'pendente' and trabalho_data['enviado']:
         status_trab = 'aguardando_correcao'
-    elif status_trab == 'revisar':
+    elif status_trab in ['revisar', 'refazer']:
         status_trab = 'ajustes_solicitados'
     trabalho_data['status'] = status_trab
 
@@ -1330,7 +1330,7 @@ def obter_progresso_consolidado(conteudo_id: int, pessoa_id: int, db: Session = 
             "concluida": status_trab in ['aguardando_correcao', 'aprovado', 'reprovado']
         },
         "resultado": {
-            "liberada": True if status_trab in ['aguardando_correcao', 'aprovado', 'reprovado', 'ajustes_solicitados'] else False,
+            "liberada": True if status_trab in ['aprovado', 'reprovado'] else False,
             "concluida": status_trab == 'aprovado'
         }
     }
