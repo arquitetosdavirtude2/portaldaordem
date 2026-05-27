@@ -13,6 +13,7 @@ interface ModalCorrecaoEntregaProps {
 
 export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuccess }: ModalCorrecaoEntregaProps) {
     const [feedback, setFeedback] = useState(entrega.feedback || '');
+    const [currentStatus, setCurrentStatus] = useState(entrega.status || 'pendente');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [alertConfig, setAlertConfig] = useState<{isOpen: boolean, title: string, message: string, variant: 'warning' | 'danger' | 'success', closeOnSuccess?: boolean} | null>(null);
@@ -127,12 +128,11 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                 title: 'Sucesso',
                 message: `Trabalho ${status === 'aprovado' ? 'aprovado' : 'retornado para ajustes'} com sucesso!`,
                 variant: 'success',
-                closeOnSuccess: true
+                closeOnSuccess: false
             });
 
-            setTimeout(() => {
-                onSuccess();
-            }, 2000);
+            setCurrentStatus(status);
+            onSuccess();
 
         } catch (e) {
             console.error(e);
@@ -174,7 +174,13 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                         </div>
                         <div>
                             <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Status atual</label>
-                            <p className="text-sm font-medium text-yellow-500 uppercase tracking-widest">Aguardando Correção</p>
+                            {currentStatus === 'aprovado' ? (
+                                <p className="text-sm font-medium text-emerald-500 uppercase tracking-widest">Aprovado</p>
+                            ) : currentStatus === 'revisar' ? (
+                                <p className="text-sm font-medium text-red-500 uppercase tracking-widest">Revisão Solicitada</p>
+                            ) : (
+                                <p className="text-sm font-medium text-yellow-500 uppercase tracking-widest">Aguardando Correção</p>
+                            )}
                         </div>
                     </div>
 
@@ -468,13 +474,15 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                                 >
                                     Solicitar Ajustes
                                 </button>
-                                <button
-                                    onClick={() => handleCorrecao('aprovado')}
-                                    disabled={isSubmitting}
-                                    className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black text-[11px] font-bold uppercase tracking-[0.15em] rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:opacity-50"
-                                >
-                                    Aprovar Trabalho
-                                </button>
+                                {currentStatus !== 'aprovado' && (
+                                    <button
+                                        onClick={() => handleCorrecao('aprovado')}
+                                        disabled={isSubmitting}
+                                        className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black text-[11px] font-bold uppercase tracking-[0.15em] rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:opacity-50"
+                                    >
+                                        Aprovar Trabalho
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

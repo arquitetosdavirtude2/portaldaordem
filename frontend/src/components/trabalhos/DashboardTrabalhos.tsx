@@ -707,7 +707,6 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                             acessoId={acesso.id || acesso.pessoa_id || 0} 
                             onClose={() => setEntregaParaCorrecao(null)} 
                             onSuccess={() => {
-                                setEntregaParaCorrecao(null);
                                 carregarEntregasAdmin();
                                 carregarConteudos();
                             }} 
