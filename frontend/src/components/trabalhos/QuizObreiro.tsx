@@ -189,7 +189,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                 <p className="text-gray-400 text-[10px] uppercase tracking-widest font-bold">Nenhum quiz para este trabalho</p>
                 <button 
                     onClick={() => onComplete('concluido')}
-                    className="mt-6 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all"
+                    className="mt-6 px-6 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 hover:border-emerald-500/40 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
                 >
                     Concluir Etapa
                 </button>
@@ -274,7 +274,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                             </span>
                             <button
                                 onClick={() => onComplete('concluido')}
-                                className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                                className="px-8 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 hover:border-emerald-500/40 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
                             >
                                 Próxima Etapa
                             </button>
@@ -285,7 +285,7 @@ export default function QuizObreiro({ quizzes, pessoaId, conteudoId, onComplete 
                         <button
                             onClick={handleSubmit}
                             disabled={isSubmitting}
-                            className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(234,179,8,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-8 py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 hover:border-yellow-500/40 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(234,179,8,0.1)] hover:shadow-[0_0_30px_rgba(234,179,8,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? 'Enviando Respostas...' : 'Enviar respostas do quiz'}
                         </button>

@@ -166,7 +166,7 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                             ) : (
                                 <button
                                     onClick={handleMarcarLido}
-                                    className="flex-1 sm:flex-none justify-center px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-[0_0_15px_rgba(234,179,8,0.2)] whitespace-nowrap"
+                                    className="flex-1 sm:flex-none justify-center px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 hover:border-yellow-500/40 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-[0_0_15px_rgba(234,179,8,0.1)] whitespace-nowrap"
                                 >
                                     Marcar como Lido
                                 </button>
@@ -219,7 +219,7 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                                     href={`/api/trabalhos/materiais/${materialAtual?.id}/arquivo?download=true`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                                    className="px-6 py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 hover:border-yellow-500/40 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(234,179,8,0.1)]"
                                 >
                                     ⬇ Baixar {ext}
                                 </a>
@@ -292,7 +292,7 @@ export default function LeitorMateriaisObreiro({ materiais, pessoaId, conteudoId
                         <span className="block text-emerald-500/70 text-[9px]">Você concluiu esta etapa</span>
                         <button 
                             onClick={onComplete}
-                            className="mt-3 w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all"
+                            className="mt-3 w-full py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 hover:border-emerald-500/40 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all"
                         >
                             Ir para o Quiz
                         </button>

@@ -146,9 +146,9 @@ export default function ModalEstudoObreiro({ conteudo, pessoaId, onClose, onSucc
                         </p>
                     </div>
                 )}
-                <button
+                <button 
                     onClick={() => { onSuccess(); handleClose(); }}
-                    className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(234,179,8,0.2)]"
+                    className="px-8 py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 hover:border-yellow-500/40 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(234,179,8,0.1)] hover:shadow-[0_0_30px_rgba(234,179,8,0.2)]"
                 >
                     Voltar ao Painel
                 </button>

@@ -344,7 +344,7 @@ export default function EntregaTrabalhoObreiro({ pessoaId, conteudoId, onComplet
                     <button
                         onClick={handleSubmitClick}
                         disabled={!file || isSubmitting}
-                        className="px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black text-[0.75rem] font-bold uppercase tracking-[0.2em] rounded-full transition-all shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] disabled:opacity-30 disabled:cursor-not-allowed transform hover:-translate-y-0.5 shrink-0"
+                        className="px-8 py-3.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 hover:border-yellow-500/40 text-[0.75rem] font-bold uppercase tracking-[0.2em] rounded-full transition-all shadow-[0_0_20px_rgba(234,179,8,0.1)] hover:shadow-[0_0_30px_rgba(234,179,8,0.2)] disabled:opacity-30 disabled:cursor-not-allowed transform hover:-translate-y-0.5 shrink-0"
                     >
                         {isSubmitting ? 'Enviando...' : 'Enviar Trabalho'}
                     </button>

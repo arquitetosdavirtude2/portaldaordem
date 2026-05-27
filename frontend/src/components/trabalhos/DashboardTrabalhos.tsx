@@ -360,72 +360,58 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
             )}
 
             {tabAtiva === 'correcoes' ? (
-                <div className="bg-black/20 border border-white/5 rounded-2xl overflow-hidden mb-12">
-                    <table className="w-full text-left">
-                        <thead className="bg-white/[0.02] text-[8px] uppercase font-bold text-gray-500 border-b border-white/5">
-                            <tr>
-                                <th className="px-6 py-4">Membro</th>
-                                <th className="px-6 py-4">Trabalho</th>
-                                <th className="px-6 py-4">Data Envio</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5 text-[11px]">
-                            {isLoadingAdmin ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-[10px] uppercase font-bold tracking-widest">
-                                        Carregando entregas...
-                                    </td>
-                                </tr>
-                            ) : adminDeliveries.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-600 text-[10px] uppercase font-bold tracking-widest">
-                                        Nenhuma entrega de trabalho encontrada.
-                                    </td>
-                                </tr>
-                            ) : (
-                                adminDeliveries.map((ent) => (
-                                    <tr key={ent.id} className="hover:bg-white/[0.01] transition-colors group">
-                                        <td className="px-6 py-4 font-bold text-gray-200 uppercase">
-                                            {ent.pessoa_nome}
-                                        </td>
-                                        <td className="px-6 py-4 font-bold text-gray-400 uppercase">
-                                            {ent.conteudo_titulo}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-500">
-                                            {ent.data_upload ? new Date(ent.data_upload).toLocaleString() : '---'}
-                                        </td>
-                                        <td className="px-6 py-4">
+                <div className="space-y-3 mb-12">
+                    {isLoadingAdmin ? (
+                        <div className="py-16 text-center text-gray-500 text-[10px] uppercase font-bold tracking-widest bg-black/20 border border-white/5 rounded-2xl">Carregando entregas...</div>
+                    ) : adminDeliveries.length === 0 ? (
+                        <div className="py-16 text-center text-gray-600 text-[10px] uppercase font-bold tracking-widest bg-black/20 border border-white/5 rounded-2xl">Nenhuma entrega de trabalho encontrada.</div>
+                    ) : (
+                        adminDeliveries.map((ent) => (
+                            <div key={ent.id} className="bg-black/20 hover:bg-black/30 border border-white/5 hover:border-emerald-500/10 rounded-xl transition-all duration-300 group">
+                                <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 font-serif font-bold text-lg shrink-0">
+                                        {(ent.pessoa_nome || 'I')[0].toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h4 className="text-[12px] font-bold text-gray-200 uppercase truncate">{ent.pessoa_nome}</h4>
+                                            <span className="text-[10px] text-gray-500 font-normal">({ent.conteudo_titulo})</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 mt-1">
+                                            <span className="text-[10px] text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                                                <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                {ent.data_upload ? new Date(ent.data_upload).toLocaleDateString('pt-BR') : '---'}
+                                            </span>
                                             {(ent.status === 'pendente' || ent.status === 'aguardando_correcao') && (
-                                                <span className="px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[9px] font-bold uppercase rounded-md">
-                                                    ⏳ Aguardando Correção
+                                                <span className="text-[9px] font-bold uppercase tracking-widest text-yellow-500 flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span> Aguardando Correção
                                                 </span>
                                             )}
                                             {ent.status === 'aprovado' && (
-                                                <span className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[9px] font-bold uppercase rounded-md">
-                                                    ✅ Aprovado
+                                                <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-500 flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aprovado
                                                 </span>
                                             )}
                                             {ent.status === 'revisar' && (
-                                                <span className="px-2 py-1 bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] font-bold uppercase rounded-md">
-                                                    ⚠️ Revisar
+                                                <span className="text-[9px] font-bold uppercase tracking-widest text-red-500 flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> Revisar
                                                 </span>
                                             )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right space-x-2">
-                                            <button
-                                                onClick={() => setEntregaParaCorrecao(ent)}
-                                                className="px-3 py-1.5 bg-emerald-500 text-black rounded-lg text-[8px] font-bold uppercase tracking-widest cursor-pointer transition-all hover:bg-emerald-400"
-                                            >
-                                                🎯 Corrigir
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                        </div>
+                                    </div>
+                                    <div className="shrink-0">
+                                        <button
+                                            onClick={() => setEntregaParaCorrecao(ent)}
+                                            className="px-5 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                                            Corrigir
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             ) : (
                 /* Premium Card-Row Listing */
