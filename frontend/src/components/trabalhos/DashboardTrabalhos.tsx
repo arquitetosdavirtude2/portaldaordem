@@ -485,23 +485,24 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                         {/* Actions */}
                                         <div className="flex items-center gap-1.5 shrink-0">
                                             {isDiretoria ? (
-                                                <>
-                                                    <button onClick={() => { setMateriaisItem(item); setMateriaisModal({ativo: true, tipo: 'video'}); }} className="p-2 bg-white/[0.03] hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Gerenciar videos">
-                                                        <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">🎬</span>
+                                                <div className="flex items-center gap-1">
+                                                    <button onClick={() => { setMateriaisItem(item); setMateriaisModal({ativo: true, tipo: 'video'}); }} className="p-2 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg cursor-pointer transition-all" title="Gerenciar vídeos">
+                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                                                     </button>
-                                                    <button onClick={() => { setMateriaisItem(item); setMateriaisModal({ativo: true, tipo: 'pdf'}); }} className="p-2 bg-white/[0.03] hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Gerenciar materiais de apoio">
-                                                        <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">📄</span>
+                                                    <button onClick={() => { setMateriaisItem(item); setMateriaisModal({ativo: true, tipo: 'pdf'}); }} className="p-2 text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg cursor-pointer transition-all" title="Gerenciar materiais de apoio">
+                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                     </button>
-                                                    <button onClick={() => { setItemEmEstudo(item); setQuizModalAtivo(true); }} className="p-2 bg-white/[0.03] hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Configurar quiz">
-                                                        <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">🧩</span>
+                                                    <button onClick={() => { setItemEmEstudo(item); setQuizModalAtivo(true); }} className="p-2 text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg cursor-pointer transition-all" title="Configurar quiz">
+                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     </button>
-                                                    <button onClick={() => handleAbrirListaOuCorrecao(item)} className="p-2 bg-white/[0.03] hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 rounded-lg cursor-pointer transition-all group/btn" title="Correcoes do trabalho">
-                                                        <span className="text-sm opacity-60 group-hover/btn:opacity-100 transition-opacity">📋</span>
+                                                    <button onClick={() => handleAbrirListaOuCorrecao(item)} className="ml-1 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 hover:border-yellow-500/40 rounded-lg text-[9px] font-bold uppercase tracking-widest cursor-pointer transition-all flex items-center gap-2" title="Correções do trabalho">
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                                                        Corrigir
                                                     </button>
-                                                    <div className="w-px h-6 bg-white/5 mx-1"></div>
-                                                    <button onClick={() => setConteudoEditando(item)} className="px-2.5 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] rounded-lg text-[8px] font-bold uppercase text-gray-500 hover:text-gray-300 cursor-pointer transition-all" title="Editar trabalho">Editar</button>
-                                                    <button onClick={() => setConteudoExcluir(item)} className="px-2.5 py-1.5 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-[8px] font-bold uppercase text-red-500/60 hover:text-red-400 cursor-pointer transition-all" title="Excluir trabalho">Excluir</button>
-                                                </>
+                                                    <div className="w-px h-6 bg-white/5 mx-2"></div>
+                                                    <button onClick={() => setConteudoEditando(item)} className="px-2.5 py-1.5 text-gray-500 hover:text-gray-300 hover:bg-white/5 rounded-lg text-[9px] font-bold uppercase tracking-widest cursor-pointer transition-all" title="Editar trabalho">Editar</button>
+                                                    <button onClick={() => setConteudoExcluir(item)} className="px-2.5 py-1.5 text-red-500/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg text-[9px] font-bold uppercase tracking-widest cursor-pointer transition-all" title="Excluir trabalho">Excluir</button>
+                                                </div>
                                             ) : (
                                                 <button 
                                                     onClick={() => {
@@ -717,13 +718,17 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                 carregarEntregasAdmin();
                                 carregarConteudos();
                             }} 
+                            onBack={listaEntregasParaSelecao.entregas.length > 0 ? () => {
+                                setEntregaParaCorrecao(null);
+                                setListaEntregasParaSelecao(prev => ({...prev, ativo: true}));
+                            } : undefined}
                         />
                     )}
                     
                     {listaEntregasParaSelecao.ativo && (
                         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-8">
                             <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''})}></div>
-                            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-3xl overflow-hidden relative z-10 flex flex-col shadow-2xl">
+                            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-4xl overflow-hidden relative z-10 flex flex-col shadow-2xl">
                                 <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                                     <div>
                                         <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Selecione o Irmão para Correção</span>
@@ -731,25 +736,30 @@ export default function DashboardTrabalhos({ acesso, isDiretoria }: DashboardTra
                                     </div>
                                     <button onClick={() => setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''})} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-colors">✕</button>
                                 </div>
-                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                                <div className="p-0 flex flex-col max-h-[70vh] overflow-y-auto custom-scrollbar divide-y divide-white/5">
                                     {listaEntregasParaSelecao.entregas.map(ent => (
                                         <button 
                                             key={ent.id}
                                             onClick={() => {
                                                 setEntregaParaCorrecao(ent);
-                                                setListaEntregasParaSelecao({ativo: false, entregas: [], tituloTrabalho: ''});
+                                                setListaEntregasParaSelecao(prev => ({...prev, ativo: false}));
                                             }}
-                                            className="p-5 bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-yellow-500/50 rounded-2xl transition-all flex items-center justify-between group cursor-pointer text-left"
+                                            className="px-8 py-5 bg-transparent hover:bg-white/[0.02] transition-all flex items-center justify-between group cursor-pointer text-left"
                                         >
-                                            <div className="flex-1 pr-4">
-                                                <p className="text-base text-white font-medium mb-1 group-hover:text-yellow-500 transition-colors truncate">{ent.pessoa_nome || ent.nome_irmao || 'Irmão'}</p>
-                                                <div className="flex items-center gap-3 mt-2">
+                                            <div className="flex-1 pr-4 flex items-center gap-6">
+                                                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 font-serif font-bold text-lg">
+                                                    {(ent.pessoa_nome || ent.nome_irmao || 'I')[0].toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="text-base text-gray-200 font-medium mb-1 group-hover:text-yellow-500 transition-colors truncate">{ent.pessoa_nome || ent.nome_irmao || 'Irmão'}</p>
+                                                    <div className="flex items-center gap-4">
                                                     <span className="text-[10px] text-gray-400 uppercase tracking-widest">
                                                         DATA: {new Date(ent.data_upload || ent.data_envio).toLocaleDateString('pt-BR')}
                                                     </span>
                                                     <span className={`text-[10px] uppercase tracking-widest font-bold ${ent.status === 'pendente' || ent.status === 'aguardando_correcao' ? 'text-yellow-500' : 'text-emerald-500'}`}>
                                                         {ent.status === 'pendente' || ent.status === 'aguardando_correcao' ? 'Pendente' : ent.status}
                                                     </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="w-10 h-10 rounded-xl bg-white/5 group-hover:bg-yellow-500 flex items-center justify-center transition-all shrink-0">

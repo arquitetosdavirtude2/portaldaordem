@@ -9,9 +9,10 @@ interface ModalCorrecaoEntregaProps {
     acessoId: number; // ID da Luz logada
     onClose: () => void;
     onSuccess: () => void;
+    onBack?: () => void;
 }
 
-export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuccess }: ModalCorrecaoEntregaProps) {
+export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuccess, onBack }: ModalCorrecaoEntregaProps) {
     const [feedback, setFeedback] = useState(entrega.feedback || '');
     const [currentStatus, setCurrentStatus] = useState(entrega.status || 'pendente');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,11 +156,18 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                 
                 {/* Header Elegante */}
                 <div className="sticky top-0 z-20 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 p-6 flex justify-between items-center">
-                    <div>
-                        <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Correção de Trabalho</span>
-                        <h3 className="text-xl font-serif text-white uppercase">{entrega.conteudo_titulo || entrega.titulo_trabalho}</h3>
+                    <div className="flex items-center gap-4">
+                        {onBack && (
+                            <button onClick={onBack} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-colors" title="Voltar para a lista">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                            </button>
+                        )}
+                        <div>
+                            <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest block mb-1">Correção de Trabalho</span>
+                            <h3 className="text-xl font-serif text-white uppercase">{entrega.conteudo_titulo || entrega.titulo_trabalho}</h3>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-colors">
+                    <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-colors" title="Fechar modal">
                         ✕
                     </button>
                 </div>
