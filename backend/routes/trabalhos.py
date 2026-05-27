@@ -536,6 +536,18 @@ def corrigir_entrega_admin(
         prog.status = 'refazer'
         prog.data_conclusao = None
         
+    # Atualiza as respostas de quiz que ficaram pendentes
+    respostas_pendentes = db.query(RespostaQuiz).filter(
+        RespostaQuiz.pessoa_id == entrega.pessoa_id,
+        RespostaQuiz.conteudo_id == entrega.conteudo_id,
+        RespostaQuiz.status == 'pendente'
+    ).all()
+    for resp in respostas_pendentes:
+        resp.status = status
+        resp.data_correcao = datetime.now().isoformat()
+        if status == 'aprovado':
+            resp.is_correto = True
+            
     db.commit()
     return {"message": "Correção aplicada com sucesso"}
 
@@ -1011,6 +1023,11 @@ def listar_respostas_obreiro(conteudo_id: int, pessoa_id: int, db: Session = Dep
                         gabarito.append(palavra_correta)
             item["resposta_correta"] = gabarito
 
+            # Re-avaliar is_correto caso o gabarito tenha mudado depois da resposta
+            if gabarito and resp_irmao:
+                item["is_correto"] = (gabarito == resp_irmao)
+
+
         elif tipo_real == "multipla_escolha":
             item["alternativas"] = opcoes.get("alternativas", [])
             
@@ -1029,6 +1046,10 @@ def listar_respostas_obreiro(conteudo_id: int, pessoa_id: int, db: Session = Dep
             if idx_correto is not None and 0 <= idx_correto < len(item["alternativas"]):
                 letra_correta = letras[idx_correto] if idx_correto < len(letras) else str(idx_correto)
                 item["resposta_correta"] = f"{letra_correta}. {item['alternativas'][idx_correto]}"
+            
+            # Re-avaliar is_correto
+            if r.opcao_selecionada is not None and idx_correto is not None:
+                item["is_correto"] = (r.opcao_selecionada == idx_correto)
         
         else:
             # Livre
