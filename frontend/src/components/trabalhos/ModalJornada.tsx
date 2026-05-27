@@ -526,14 +526,15 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
 
                                                 {/* NODE (STAR / SYMBOL) */}
                                                 <div className="relative group" data-jornada-node>
-                                                     {/* Anchor exactly in the center of the image to make line perfectly weave */}
+                                                     {/* Anchor on the side of the image to make line perfectly weave */}
                                                      <div
                                                          className="work-node-anchor absolute pointer-events-none"
                                                          data-work-id={item.id}
                                                          style={{
                                                              top: '50%',
-                                                             left: '50%',
-                                                             transform: 'translate(-50%, -50%)',
+                                                             left: isLeft ? '-40px' : 'auto',
+                                                             right: !isLeft ? '-40px' : 'auto',
+                                                             transform: 'translateY(-50%)',
                                                              width: 0,
                                                              height: 0,
                                                              opacity: 0,
@@ -555,9 +556,9 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                     <div className={`journey-work-image work-image relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-[1.5s] ease-out ${
                                                         isConcluido 
                                                             ? `drop-shadow-[0_0_40px_rgba(255,255,255,0.15)] ${isSupernova ? 'scale-110 brightness-[1.5] saturate-[1.5]' : 'scale-100'}`
-                                                            : isFocused 
+                                                            : isAtual 
                                                                 ? 'drop-shadow-[0_0_60px_rgba(100,120,180,0.25)] scale-[1.02]'
-                                                                : 'drop-shadow-[0_0_40px_rgba(100,120,180,0.1)] scale-95 opacity-65'
+                                                                : 'drop-shadow-[0_0_40px_rgba(100,120,180,0.1)] scale-95 opacity-80'
                                                     }`}>
                                                         <div className="w-full h-full relative" style={{
                                                             maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
@@ -579,7 +580,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                                                 </div>
 
                                                 {/* INFO SIDE */}
-                                                <div className={`journey-work-text work-text w-80 md:w-[32.5rem] text-left relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isFocused ? 'opacity-100 scale-100' : 'opacity-40 scale-95'} ${isBloqueado ? 'is-locked' : 'is-active'} ${isSupernova ? 'drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]' : ''}`}>
+                                                <div className={`journey-work-text work-text w-80 md:w-[32.5rem] text-left relative -top-8 transition-all duration-1000 flex flex-col justify-center ${isBloqueado ? 'opacity-60 scale-95 is-locked' : 'opacity-100 scale-100 is-active'} ${isSupernova ? 'drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]' : ''}`}>
                                                     <div className="space-y-1">
                                                         <span className={`work-kicker block transition-all duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} pl-6`}>
                                                             {GRAU_LABELS[item.grau]} • Nível {idx + 1}
@@ -1080,62 +1081,16 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     transition: opacity 0.8s ease 1.45s, transform 0.8s ease 1.45s, filter 0.8s ease 1.45s;
                 }
 
-                /* Resumed/Recolhido with Fade Transition */
+                /* Smooth static state (No hover or focus changes) */
                 .work-description-wrapper {
                     position: relative;
-                    overflow: hidden;
-                    max-height: 4.8em;
-                    opacity: 0.68;
-                    transition:
-                        max-height 0.9s cubic-bezier(0.25, 1, 0.5, 1),
-                        opacity 0.65s ease,
-                        filter 0.65s ease;
+                    opacity: 1;
                     filter: blur(0px);
                 }
 
-                .is-focused .work-description-wrapper,
-                .group:hover .work-description-wrapper {
-                    max-height: 600px;
-                    opacity: 0.9;
-                    filter: blur(0);
-                }
-
-                /* Fade overlay for normal state */
-                .work-description-wrapper::after {
-                    content: "";
-                    position: absolute;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    height: 2.4em;
-                    pointer-events: none;
-                    background: linear-gradient(
-                        to bottom,
-                        rgba(2, 2, 5, 0),
-                        rgba(2, 2, 5, 0.95)
-                    );
-                    transition: opacity 0.45s ease;
-                    opacity: 1;
-                }
-
-                .is-focused .work-description-wrapper::after,
-                .group:hover .work-description-wrapper::after {
-                    opacity: 0;
-                }
-
-                /* Smooth vertical shift reveal and color transitions */
                 .work-description {
-                    transform: translateY(4px);
-                    transition:
-                        color 0.55s ease,
-                        opacity 0.55s ease,
-                        max-height 0.85s ease,
-                        transform 0.65s ease;
-                }
-
-                .is-focused .work-description,
-                .group:hover .work-description {
                     transform: translateY(0);
+                    opacity: 1;
                 }
 
                 /* Cormorant & EB Garamond Liturgical paragraph details */
@@ -1145,7 +1100,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     line-height: 1.62;
                     letter-spacing: 0.01em;
                     font-weight: 300;
-                    color: rgba(220, 224, 235, 0.58);
+                    color: rgba(238, 240, 246, 0.85); /* Readability fixed */
                     margin: 0 0 0.82rem;
                     transition: color 0.55s ease;
                 }
@@ -1166,11 +1121,7 @@ export default function ModalJornada({ itens, tipo, onClose, onIniciarEstudo }: 
                     }
                 }
 
-                /* Glow transition to active/softer light text on focus or hover */
-                .is-focused .work-description p,
-                .group:hover .work-description p {
-                    color: rgba(238, 240, 246, 0.76);
-                }`}</style>
+                /* Removed hover/glow transition for accessibility and static readability */`}</style>
         </div>
     );
 }
