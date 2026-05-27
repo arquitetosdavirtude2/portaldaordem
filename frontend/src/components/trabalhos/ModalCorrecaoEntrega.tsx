@@ -282,87 +282,159 @@ export default function ModalCorrecaoEntrega({ entrega, acessoId, onClose, onSuc
                         {loadingQuiz ? (
                             <p className="text-[13px] text-white/40 italic">Carregando respostas...</p>
                         ) : respostasQuiz.length > 0 ? (
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {respostasQuiz.map((resposta, index) => (
-                                    <div key={resposta.id || index} className="bg-black/20 border border-white/5 rounded-xl p-5">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <p className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">Pergunta {index + 1}</p>
-                                            <span className="text-[9px] text-gray-500 uppercase tracking-widest bg-white/5 px-2 py-1 rounded">
-                                                Tipo: {resposta.tipo === 'livre' ? 'Livre' : resposta.tipo === 'multipla_escolha' ? 'Múltipla Escolha' : 'Lacunas'}
+                                    <div key={resposta.id || index} className="bg-[#0f0f0f] border border-white/10 rounded-xl p-6">
+                                        
+                                        {/* HEADER DA PERGUNTA */}
+                                        <div className="flex justify-between items-start mb-4 border-b border-white/5 pb-4">
+                                            <p className="text-[11px] text-yellow-500 font-bold uppercase tracking-widest">Pergunta {index + 1}</p>
+                                            <span className="text-[10px] text-gray-400 uppercase tracking-widest bg-white/5 px-3 py-1.5 rounded-md font-bold">
+                                                TIPO: {resposta.tipo === 'livre' ? 'LIVRE' : resposta.tipo === 'multipla_escolha' ? 'MÚLTIPLA ESCOLHA' : 'LACUNAS'}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-gray-200 mb-3">{resposta.pergunta}</p>
-                                        <div className="bg-white/[0.02] border border-white/5 rounded-lg p-4">
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Resposta do irmão:</p>
-                                            <p className="text-sm text-white/90 mb-3">
-                                                {resposta.tipo === 'livre' ? resposta.resposta_texto : 
-                                                 resposta.tipo === 'multipla_escolha' ? `Alternativa selecionada: ${resposta.opcao_selecionada}` :
-                                                 resposta.lacunas_json ? `Lacunas preenchidas: ${resposta.lacunas_json}` : 'Nenhuma resposta registrada'}
-                                            </p>
+                                        
+                                        {/* PERGUNTA E TEXTO BASE */}
+                                        <div className="mb-6">
+                                            <p className="text-sm text-gray-200 mb-2 font-serif">{resposta.pergunta}</p>
                                             
-                                            <div className="border-t border-white/5 pt-4 mt-4">
-                                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Sua Correção (Luz):</p>
-                                                
-                                                {resposta.tipo !== 'livre' && (
-                                                    <div className="flex items-center gap-2 mb-4">
-                                                        <span className="text-[10px] text-gray-400 uppercase tracking-widest">Correção Automática:</span>
-                                                        {resposta.is_correto ? (
-                                                            <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">✅ Correta (Nota Original: {resposta.nota})</span>
-                                                        ) : (
-                                                            <span className="text-[10px] text-red-500 font-bold uppercase tracking-widest">❌ Incorreta (Nota Original: {resposta.nota})</span>
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                                                    <div className="w-full md:w-32 shrink-0">
-                                                        <label className="text-[9px] text-gray-400 uppercase tracking-widest block mb-1">Nota</label>
-                                                        <input 
-                                                            type="number" 
-                                                            step="0.5"
-                                                            min="0"
-                                                            max="10"
-                                                            value={quizNota[resposta.id] ?? resposta.nota ?? ''}
-                                                            onChange={e => setQuizNota(prev => ({ ...prev, [resposta.id]: e.target.value }))}
-                                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500/50 transition-colors"
-                                                            placeholder="0.0"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <label className="text-[9px] text-gray-400 uppercase tracking-widest block mb-1">Feedback Específico</label>
-                                                        <input 
-                                                            type="text" 
-                                                            value={quizFeedback[resposta.id] ?? resposta.feedback ?? ''}
-                                                            onChange={e => setQuizFeedback(prev => ({ ...prev, [resposta.id]: e.target.value }))}
-                                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500/50 transition-colors"
-                                                            placeholder="Opcional. Ex: Faltou citar o autor X."
-                                                        />
-                                                    </div>
+                                            {resposta.tipo === 'lacunas' && resposta.texto_base && (
+                                                <div className="mt-3 p-4 bg-white/[0.02] border border-white/5 rounded-lg">
+                                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Texto Base:</p>
+                                                    <p className="text-sm text-white/80 leading-relaxed">
+                                                        {resposta.texto_base.split(' ').map((word: string, i: number) => {
+                                                            const isOculta = resposta.palavras_ocultas?.includes(i);
+                                                            return isOculta ? (
+                                                                <span key={i} className="inline-block mx-1 px-2 py-0.5 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded font-mono text-xs">
+                                                                    [lacuna]
+                                                                </span>
+                                                            ) : (
+                                                                <span key={i}> {word} </span>
+                                                            );
+                                                        })}
+                                                    </p>
                                                 </div>
+                                            )}
 
-                                                <div className="flex gap-2">
-                                                    <button 
-                                                        onClick={() => handleCorrigirRespostaQuiz(resposta.id, 'aprovado')}
-                                                        disabled={quizSubmitting[resposta.id]}
-                                                        className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all border ${resposta.status === 'aprovado' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-white/5 border-white/10 text-white hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-500'} disabled:opacity-50`}
-                                                    >
-                                                        {quizSubmitting[resposta.id] ? 'Salvando...' : 'Aprovar / Certo'}
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleCorrigirRespostaQuiz(resposta.id, 'reprovado')}
-                                                        disabled={quizSubmitting[resposta.id]}
-                                                        className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all border ${resposta.status === 'reprovado' ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-white/5 border-white/10 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-500'} disabled:opacity-50`}
-                                                    >
-                                                        {quizSubmitting[resposta.id] ? 'Salvando...' : 'Reprovar / Errado'}
-                                                    </button>
+                                            {resposta.tipo === 'multipla_escolha' && resposta.alternativas && (
+                                                <div className="mt-3 space-y-2">
+                                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Alternativas:</p>
+                                                    {resposta.alternativas.map((alt: string, i: number) => (
+                                                        <p key={i} className="text-xs text-white/70 bg-white/[0.02] p-2 rounded border border-white/5">
+                                                            <span className="font-bold text-gray-400 mr-2">{['A', 'B', 'C', 'D', 'E'][i]}.</span> 
+                                                            {alt}
+                                                        </p>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* COMPARAÇÃO DE RESPOSTAS */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                            
+                                            {/* RESPOSTA DO IRMÃO */}
+                                            <div className="bg-white/[0.03] border border-white/10 rounded-lg p-4">
+                                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Resposta do Irmão</p>
+                                                
+                                                {resposta.resposta_irmao ? (
+                                                    resposta.tipo === 'lacunas' && Array.isArray(resposta.resposta_irmao) ? (
+                                                        <ul className="list-decimal list-inside text-sm text-white/90 space-y-1">
+                                                            {resposta.resposta_irmao.map((palavra: string, i: number) => (
+                                                                <li key={i}>{palavra}</li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : (
+                                                        <p className="text-sm text-white/90 whitespace-pre-wrap">{resposta.resposta_irmao}</p>
+                                                    )
+                                                ) : (
+                                                    <p className="text-sm text-gray-500 italic">Nenhuma resposta registrada para esta pergunta.</p>
+                                                )}
+                                            </div>
+
+                                            {/* RESPOSTA CORRETA (APENAS LACUNAS E MÚLTIPLA) */}
+                                            {resposta.tipo !== 'livre' && (
+                                                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                                                    <p className="text-[10px] text-emerald-500/70 uppercase tracking-widest mb-3 font-bold">Resposta Correta</p>
+                                                    
+                                                    {resposta.tipo === 'lacunas' && Array.isArray(resposta.resposta_correta) ? (
+                                                        <ul className="list-decimal list-inside text-sm text-emerald-400 space-y-1">
+                                                            {resposta.resposta_correta.map((palavra: string, i: number) => (
+                                                                <li key={i}>{palavra}</li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : (
+                                                        <p className="text-sm text-emerald-400 whitespace-pre-wrap">{resposta.resposta_correta || 'Não definida'}</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                            
+                                        </div>
+                                        
+                                        {/* RESULTADO AUTOMÁTICO */}
+                                        {resposta.tipo !== 'livre' && (
+                                            <div className="mb-6 flex items-center gap-3">
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest">Resultado Automático:</span>
+                                                {resposta.is_correto ? (
+                                                    <span className="text-[11px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded font-bold uppercase tracking-widest">✅ Correto</span>
+                                                ) : (
+                                                    <span className="text-[11px] bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded font-bold uppercase tracking-widest">❌ Errado</span>
+                                                )}
+                                            </div>
+                                        )}
+                                        
+                                        {/* CORREÇÃO DA LUZ */}
+                                        <div className="border-t border-white/5 pt-5">
+                                            <p className="text-[11px] text-yellow-500 font-bold uppercase tracking-widest mb-4">Sua Correção (Luz)</p>
+                                            
+                                            <div className="flex flex-col md:flex-row gap-4 mb-5">
+                                                <div className="w-full md:w-32 shrink-0">
+                                                    <label className="text-[10px] text-gray-400 uppercase tracking-widest block mb-2">Nota</label>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.5"
+                                                        min="0"
+                                                        max="10"
+                                                        value={quizNota[resposta.id] ?? resposta.nota ?? ''}
+                                                        onChange={e => setQuizNota(prev => ({ ...prev, [resposta.id]: e.target.value }))}
+                                                        className="w-full bg-black/60 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500/50 transition-colors"
+                                                        placeholder="0.0"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="text-[10px] text-gray-400 uppercase tracking-widest block mb-2">Feedback Específico</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={quizFeedback[resposta.id] ?? resposta.feedback ?? ''}
+                                                        onChange={e => setQuizFeedback(prev => ({ ...prev, [resposta.id]: e.target.value }))}
+                                                        className="w-full bg-black/60 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500/50 transition-colors"
+                                                        placeholder="Opcional. Ex: Faltou citar o autor X."
+                                                    />
                                                 </div>
                                             </div>
+
+                                            <div className="flex gap-3">
+                                                <button 
+                                                    onClick={() => handleCorrigirRespostaQuiz(resposta.id, 'aprovado')}
+                                                    disabled={quizSubmitting[resposta.id] || !resposta.resposta_irmao}
+                                                    className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-widest rounded-lg transition-all border ${resposta.status === 'aprovado' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-white/5 border-white/10 text-gray-300 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-500'} disabled:opacity-50`}
+                                                >
+                                                    {quizSubmitting[resposta.id] ? 'Salvando...' : 'Aprovar / Certo'}
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleCorrigirRespostaQuiz(resposta.id, 'reprovado')}
+                                                    disabled={quizSubmitting[resposta.id] || !resposta.resposta_irmao}
+                                                    className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-widest rounded-lg transition-all border ${resposta.status === 'reprovado' ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-white/5 border-white/10 text-gray-300 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-500'} disabled:opacity-50`}
+                                                >
+                                                    {quizSubmitting[resposta.id] ? 'Salvando...' : 'Reprovar / Errado'}
+                                                </button>
+                                            </div>
                                         </div>
+
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[13px] text-white/40 italic">Este trabalho não possui respostas de quiz registradas no momento.</p>
+                            <p className="text-[13px] text-white/40 italic bg-white/5 p-6 rounded-xl text-center border border-white/10">Este trabalho não possui respostas de quiz registradas no momento.</p>
                         )}
                     </div>
 
