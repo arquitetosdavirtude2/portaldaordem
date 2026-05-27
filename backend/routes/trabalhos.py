@@ -988,7 +988,14 @@ def listar_respostas_obreiro(conteudo_id: int, pessoa_id: int, db: Session = Dep
             resp_irmao = []
             if r.lacunas_json:
                 try:
-                    resp_irmao = json.loads(r.lacunas_json)
+                    parsed = json.loads(r.lacunas_json)
+                    if isinstance(parsed, dict):
+                        # Sort by key (which is the word index) and extract values
+                        resp_irmao = [str(parsed[k]) for k in sorted(parsed.keys(), key=lambda x: int(x) if str(x).isdigit() else x)]
+                    elif isinstance(parsed, list):
+                        resp_irmao = [str(v) for v in parsed]
+                    else:
+                        resp_irmao = [str(parsed)]
                 except Exception:
                     resp_irmao = []
             item["resposta_irmao"] = resp_irmao
