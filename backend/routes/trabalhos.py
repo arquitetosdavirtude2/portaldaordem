@@ -406,7 +406,8 @@ async def configurar_quiz(
             conteudo_id=conteudo_id,
             pergunta=p['pergunta'],
             opcoes_json=json.dumps(p['opcoes']),
-            resposta_correta=p['resposta_correta']
+            resposta_correta=p['resposta_correta'],
+            tipo=p['opcoes'].get('tipo', 'livre')
         )
         db.add(q)
         
@@ -954,21 +955,81 @@ def listar_respostas_obreiro(conteudo_id: int, pessoa_id: int, db: Session = Dep
     resultado = []
     for r in respostas:
         quiz = db.query(Quiz).filter(Quiz.id == r.quiz_id).first()
-        resultado.append({
+        
+        # Obter os dados extra do quiz
+        opcoes = {}
+        if quiz and quiz.opcoes_json:
+            try:
+                opcoes = json.loads(quiz.opcoes_json)
+            except Exception:
+                pass
+                
+        # Fallback de tipo conforme regra
+        tipo_real = opcoes.get("tipo") if opcoes.get("tipo") else (quiz.tipo if quiz and quiz.tipo else "livre")
+        
+        # Construir o dado que o frontend precisa
+        item = {
             "id": r.id,
             "quiz_id": r.quiz_id,
             "pergunta": quiz.pergunta if quiz else "Pergunta não encontrada",
-            "tipo": quiz.tipo if quiz else "desconhecido",
-            "resposta_texto": r.resposta_texto,
-            "opcao_selecionada": r.opcao_selecionada,
-            "lacunas_json": r.lacunas_json,
+            "tipo": tipo_real,
             "is_correto": r.is_correto,
             "nota": r.nota,
             "feedback": r.feedback,
             "status": r.status,
             "data_resposta": r.data_resposta,
-            "data_correcao": r.data_correcao
-        })
+            "data_correcao": r.data_correcao,
+        }
+        
+        if tipo_real == "lacunas":
+            item["texto_base"] = opcoes.get("texto", "")
+            item["palavras_ocultas"] = opcoes.get("lacunas", [])
+            # Resposta irmao foi salva como JSON array, exemplo: ["A", "B"]
+            resp_irmao = []
+            if r.lacunas_json:
+                try:
+                    resp_irmao = json.loads(r.lacunas_json)
+                except Exception:
+                    resp_irmao = []
+            item["resposta_irmao"] = resp_irmao
+            
+            # Resposta correta do gabarito baseada no índice:
+            gabarito = []
+            if item["texto_base"] and item["palavras_ocultas"]:
+                palavras_base = item["texto_base"].split(" ")
+                for index in item["palavras_ocultas"]:
+                    if index < len(palavras_base):
+                        # Remover pontuacao basica da palavra pra ficar limpo
+                        palavra_correta = palavras_base[index].strip(",.;:!?")
+                        gabarito.append(palavra_correta)
+            item["resposta_correta"] = gabarito
+
+        elif tipo_real == "multipla_escolha":
+            item["alternativas"] = opcoes.get("alternativas", [])
+            
+            # Formatar a resposta do irmão e a correta como texto da alternativa ou A/B/C...
+            letras = ["A", "B", "C", "D", "E"]
+            idx_correto = quiz.resposta_correta if quiz else -1
+            
+            # Resposta do irmão
+            item["resposta_irmao"] = ""
+            if r.opcao_selecionada is not None and 0 <= r.opcao_selecionada < len(item["alternativas"]):
+                letra_irmao = letras[r.opcao_selecionada] if r.opcao_selecionada < len(letras) else str(r.opcao_selecionada)
+                item["resposta_irmao"] = f"{letra_irmao}. {item['alternativas'][r.opcao_selecionada]}"
+                
+            # Resposta correta
+            item["resposta_correta"] = ""
+            if idx_correto is not None and 0 <= idx_correto < len(item["alternativas"]):
+                letra_correta = letras[idx_correto] if idx_correto < len(letras) else str(idx_correto)
+                item["resposta_correta"] = f"{letra_correta}. {item['alternativas'][idx_correto]}"
+        
+        else:
+            # Livre
+            item["resposta_irmao"] = r.resposta_texto
+            item["resposta_correta"] = None
+            
+        resultado.append(item)
+        
     return resultado
 
 
