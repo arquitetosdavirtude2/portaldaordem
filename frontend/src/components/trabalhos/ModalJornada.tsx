@@ -260,12 +260,17 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             if (el) el.classList.add('is-resting');
         }
 
-        function triggerSupernova(workIdx: number) {
-            const img = content!.querySelector(`[data-work-idx="${workIdx}"] .work-image`) as HTMLElement;
-            if (img) {
-                img.classList.add('supernova-flash');
-                setTimeout(() => img.classList.remove('supernova-flash'), 900);
+        function triggerSupernova(ci: number) {
+            const starEl = content!.querySelector(`[data-star="${ci}"]`);
+            if (starEl) {
+                starEl.classList.add('supernova-flash');
+                setTimeout(() => starEl.classList.remove('supernova-flash'), 900);
             }
+        }
+
+        function revealWork(workIdx: number) {
+            const el = content!.querySelector(`[data-work-idx="${workIdx}"]`);
+            if (el) el.classList.add('is-revealed');
         }
 
         function markSeen(workIdx: number) {
@@ -322,8 +327,8 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             const fromLen = i === 0 ? 0 : stops[i - 1].pathLen;
             const toLen = stops[i].pathLen;
             const dist = toLen - fromLen;
-            // Slower animation: at least 1.5s, up to 5s per segment
-            const dur = dist < 1 ? 200 : Math.max(1500, Math.min(5000, dist * 2.8));
+            // Slower animation: at least 3s, up to 10s per segment
+            const dur = dist < 1 ? 200 : Math.max(3000, Math.min(10000, dist * 5.0));
             segs.push({ fromLen, toLen, toCI: stops[i].ci, dur, stop: stops[i] });
         }
 
@@ -394,8 +399,10 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             // Segment complete?
             if (rawP >= 1) {
                 const stop = seg.stop;
+                // Always reveal the work when reached
+                revealWork(stop.workIdx);
                 if (stop.isConcl && stop.pauseMs > 0) {
-                    triggerSupernova(stop.workIdx);
+                    triggerSupernova(stop.ci);
                     markSeen(stop.workIdx);
                     pauseEnd = ts + stop.pauseMs;
                     if (guidingStar) guidingStar.style.opacity = '0';
@@ -413,8 +420,9 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             if (stops.length > 0 && stops[0].pathLen < 1) {
                 revealStarsUpTo(stops[0].ci);
                 moveGuidingStar(0);
+                revealWork(stops[0].workIdx);
                 if (stops[0].isConcl) {
-                    triggerSupernova(stops[0].workIdx);
+                    triggerSupernova(stops[0].ci);
                     markSeen(stops[0].workIdx);
                 }
                 // Wait a beat for the first supernova, then animate the rest
@@ -508,8 +516,11 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                             <svg className="absolute top-0 left-0 w-full pointer-events-none overflow-visible" style={{ height: contentHeight, zIndex: 5 }}>
                                 <defs>
                                     <filter id="glow-line-soft">
-                                        <feGaussianBlur stdDeviation="6" result="blur" />
-                                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                                        <feGaussianBlur stdDeviation="8" result="blur" />
+                                        <feComponentTransfer in="blur" result="glow">
+                                            <feFuncA type="linear" slope="0.7"/>
+                                        </feComponentTransfer>
+                                        <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
                                     </filter>
                                 </defs>
 
@@ -518,8 +529,8 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                                     ref={mainPathRef}
                                     d={pathD}
                                     fill="none"
-                                    stroke="rgba(150,180,220,0.08)"
-                                    strokeWidth="2"
+                                    stroke="rgba(150,180,220,0.05)"
+                                    strokeWidth="1"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                 />
@@ -529,8 +540,8 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                                     ref={revealedPathRef}
                                     d={pathD}
                                     fill="none"
-                                    stroke="rgba(255,225,140,0.55)"
-                                    strokeWidth="2.5"
+                                    stroke="rgba(255,225,140,0.25)"
+                                    strokeWidth="1.5"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeDasharray={totalPathLength || 1}
@@ -543,8 +554,8 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                                     <path
                                         d={pathD}
                                         fill="none"
-                                        stroke="rgba(255,225,140,0.55)"
-                                        strokeWidth="2.5"
+                                        stroke="rgba(255,225,140,0.25)"
+                                        strokeWidth="1.5"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
                                         strokeDasharray={totalPathLength}
@@ -600,37 +611,29 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
 
                                 return (
                                     <div key={item.id} data-jornada-row data-work-idx={idx}
-                                        className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative z-10`}>
+                                        className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative z-10 ${phase === 'done' ? 'is-revealed' : ''} ${isAtual ? 'is-atual' : ''} ${isBloqueado ? 'is-bloqueado' : ''}`}>
                                         <div className={`flex items-center gap-12 max-w-4xl relative ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
                                             {/* IMAGE */}
                                             <div className="relative">
                                                 {isConcluido && <div className="absolute -inset-12 rounded-full blur-[60px] bg-yellow-500/8 pointer-events-none" style={{ zIndex: -1 }} />}
-                                                <div className={`work-image-container relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-[1.5s] ease-out ${
-                                                    isConcluido ? 'drop-shadow-[0_0_40px_rgba(255,255,255,0.15)]'
-                                                        : isAtual ? 'drop-shadow-[0_0_60px_rgba(100,120,180,0.25)]'
-                                                            : 'drop-shadow-[0_0_40px_rgba(100,120,180,0.1)] opacity-80'
-                                                }`}>
+                                                <div className="work-image-wrapper relative z-10 w-72 h-72 md:w-80 md:h-80">
                                                     <div className="w-full h-full relative" style={{
                                                         maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
                                                         WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)'
                                                     }}>
                                                         <img src={imgUrl} alt={item.titulo} width={320} height={320}
-                                                            className={`work-image w-full h-full object-contain transition-all duration-[2s] ease-out ${
-                                                                isConcluido ? 'brightness-110 drop-shadow-[0_0_20px_rgba(255,220,150,0.2)] saturate-100'
-                                                                    : isAtual ? 'grayscale brightness-[0.7] opacity-60'
-                                                                        : 'grayscale brightness-[0.4] opacity-30'
-                                                            }`} />
+                                                            className="work-image w-full h-full object-contain" />
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* TEXT */}
-                                            <div className={`journey-work-text work-text w-80 md:w-[32.5rem] text-left relative -top-8 flex flex-col justify-center transition-opacity duration-1000 ${isBloqueado ? 'opacity-60 is-locked' : 'opacity-100 is-active'}`}>
+                                            <div className="journey-work-text work-text w-80 md:w-[32.5rem] text-left relative -top-8 flex flex-col justify-center">
                                                 <div className="space-y-1">
-                                                    <span className={`work-kicker block transition-all duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} pl-6`}>
+                                                    <span className={`work-kicker block transition-colors duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} pl-6`}>
                                                         {GRAU_LABELS[item.grau]} • Nível {idx + 1}
                                                     </span>
-                                                    <h3 className={`work-title text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} pl-6`}>
+                                                    <h3 className={`work-title text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-colors duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} pl-6`}>
                                                         {isBloqueado ? 'Oculto em Trevas' : item.titulo}
                                                     </h3>
                                                 </div>
@@ -663,41 +666,94 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Libre+Baskerville:ital@0;1&family=Spectral:ital,wght@0,300;0,400;1,400&display=swap');
 
-                /* ======= SUPERNOVA FLASH ======= */
-                .supernova-flash {
-                    filter: brightness(2.8) saturate(2) drop-shadow(0 0 70px rgba(255,255,255,0.9)) !important;
-                    transition: filter 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                /* ======= DYNAMIC ROW REVEAL CSS ======= */
+                [data-jornada-row] .work-image-wrapper {
+                    filter: grayscale(100%) brightness(0.2);
+                    opacity: 0;
+                    transition: filter 2.5s ease, opacity 2.5s ease, transform 2.5s ease;
+                    transform: scale(0.95);
+                }
+                [data-jornada-row] .journey-work-text {
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: opacity 2s ease, transform 2s ease;
                 }
 
-                /* ======= GUIDING STAR (burning fuse tip) ======= */
-                .guiding-star {
+                /* REVEALED + COMPLETED */
+                [data-jornada-row].is-revealed:not(.is-atual):not(.is-bloqueado) .work-image-wrapper {
+                    filter: grayscale(0%) brightness(1) drop-shadow(0 0 30px rgba(255,220,150,0.15));
+                    opacity: 1;
+                    transform: scale(1);
+                }
+                [data-jornada-row].is-revealed:not(.is-atual):not(.is-bloqueado) .journey-work-text {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                /* REVEALED + ATUAL (Current Work) */
+                [data-jornada-row].is-revealed.is-atual .work-image-wrapper {
+                    filter: grayscale(100%) brightness(0.8) drop-shadow(0 0 40px rgba(100,120,180,0.25));
+                    opacity: 0.7;
+                    transform: scale(1);
+                }
+                [data-jornada-row].is-revealed.is-atual .journey-work-text {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                /* REVEALED + BLOQUEADO (Future Works) */
+                [data-jornada-row].is-revealed.is-bloqueado .work-image-wrapper {
+                    filter: grayscale(100%) brightness(0.3);
+                    opacity: 0.3;
+                    transform: scale(0.98);
+                }
+                [data-jornada-row].is-revealed.is-bloqueado .journey-work-text {
+                    opacity: 0.5;
+                    transform: translateY(0);
+                }
+
+                /* ======= SUPERNOVA FLASH (ON THE STAR) ======= */
+                .supernova-flash .cs-core {
+                    transform: translate(-50%, -50%) scale(3) !important;
+                    filter: brightness(2) drop-shadow(0 0 50px rgba(255,255,255,1)) !important;
+                    transition: transform 0.2s ease-out, filter 0.2s ease-out !important;
+                }
+                .supernova-flash .cs-ray-h, .supernova-flash .cs-ray-v {
+                    transform: translate(-50%, -50%) scale(1.5) !important;
+                    opacity: 1 !important;
+                    transition: transform 0.2s ease-out, opacity 0.2s ease-out !important;
+                }
+
+                /* ======= GUIDING STAR & WAYPOINTS ======= */
+                .guiding-star, .constellation-star {
                     position: absolute;
                     width: 40px; height: 40px;
                     transform: translate(-50%, -50%);
                     pointer-events: none; z-index: 200;
-                    animation: guidingBurn 2s ease-in-out infinite alternate;
-                    transition: opacity 0.2s ease-out;
                 }
-                .guiding-star .cs-core {
+                .guiding-star {
+                    animation: guidingBurn 4s ease-in-out infinite alternate;
+                    transition: opacity 0.6s ease-out;
+                }
+                .cs-core {
                     position: absolute; left: 50%; top: 50%;
-                    width: 6px; height: 6px;
+                    width: 4px; height: 4px;
                     transform: translate(-50%, -50%); border-radius: 50%;
-                    background: rgba(255,255,255,1);
-                    box-shadow: 0 0 10px 4px rgba(255,255,255,0.8), 0 0 25px 12px rgba(255,220,100,0.8), 0 0 45px 20px rgba(255,180,0,0.4);
+                    background: rgba(255,255,255,0.5);
+                    box-shadow: 0 0 10px 4px rgba(255,230,150,0.3);
+                    transition: all 2s ease;
                 }
-                .guiding-star .cs-ray-h {
+                .cs-ray-h, .cs-ray-v {
                     position: absolute; left: 50%; top: 50%;
-                    width: 40px; height: 2px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to right, transparent, rgba(255,255,255,0.9), transparent);
+                    background: linear-gradient(to right, transparent, rgba(255,230,150,0.3), transparent);
+                    transition: all 2s ease;
                 }
-                .guiding-star .cs-ray-v {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 2px; height: 40px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.9), transparent);
-                }
+                .cs-ray-h { width: 30px; height: 1px; transform: translate(-50%, -50%); }
+                .cs-ray-v { width: 1px; height: 30px; transform: translate(-50%, -50%); }
+
                 @keyframes guidingBurn {
-                    0% { transform: translate(-50%, -50%) scale(0.9); filter: brightness(0.9); }
-                    100% { transform: translate(-50%, -50%) scale(1.15); filter: brightness(1.3); }
+                    0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
+                    100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.9; }
                 }
 
                 /* ======= BACKGROUND ======= */
@@ -750,116 +806,32 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                     transform: translate(-50%, -50%);
                     pointer-events: none; z-index: 35;
                 }
-
-                /* --- Waypoint stars (vertices) --- */
-                .constellation-star.is-waypoint { width: 28px; height: 28px; }
-                .constellation-star.is-waypoint .cs-core {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 5px; height: 5px;
-                    transform: translate(-50%, -50%); border-radius: 50%;
-                    background: rgba(210,225,255,0.8);
-                    box-shadow: 0 0 6px rgba(210,225,255,0.6), 0 0 16px rgba(170,200,255,0.25);
-                    transition: all 0.6s ease;
-                }
-                .constellation-star.is-waypoint .cs-ray-h {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 22px; height: 1px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to right, transparent, rgba(210,225,255,0.6), transparent);
-                    transition: all 0.6s ease;
-                }
-                .constellation-star.is-waypoint .cs-ray-v {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 1px; height: 22px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to bottom, transparent, rgba(210,225,255,0.6), transparent);
-                    transition: all 0.6s ease;
-                }
-
-                /* --- Work stars (bigger) --- */
-                .constellation-star.is-work { width: 52px; height: 52px; }
-                .constellation-star.is-work .cs-core {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 8px; height: 8px;
-                    transform: translate(-50%, -50%); border-radius: 50%;
-                    background: rgba(255,248,220,0.9);
-                    box-shadow: 0 0 10px rgba(255,248,220,0.8), 0 0 24px rgba(255,220,140,0.5), 0 0 45px rgba(255,180,70,0.2);
-                    transition: all 0.6s ease;
-                }
-                .constellation-star.is-work .cs-ray-h {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 46px; height: 1px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to right, transparent, rgba(255,245,210,0.85), transparent);
-                    transition: all 0.6s ease;
-                }
-                .constellation-star.is-work .cs-ray-v {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 1px; height: 46px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to bottom, transparent, rgba(255,245,210,0.85), transparent);
-                    transition: all 0.6s ease;
-                }
-
-                /* --- Completed work stars --- */
-                .constellation-star.work-completed .cs-core {
-                    background: rgba(255,250,200,1) !important;
-                    box-shadow: 0 0 12px rgba(255,245,200,1), 0 0 30px rgba(255,220,120,0.85), 0 0 60px rgba(255,170,50,0.35) !important;
-                    width: 9px !important; height: 9px !important;
-                }
-                .constellation-star.work-completed .cs-ray-h {
-                    width: 56px !important;
-                    background: linear-gradient(to right, transparent, rgba(255,240,180,1), transparent) !important;
-                }
-                .constellation-star.work-completed .cs-ray-v {
-                    height: 56px !important;
-                    background: linear-gradient(to bottom, transparent, rgba(255,240,180,1), transparent) !important;
-                }
-
-                /* --- DIM state (not yet reached) --- */
-                .constellation-star.is-dim { opacity: 0.30; }
-                .constellation-star.is-dim .cs-core {
-                    background: rgba(160,180,210,0.35) !important;
-                    box-shadow: 0 0 4px rgba(160,180,210,0.15) !important;
-                }
-                .constellation-star.is-dim .cs-ray-h,
-                .constellation-star.is-dim .cs-ray-v {
-                    opacity: 0.3;
-                }
-
-                /* --- REACHED state (star lights up) --- */
-                .constellation-star.is-reached { opacity: 1; }
-                .constellation-star.is-reached.is-work {
-                    animation: workStarPulse 3s ease-in-out infinite;
-                }
-                .constellation-star.is-reached.is-waypoint {
-                    animation: waypointPulse 3.5s ease-in-out infinite;
-                }
+                .constellation-star.is-work { width: 44px; height: 44px; }
+                
+                .constellation-star.is-dim { opacity: 0.2; }
+                .constellation-star.is-reached { opacity: 0.8; }
+                
+                .constellation-star.is-reached.is-work { animation: workStarPulse 5s ease-in-out infinite; }
+                
                 @keyframes workStarPulse {
-                    0%, 100% { transform: translate(-50%, -50%) scale(0.94); filter: brightness(0.9); }
-                    50% { transform: translate(-50%, -50%) scale(1.14); filter: brightness(1.35); }
-                }
-                @keyframes waypointPulse {
-                    0%, 100% { transform: translate(-50%, -50%) scale(0.92); filter: brightness(0.82); }
-                    50% { transform: translate(-50%, -50%) scale(1.1); filter: brightness(1.2); }
+                    0%, 100% { transform: translate(-50%, -50%) scale(0.9); filter: brightness(0.8); }
+                    50% { transform: translate(-50%, -50%) scale(1.05); filter: brightness(1.1); }
                 }
 
-                /* --- RESTING state (current position — strong pulse) --- */
-                .constellation-star.is-resting {
-                    animation: restingPulse 3s ease-in-out infinite !important;
-                }
-                .constellation-star.is-resting .cs-core {
-                    width: 12px !important; height: 12px !important;
-                    background: rgba(255,250,210,1) !important;
-                    box-shadow: 0 0 16px rgba(255,250,210,1), 0 0 40px rgba(255,225,120,0.95), 0 0 80px rgba(255,180,50,0.5) !important;
+                .constellation-star.is-resting { animation: restingPulse 4s ease-in-out infinite !important; }
+                .constellation-star.is-work.is-resting .cs-core {
+                    background: rgba(255,255,255,0.9);
+                    box-shadow: 0 0 12px 6px rgba(255,230,150,0.7), 0 0 35px 15px rgba(255,200,50,0.3);
                 }
                 .constellation-star.is-resting .cs-ray-h {
-                    width: 70px !important;
-                    background: linear-gradient(to right, transparent, rgba(255,245,200,1), transparent) !important;
+                    width: 50px; opacity: 1; background: linear-gradient(to right, transparent, rgba(255,230,150,0.6), transparent);
                 }
-                .constellation-star.is-resting .cs-ray-v {
-                    height: 70px !important;
-                    background: linear-gradient(to bottom, transparent, rgba(255,245,200,1), transparent) !important;
+                .constellation-star.is-work.is-resting .cs-ray-v {
+                    height: 50px; opacity: 1; background: linear-gradient(to bottom, transparent, rgba(255,230,150,0.6), transparent);
                 }
                 @keyframes restingPulse {
                     0%, 100% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(0.8); }
-                    50% { transform: translate(-50%, -50%) scale(1.35); filter: brightness(1.6); }
+                    50% { transform: translate(-50%, -50%) scale(1.15); filter: brightness(1.4); }
                 }
 
                 /* ======= TYPOGRAPHY ======= */
