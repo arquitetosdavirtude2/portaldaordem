@@ -114,7 +114,6 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
     const handleClose = useCallback(() => {
         setIsClosing(true);
         if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
-        hasLaunchedAnim.current = false;
         setTimeout(onClose, 500);
     }, [onClose]);
 
@@ -221,11 +220,10 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             constellationNodes.length === 0 ||
             !containerRef.current ||
             !mainPathRef.current ||
-            totalPathLength === 0 ||
-            hasLaunchedAnim.current
+            totalPathLength === 0
         ) return;
 
-        hasLaunchedAnim.current = true;
+        let isCancelled = false;
 
         const container = containerRef.current;
         const svgPath = mainPathRef.current;
@@ -360,6 +358,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
         }
 
         function frame(ts: number) {
+            if (isCancelled) return;
             if (segIdx >= segs.length) { finishAnim(); return; }
 
             // Pausing at a stop?
@@ -367,6 +366,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                 if (ts < pauseEnd) { animRafRef.current = requestAnimationFrame(frame); return; }
                 pauseEnd = null;
                 segStart = null;
+                if (guidingStar) guidingStar.style.opacity = '1';
             }
 
             const seg = segs[segIdx];
@@ -398,6 +398,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                     triggerSupernova(stop.workIdx);
                     markSeen(stop.workIdx);
                     pauseEnd = ts + stop.pauseMs;
+                    if (guidingStar) guidingStar.style.opacity = '0';
                 }
                 segIdx++;
                 segStart = null;
@@ -432,6 +433,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
         }, 1300);
 
         return () => {
+            isCancelled = true;
             clearTimeout(startTimer);
             if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
         };
@@ -670,26 +672,27 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                 /* ======= GUIDING STAR (burning fuse tip) ======= */
                 .guiding-star {
                     position: absolute;
-                    width: 52px; height: 52px;
+                    width: 40px; height: 40px;
                     transform: translate(-50%, -50%);
                     pointer-events: none; z-index: 200;
                     animation: guidingBurn 2s ease-in-out infinite alternate;
+                    transition: opacity 0.2s ease-out;
                 }
                 .guiding-star .cs-core {
                     position: absolute; left: 50%; top: 50%;
-                    width: 10px; height: 10px;
+                    width: 6px; height: 6px;
                     transform: translate(-50%, -50%); border-radius: 50%;
                     background: rgba(255,255,255,1);
-                    box-shadow: 0 0 12px 6px rgba(255,255,255,1), 0 0 30px 15px rgba(255,220,100,0.9), 0 0 60px 30px rgba(255,180,0,0.5);
+                    box-shadow: 0 0 10px 4px rgba(255,255,255,0.8), 0 0 25px 12px rgba(255,220,100,0.8), 0 0 45px 20px rgba(255,180,0,0.4);
                 }
                 .guiding-star .cs-ray-h {
                     position: absolute; left: 50%; top: 50%;
-                    width: 60px; height: 2px; transform: translate(-50%, -50%);
+                    width: 40px; height: 2px; transform: translate(-50%, -50%);
                     background: linear-gradient(to right, transparent, rgba(255,255,255,0.9), transparent);
                 }
                 .guiding-star .cs-ray-v {
                     position: absolute; left: 50%; top: 50%;
-                    width: 2px; height: 60px; transform: translate(-50%, -50%);
+                    width: 2px; height: 40px; transform: translate(-50%, -50%);
                     background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.9), transparent);
                 }
                 @keyframes guidingBurn {
