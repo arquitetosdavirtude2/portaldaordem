@@ -311,9 +311,17 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
 
         // === CINEMATIC ANIMATION ===
         setPhase('animating');
-        container.scrollTop = 0;
-        if (guidingStar) guidingStar.style.display = 'block';
         updatePath(0); // start with nothing revealed
+        moveGuidingStar(0);
+        if (guidingStar) guidingStar.style.display = 'block';
+
+        // Ensure we start scrolled to the first node smoothly during fade-in
+        if (constellationNodes[0]) {
+            container.scrollTo({
+                top: Math.max(0, constellationNodes[0].y - container.clientHeight / 2 + 50),
+                behavior: 'smooth'
+            });
+        }
 
         // Build stops at work nodes
         interface Stop { ci: number; pathLen: number; workIdx: number; isConcl: boolean; pauseMs: number; }
@@ -346,6 +354,12 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             updatePath(lenToFinal);
             revealStarsUpTo(finalCI);
             setResting(finalCI);
+            if (constellationNodes[finalCI]) {
+                container!.scrollTo({
+                    top: Math.max(0, constellationNodes[finalCI].y - container!.clientHeight / 2 + 50),
+                    behavior: 'smooth'
+                });
+            }
             setPhase('done');
             setRestingNodeIdx(finalCI);
             setFinalRevealedLen(lenToFinal);
@@ -548,7 +562,11 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                         )}
 
                         {/* GUIDING STAR — always in DOM, visibility controlled by animation */}
-                        <div ref={guidingStarRef} className="guiding-star" style={{ display: 'none' }} />
+                        <div ref={guidingStarRef} className="guiding-star" style={{ display: 'none' }}>
+                            <div className="cs-ray-h" />
+                            <div className="cs-ray-v" />
+                            <div className="cs-core" />
+                        </div>
 
                         {/* CONSTELLATION STAR NODES — always rendered, toggled via classList */}
                         {constellationNodes.map((node, ci) => {
@@ -660,23 +678,30 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                 /* ======= GUIDING STAR (burning fuse tip) ======= */
                 .guiding-star {
                     position: absolute;
-                    width: 24px; height: 24px; border-radius: 50%;
-                    background: radial-gradient(circle,
-                        rgba(255,255,255,1) 0%,
-                        rgba(255,240,180,0.95) 25%,
-                        rgba(255,200,50,0.5) 50%,
-                        transparent 70%);
-                    box-shadow:
-                        0 0 8px 4px rgba(255,255,255,1),
-                        0 0 24px 10px rgba(255,220,100,0.9),
-                        0 0 55px 22px rgba(255,180,0,0.45),
-                        0 0 100px 40px rgba(255,150,0,0.15);
+                    width: 52px; height: 52px;
                     transform: translate(-50%, -50%);
                     pointer-events: none; z-index: 200;
                     animation: guidingBurn 0.5s ease-in-out infinite alternate;
                 }
+                .guiding-star .cs-core {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 10px; height: 10px;
+                    transform: translate(-50%, -50%); border-radius: 50%;
+                    background: rgba(255,255,255,1);
+                    box-shadow: 0 0 12px 6px rgba(255,255,255,1), 0 0 30px 15px rgba(255,220,100,0.9), 0 0 60px 30px rgba(255,180,0,0.5);
+                }
+                .guiding-star .cs-ray-h {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 60px; height: 2px; transform: translate(-50%, -50%);
+                    background: linear-gradient(to right, transparent, rgba(255,255,255,0.9), transparent);
+                }
+                .guiding-star .cs-ray-v {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 2px; height: 60px; transform: translate(-50%, -50%);
+                    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.9), transparent);
+                }
                 @keyframes guidingBurn {
-                    0% { transform: translate(-50%, -50%) scale(0.82); filter: brightness(0.85); }
+                    0% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(0.9); }
                     100% { transform: translate(-50%, -50%) scale(1.2); filter: brightness(1.3); }
                 }
 
