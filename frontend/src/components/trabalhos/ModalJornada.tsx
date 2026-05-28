@@ -129,7 +129,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
 
         const workPositions: { x: number; y: number }[] = [];
         rows.forEach((row, idx) => {
-            const img = row.querySelector('.work-image-container');
+            const img = row.querySelector('.work-image-wrapper');
             if (!img) return;
             const imgRect = img.getBoundingClientRect();
             const isLeft = idx % 2 === 0;
