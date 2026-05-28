@@ -114,6 +114,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
     const handleClose = useCallback(() => {
         setIsClosing(true);
         if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
+        hasLaunchedAnim.current = false;
         setTimeout(onClose, 500);
     }, [onClose]);
 
@@ -294,34 +295,17 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             container!.scrollTop = Math.max(0, y - container!.clientHeight / 2 + 50);
         }
 
-        // === REDUCED MOTION: jump to final ===
-        if (prefersReducedMotion) {
-            updatePath(lenToFinal);
-            if (guidingStar) guidingStar.style.display = 'none';
-            revealStarsUpTo(finalCI);
-            setResting(finalCI);
-            scrollTo(constellationNodes[finalCI].y);
-            jornada.forEach((_, wi) => { if (jornada[wi].progresso?.status === 'concluido') markSeen(wi); });
-            setPhase('done');
-            setRestingNodeIdx(finalCI);
-            setFinalRevealedLen(lenToFinal);
-            setFinalReachedCI(finalCI);
-            return;
-        }
+
 
         // === CINEMATIC ANIMATION ===
         setPhase('animating');
         updatePath(0); // start with nothing revealed
         moveGuidingStar(0);
+        
         if (guidingStar) guidingStar.style.display = 'block';
 
-        // Ensure we start scrolled to the first node smoothly during fade-in
-        if (constellationNodes[0]) {
-            container.scrollTo({
-                top: Math.max(0, constellationNodes[0].y - container.clientHeight / 2 + 50),
-                behavior: 'smooth'
-            });
-        }
+        // 1. Instantly snap to top so the user always sees the journey from the beginning
+        container.scrollTop = 0;
 
         // Build stops at work nodes
         interface Stop { ci: number; pathLen: number; workIdx: number; isConcl: boolean; pauseMs: number; }
@@ -340,14 +324,23 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             const fromLen = i === 0 ? 0 : stops[i - 1].pathLen;
             const toLen = stops[i].pathLen;
             const dist = toLen - fromLen;
-            // If distance is zero (first node at path start), short duration
-            const dur = dist < 1 ? 200 : Math.max(800, Math.min(2200, dist * 1.2));
+            // Slower animation: at least 1.5s, up to 5s per segment
+            const dur = dist < 1 ? 200 : Math.max(1500, Math.min(5000, dist * 2.8));
             segs.push({ fromLen, toLen, toCI: stops[i].ci, dur, stop: stops[i] });
         }
 
         let segIdx = 0;
         let segStart: number | null = null;
         let pauseEnd: number | null = null;
+        
+        const finalY = constellationNodes[finalCI].y;
+        const targetScroll = Math.max(0, finalY - container.clientHeight / 2 + 50);
+
+        function scrollToProportional(len: number) {
+            if (lenToFinal <= 0) return;
+            const progress = Math.min(1, len / lenToFinal);
+            container!.scrollTop = progress * targetScroll;
+        }
 
         function finishAnim() {
             if (guidingStar) guidingStar.style.display = 'none';
@@ -356,7 +349,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             setResting(finalCI);
             if (constellationNodes[finalCI]) {
                 container!.scrollTo({
-                    top: Math.max(0, constellationNodes[finalCI].y - container!.clientHeight / 2 + 50),
+                    top: targetScroll,
                     behavior: 'smooth'
                 });
             }
@@ -396,8 +389,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             }
 
             // Sync scroll
-            const pt = svgPath.getPointAtLength(Math.min(curLen, totalPathLength));
-            scrollTo(pt.y);
+            scrollToProportional(curLen);
 
             // Segment complete?
             if (rawP >= 1) {
@@ -426,7 +418,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                 }
                 // Wait a beat for the first supernova, then animate the rest
                 setTimeout(() => {
-                    segIdx = 1;
+                    segIdx = 0; // Fix: DO NOT SKIP the first segment
                     segStart = null;
                     if (segIdx < segs.length) {
                         animRafRef.current = requestAnimationFrame(frame);
@@ -681,7 +673,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                     width: 52px; height: 52px;
                     transform: translate(-50%, -50%);
                     pointer-events: none; z-index: 200;
-                    animation: guidingBurn 0.5s ease-in-out infinite alternate;
+                    animation: guidingBurn 2s ease-in-out infinite alternate;
                 }
                 .guiding-star .cs-core {
                     position: absolute; left: 50%; top: 50%;
@@ -701,8 +693,8 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                     background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.9), transparent);
                 }
                 @keyframes guidingBurn {
-                    0% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(0.9); }
-                    100% { transform: translate(-50%, -50%) scale(1.2); filter: brightness(1.3); }
+                    0% { transform: translate(-50%, -50%) scale(0.9); filter: brightness(0.9); }
+                    100% { transform: translate(-50%, -50%) scale(1.15); filter: brightness(1.3); }
                 }
 
                 /* ======= BACKGROUND ======= */
@@ -831,10 +823,10 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                 /* --- REACHED state (star lights up) --- */
                 .constellation-star.is-reached { opacity: 1; }
                 .constellation-star.is-reached.is-work {
-                    animation: workStarPulse 2.5s ease-in-out infinite;
+                    animation: workStarPulse 3s ease-in-out infinite;
                 }
                 .constellation-star.is-reached.is-waypoint {
-                    animation: waypointPulse 3.2s ease-in-out infinite;
+                    animation: waypointPulse 3.5s ease-in-out infinite;
                 }
                 @keyframes workStarPulse {
                     0%, 100% { transform: translate(-50%, -50%) scale(0.94); filter: brightness(0.9); }
@@ -847,7 +839,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
 
                 /* --- RESTING state (current position — strong pulse) --- */
                 .constellation-star.is-resting {
-                    animation: restingPulse 1.6s ease-in-out infinite !important;
+                    animation: restingPulse 3s ease-in-out infinite !important;
                 }
                 .constellation-star.is-resting .cs-core {
                     width: 12px !important; height: 12px !important;
@@ -863,9 +855,8 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                     background: linear-gradient(to bottom, transparent, rgba(255,245,200,1), transparent) !important;
                 }
                 @keyframes restingPulse {
-                    0% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(0.8); }
+                    0%, 100% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(0.8); }
                     50% { transform: translate(-50%, -50%) scale(1.35); filter: brightness(1.6); }
-                    100% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(0.8); }
                 }
 
                 /* ======= TYPOGRAPHY ======= */
