@@ -97,8 +97,8 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
         return jornada.length - 1;
     }, [jornada]);
 
-    // Should we play the full cinematic?
-    const shouldPlayCinematic = useCallback((): boolean => {
+    // Check if there are NEW unseen reveals (for supernova)
+    const hasUnseenReveals = useCallback((): boolean => {
         const pessoaId = getPessoaIdFromLocalStorage();
         for (const item of jornada) {
             if (item.progresso?.status === 'concluido') {
@@ -246,41 +246,44 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
         return () => { ro.disconnect(); clearTimeout(t1); clearTimeout(t2); };
     }, [isOpen, measureAndBuildConstellation]);
 
-    // ---------- compute total path length ----------
+    // ---------- compute total path length AND per-node cumulative lengths ----------
+    // We calculate node lengths by summing the distance between consecutive nodes.
+    // This is exact for straight-line (M/L) paths and avoids fragile binary search.
+    const nodeCumulativeLengths = useRef<number[]>([]);
+
     useEffect(() => {
-        if (!mainPathRef.current || !pathD) return;
+        if (!mainPathRef.current || !pathD || constellationNodes.length === 0) return;
         const len = mainPathRef.current.getTotalLength();
         setTotalPathLength(len);
-    }, [pathD]);
 
-    // ---------- find length along path to a specific constellation node ----------
-    const getLengthToConstellationNode = useCallback((nodeIdx: number): number => {
-        if (!mainPathRef.current || nodeIdx <= 0) return 0;
-        const path = mainPathRef.current;
-        const totalLen = path.getTotalLength();
-        const target = constellationNodes[nodeIdx];
-        if (!target) return totalLen;
-
-        // Binary search for closest point on path
-        let lo = 0, hi = totalLen;
-        for (let iter = 0; iter < 40; iter++) {
-            const mid = (lo + hi) / 2;
-            const pt = path.getPointAtLength(mid);
-            if (pt.y < target.y - 1) {
-                lo = mid;
-            } else if (pt.y > target.y + 1) {
-                hi = mid;
-            } else {
-                // Close enough vertically, check x
-                const dx = pt.x - target.x;
-                if (Math.abs(dx) < 3) break;
-                // Walk in the right direction
-                if (mid < totalLen * 0.99) lo = mid;
-                else break;
-            }
+        // Compute cumulative straight-line distances between consecutive nodes
+        const cumLens: number[] = [0];
+        let cumulative = 0;
+        for (let i = 1; i < constellationNodes.length; i++) {
+            const prev = constellationNodes[i - 1];
+            const curr = constellationNodes[i];
+            const dx = curr.x - prev.x;
+            const dy = curr.y - prev.y;
+            cumulative += Math.sqrt(dx * dx + dy * dy);
+            cumLens.push(cumulative);
         }
-        return (lo + hi) / 2;
-    }, [constellationNodes]);
+
+        // Scale cumulative distances to match actual SVG path length
+        // (they should be nearly identical for L-only paths, but just in case)
+        const rawTotal = cumulative || 1;
+        for (let i = 0; i < cumLens.length; i++) {
+            cumLens[i] = (cumLens[i] / rawTotal) * len;
+        }
+
+        nodeCumulativeLengths.current = cumLens;
+    }, [pathD, constellationNodes]);
+
+    const getLengthToConstellationNode = useCallback((nodeIdx: number): number => {
+        if (nodeIdx <= 0) return 0;
+        const lens = nodeCumulativeLengths.current;
+        if (nodeIdx < lens.length) return lens[nodeIdx];
+        return totalPathLength;
+    }, [totalPathLength]);
 
     // ---------- MAIN ANIMATION CHOREOGRAPHY ----------
     useEffect(() => {
@@ -298,7 +301,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
         const path = mainPathRef.current;
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const finalStopWorkIdx = findFinalStop();
-        const isCinematic = shouldPlayCinematic();
+        const hasNewReveals = hasUnseenReveals();
         const pessoaId = getPessoaIdFromLocalStorage();
 
         // Find the constellation node index for each work
@@ -311,11 +314,13 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
         const finalConstellationIdx = workConstellationIndices[finalStopWorkIdx] ?? constellationNodes.length - 1;
 
         // Pre-calculate path lengths to each constellation node
-        const nodeLengths: number[] = constellationNodes.map((_, i) => getLengthToConstellationNode(i));
+        const nodeLengths: number[] = nodeCumulativeLengths.current.length > 0
+            ? [...nodeCumulativeLengths.current]
+            : constellationNodes.map((_, i) => getLengthToConstellationNode(i));
         const lengthToFinalStop = nodeLengths[finalConstellationIdx] || totalPathLength;
 
-        // ---- Quick mode (reduced motion or revisit) ----
-        if (prefersReducedMotion || !isCinematic) {
+        // ---- Reduced motion only: skip animation ----
+        if (prefersReducedMotion) {
             setRevealedLength(lengthToFinalStop);
             setPhase('done');
             setRestingNodeIdx(finalConstellationIdx);
@@ -351,12 +356,14 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             const ci = workConstellationIndices[wi];
             if (ci === undefined) continue;
             const isConcl = jornada[wi]?.progresso?.status === 'concluido';
+            // On revisit (no new reveals), supernova is shorter
+            const supernovaDur = isConcl ? (hasNewReveals ? 800 : 400) : 0;
             stops.push({
                 constellationIdx: ci,
                 pathLength: nodeLengths[ci],
                 workIdx: wi,
                 isConcluido: isConcl,
-                pauseDuration: isConcl ? 800 : 0,
+                pauseDuration: supernovaDur,
             });
         }
 
@@ -375,7 +382,9 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             const fromCI = i === 0 ? 0 : stops[i - 1].constellationIdx;
             const toLen = stops[i].pathLength;
             const dist = toLen - fromLen;
-            const dur = Math.max(800, Math.min(2000, dist * 1.5));
+            // Faster on revisit
+            const speedMult = hasNewReveals ? 1.5 : 0.8;
+            const dur = Math.max(600, Math.min(2000, dist * speedMult));
             segments.push({
                 fromLength: fromLen,
                 toLength: toLen,
@@ -472,7 +481,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             clearTimeout(startDelay);
             if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
         };
-    }, [constellationNodes, totalPathLength, jornada, findFinalStop, shouldPlayCinematic, getLengthToConstellationNode]);
+    }, [constellationNodes, totalPathLength, jornada, findFinalStop, hasUnseenReveals, getLengthToConstellationNode]);
 
     // ---------- rendering ----------
     return (
@@ -540,24 +549,24 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                                         </filter>
                                     </defs>
 
-                                    {/* Full path — dim future portion */}
+                                    {/* Full path — dim future portion (thicker) */}
                                     <path
                                         ref={mainPathRef}
                                         d={pathD}
                                         fill="none"
-                                        stroke="rgba(185,205,240,0.12)"
-                                        strokeWidth="1.5"
+                                        stroke="rgba(185,205,240,0.18)"
+                                        strokeWidth="3"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
                                     />
 
-                                    {/* Revealed portion — bright golden */}
+                                    {/* Revealed portion — bright golden (thicker) */}
                                     {totalPathLength > 0 && (
                                         <path
                                             d={pathD}
                                             fill="none"
-                                            stroke="rgba(255,230,160,0.9)"
-                                            strokeWidth="2.2"
+                                            stroke="rgba(255,225,140,0.95)"
+                                            strokeWidth="4"
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                             strokeDasharray={totalPathLength}
@@ -575,8 +584,8 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                                 const isResting = restingNodeIdx === ci && phase === 'done';
                                 const isWork = node.isWorkNode;
 
-                                // During animation, don't show nodes not yet reached
-                                if (phase === 'animating' && !isReached) return null;
+                                // During animation, dim nodes not yet reached; during idle, show all dimmed
+                                const showDim = phase === 'idle' || (phase === 'animating' && !isReached);
 
                                 // Determine status for work nodes
                                 let workStatus = '';
@@ -590,7 +599,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                                 return (
                                     <div
                                         key={`cn-${ci}`}
-                                        className={`constellation-star ${isWork ? 'is-work' : 'is-waypoint'} ${isReached ? 'is-reached' : 'is-dim'} ${isResting ? 'is-resting' : ''} ${workStatus ? `work-${workStatus}` : ''}`}
+                                        className={`constellation-star ${isWork ? 'is-work' : 'is-waypoint'} ${showDim ? 'is-dim' : 'is-reached'} ${isResting ? 'is-resting' : ''} ${workStatus ? `work-${workStatus}` : ''}`}
                                         style={{ left: node.x, top: node.y }}
                                     >
                                         <div className="cs-ray-h" />
