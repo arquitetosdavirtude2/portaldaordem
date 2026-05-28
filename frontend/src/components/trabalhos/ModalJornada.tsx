@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect, useMemo } from 'react';
 
 interface JornadaItem {
     id: number;
@@ -44,76 +44,57 @@ const getPessoaIdFromLocalStorage = (): string => {
     return '';
 };
 
-// A point on the constellation map
 interface ConstellationNode {
     x: number;
     y: number;
-    isWorkNode: boolean;   // true = corresponds to a work item
-    workIdx: number;       // index in jornada[] (-1 for intermediate waypoints)
+    isWorkNode: boolean;
+    workIdx: number;
 }
 
 export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps) {
+    // ===== REFS =====
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const mainPathRef = useRef<SVGPathElement | null>(null);
-    const animRafRef = useRef<number | null>(null);
+    const revealedPathRef = useRef<SVGPathElement | null>(null);
+    const guidingStarRef = useRef<HTMLDivElement | null>(null);
+    const animRafRef = useRef<number>(0);
     const hasLaunchedAnim = useRef(false);
+    const nodeLengthsRef = useRef<number[]>([]);
 
+    // ===== STATE =====
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-
-    // All constellation nodes (work nodes + intermediate waypoints)
     const [constellationNodes, setConstellationNodes] = useState<ConstellationNode[]>([]);
-    // The SVG path "d" string built from straight segments
     const [pathD, setPathD] = useState('');
     const [contentHeight, setContentHeight] = useState(0);
-
-    // Animation state
-    const [phase, setPhase] = useState<'idle' | 'animating' | 'done'>('idle');
-    const [guidingStarPos, setGuidingStarPos] = useState<{ x: number; y: number } | null>(null);
-    const [restingNodeIdx, setRestingNodeIdx] = useState<number | null>(null);
-    const [supernovaWorkIndices, setSupernovaWorkIndices] = useState<Set<number>>(new Set());
-    const [revealedLength, setRevealedLength] = useState(0);
     const [totalPathLength, setTotalPathLength] = useState(0);
-    // Track which constellation nodes have been "reached" by the animation
-    const [reachedConstellationIdx, setReachedConstellationIdx] = useState(-1);
+    // Final state (set only at animation END or for reduced-motion)
+    const [phase, setPhase] = useState<'idle' | 'animating' | 'done'>('idle');
+    const [restingNodeIdx, setRestingNodeIdx] = useState<number | null>(null);
+    const [finalRevealedLen, setFinalRevealedLen] = useState(0);
+    const [finalReachedCI, setFinalReachedCI] = useState(-1);
 
-    // ---------- derived data ----------
-    if (!itens) return null;
+    // ===== MEMOIZED DATA (CRITICAL: prevents useEffect cleanup killing animation) =====
+    const jornada = useMemo(() => {
+        if (!itens || itens.length === 0) return [] as JornadaItem[];
+        return [...itens]
+            .filter(i => i.tipo?.toLowerCase().includes(tipo?.toLowerCase().replace('s', '')))
+            .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+    }, [itens, tipo]);
 
-    const jornada = [...itens]
-        .filter(i => i.tipo?.toLowerCase().includes(tipo?.toLowerCase().replace('s', '')))
-        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
-
-    const concluidos = jornada.filter(j => j.progresso?.status === 'concluido').length;
+    const concluidos = useMemo(() => jornada.filter(j => j.progresso?.status === 'concluido').length, [jornada]);
     const total = jornada.length;
     const progressoGlobal = total > 0 ? (concluidos / total) * 100 : 0;
 
-    // Find the "final stop" = first non-completed work, or last if all done
     const findFinalStop = useCallback((): number => {
         for (let i = 0; i < jornada.length; i++) {
             if (jornada[i].progresso?.status !== 'concluido') return i;
         }
-        return jornada.length - 1;
+        return Math.max(0, jornada.length - 1);
     }, [jornada]);
 
-    // Check if there are NEW unseen reveals (for supernova)
-    const hasUnseenReveals = useCallback((): boolean => {
-        const pessoaId = getPessoaIdFromLocalStorage();
-        for (const item of jornada) {
-            if (item.progresso?.status === 'concluido') {
-                const key = pessoaId
-                    ? `jornada_reveal_visto_${pessoaId}_${item.id}`
-                    : `jornada_reveal_visto_${item.id}`;
-                try {
-                    if (!localStorage.getItem(key)) return true;
-                } catch { /* ignore */ }
-            }
-        }
-        return false;
-    }, [jornada]);
-
-    const getSymbolImage = (item: JornadaItem, isConcluido?: boolean) => {
+    const getSymbolImage = useCallback((item: JornadaItem, isConcluido?: boolean) => {
         const title = item.titulo.toLowerCase();
         if (title.includes('iniciação')) return isConcluido ? IMAGE_MAP['iniciação'] : 'https://www.portaldaordem.com.br/initiation_dark.png';
         if (title.includes('dualidade') || title.includes('mosaico') || title.includes('piso')) {
@@ -122,170 +103,118 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
         if (item.grau === 1) return IMAGE_MAP['aprendiz'];
         if (item.grau === 2) return IMAGE_MAP['companheiro'];
         return IMAGE_MAP['mestre'];
-    };
+    }, []);
 
-    // ---------- open/close ----------
+    // ===== OPEN / CLOSE =====
     useEffect(() => {
         const t = setTimeout(() => setIsOpen(true), 50);
         return () => clearTimeout(t);
     }, []);
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         setIsClosing(true);
         if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
         setTimeout(onClose, 500);
-    };
+    }, [onClose]);
 
-    // ---------- measurement & constellation building ----------
-    const measureAndBuildConstellation = useCallback(() => {
+    // ===== MEASUREMENT & CONSTELLATION BUILDING =====
+    const measureAndBuild = useCallback(() => {
         if (!containerRef.current || !contentRef.current) return;
-        const container = containerRef.current;
         const content = contentRef.current;
         const contentRect = content.getBoundingClientRect();
-
         setContentHeight(content.scrollHeight);
 
         const rows = content.querySelectorAll('[data-jornada-row]');
         if (rows.length === 0) return;
 
-        // First, find the work-node positions (anchored to images)
         const workPositions: { x: number; y: number }[] = [];
-
         rows.forEach((row, idx) => {
             const img = row.querySelector('.work-image-container');
             if (!img) return;
             const imgRect = img.getBoundingClientRect();
             const isLeft = idx % 2 === 0;
-
-            let nx: number;
             const gapX = 40;
-            if (isLeft) {
-                nx = (imgRect.right - contentRect.left) + gapX;
-            } else {
-                nx = (imgRect.left - contentRect.left) - gapX;
-            }
+            const nx = isLeft
+                ? (imgRect.right - contentRect.left) + gapX
+                : (imgRect.left - contentRect.left) - gapX;
             const ny = ((imgRect.top + imgRect.bottom) / 2) - contentRect.top + (imgRect.height * 0.18);
             workPositions.push({ x: nx, y: ny });
         });
 
         if (workPositions.length === 0) return;
 
-        // Build constellation: work nodes + intermediate waypoints with angular segments
+        // Build constellation path with straight segments (M + L only)
         const allNodes: ConstellationNode[] = [];
         let dStr = '';
 
         for (let i = 0; i < workPositions.length; i++) {
             const wp = workPositions[i];
-
             if (i === 0) {
-                // First work node
                 allNodes.push({ x: wp.x, y: wp.y, isWorkNode: true, workIdx: i });
                 dStr = `M ${wp.x} ${wp.y}`;
             } else {
                 const prev = workPositions[i - 1];
                 const curr = wp;
-
-                // Create an angular/geometric route between prev and curr
-                // using 2-3 intermediate waypoints with straight lines
                 const midY = (prev.y + curr.y) / 2;
-                const centerX = (contentRect.width) / 2;
-
-                // Different angular patterns depending on direction
+                const centerX = contentRect.width / 2;
                 const goingRight = curr.x > prev.x;
 
-                // Waypoint 1: go down from previous, angled toward center
+                // 3 intermediate waypoints forming angular constellation path
                 const wp1x = prev.x + (goingRight ? 60 : -60);
                 const wp1y = prev.y + (midY - prev.y) * 0.35;
-
-                // Waypoint 2: move toward center column
                 const wp2x = centerX + (goingRight ? -30 : 30);
                 const wp2y = midY;
-
-                // Waypoint 3: angle toward the next work node
                 const wp3x = curr.x + (goingRight ? -60 : 60);
                 const wp3y = curr.y - (curr.y - midY) * 0.35;
 
-                // Add intermediate nodes
                 allNodes.push({ x: wp1x, y: wp1y, isWorkNode: false, workIdx: -1 });
                 allNodes.push({ x: wp2x, y: wp2y, isWorkNode: false, workIdx: -1 });
                 allNodes.push({ x: wp3x, y: wp3y, isWorkNode: false, workIdx: -1 });
-
-                // Add the work node
                 allNodes.push({ x: curr.x, y: curr.y, isWorkNode: true, workIdx: i });
 
-                // Build the path with L (line-to) commands
-                dStr += ` L ${wp1x} ${wp1y}`;
-                dStr += ` L ${wp2x} ${wp2y}`;
-                dStr += ` L ${wp3x} ${wp3y}`;
-                dStr += ` L ${curr.x} ${curr.y}`;
+                dStr += ` L ${wp1x} ${wp1y} L ${wp2x} ${wp2y} L ${wp3x} ${wp3y} L ${curr.x} ${curr.y}`;
             }
         }
-
         setConstellationNodes(allNodes);
         setPathD(dStr);
     }, []);
 
     useLayoutEffect(() => {
-        if (isOpen) measureAndBuildConstellation();
-    }, [isOpen, jornada.length, measureAndBuildConstellation]);
+        if (isOpen) measureAndBuild();
+    }, [isOpen, jornada.length, measureAndBuild]);
 
     useEffect(() => {
         if (!isOpen) return;
-        if ('fonts' in document) {
-            document.fonts.ready.then(measureAndBuildConstellation);
-        }
+        if ('fonts' in document) document.fonts.ready.then(measureAndBuild);
         const container = containerRef.current;
         if (!container) return;
-
-        const ro = new ResizeObserver(measureAndBuildConstellation);
+        const ro = new ResizeObserver(measureAndBuild);
         ro.observe(container);
-
-        const t1 = setTimeout(measureAndBuildConstellation, 400);
-        const t2 = setTimeout(measureAndBuildConstellation, 1000);
-
+        const t1 = setTimeout(measureAndBuild, 400);
+        const t2 = setTimeout(measureAndBuild, 1000);
         return () => { ro.disconnect(); clearTimeout(t1); clearTimeout(t2); };
-    }, [isOpen, measureAndBuildConstellation]);
+    }, [isOpen, measureAndBuild]);
 
-    // ---------- compute total path length AND per-node cumulative lengths ----------
-    // We calculate node lengths by summing the distance between consecutive nodes.
-    // This is exact for straight-line (M/L) paths and avoids fragile binary search.
-    const nodeCumulativeLengths = useRef<number[]>([]);
-
+    // ===== PATH LENGTH COMPUTATION =====
     useEffect(() => {
         if (!mainPathRef.current || !pathD || constellationNodes.length === 0) return;
         const len = mainPathRef.current.getTotalLength();
         setTotalPathLength(len);
 
-        // Compute cumulative straight-line distances between consecutive nodes
+        // Cumulative straight-line distances, scaled to match SVG path length
         const cumLens: number[] = [0];
-        let cumulative = 0;
+        let cum = 0;
         for (let i = 1; i < constellationNodes.length; i++) {
-            const prev = constellationNodes[i - 1];
-            const curr = constellationNodes[i];
-            const dx = curr.x - prev.x;
-            const dy = curr.y - prev.y;
-            cumulative += Math.sqrt(dx * dx + dy * dy);
-            cumLens.push(cumulative);
+            const p = constellationNodes[i - 1], c = constellationNodes[i];
+            cum += Math.sqrt((c.x - p.x) ** 2 + (c.y - p.y) ** 2);
+            cumLens.push(cum);
         }
-
-        // Scale cumulative distances to match actual SVG path length
-        // (they should be nearly identical for L-only paths, but just in case)
-        const rawTotal = cumulative || 1;
-        for (let i = 0; i < cumLens.length; i++) {
-            cumLens[i] = (cumLens[i] / rawTotal) * len;
-        }
-
-        nodeCumulativeLengths.current = cumLens;
+        const rawTotal = cum || 1;
+        for (let i = 0; i < cumLens.length; i++) cumLens[i] = (cumLens[i] / rawTotal) * len;
+        nodeLengthsRef.current = cumLens;
     }, [pathD, constellationNodes]);
 
-    const getLengthToConstellationNode = useCallback((nodeIdx: number): number => {
-        if (nodeIdx <= 0) return 0;
-        const lens = nodeCumulativeLengths.current;
-        if (nodeIdx < lens.length) return lens[nodeIdx];
-        return totalPathLength;
-    }, [totalPathLength]);
-
-    // ---------- MAIN ANIMATION CHOREOGRAPHY ----------
+    // ===== ANIMATION (all DOM updates via refs — no setState in the rAF loop) =====
     useEffect(() => {
         if (
             constellationNodes.length === 0 ||
@@ -298,195 +227,237 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
         hasLaunchedAnim.current = true;
 
         const container = containerRef.current;
-        const path = mainPathRef.current;
+        const svgPath = mainPathRef.current;
+        const revealedPath = revealedPathRef.current;
+        const guidingStar = guidingStarRef.current;
+        const content = contentRef.current;
+
+        if (!revealedPath || !guidingStar || !content) return;
+
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const finalStopWorkIdx = findFinalStop();
-        const hasNewReveals = hasUnseenReveals();
         const pessoaId = getPessoaIdFromLocalStorage();
+        const nodeLens = nodeLengthsRef.current;
 
-        // Find the constellation node index for each work
-        const workConstellationIndices: number[] = [];
-        constellationNodes.forEach((n, i) => {
-            if (n.isWorkNode) workConstellationIndices[n.workIdx] = i;
-        });
+        // Map work index → constellation index
+        const workCI: number[] = [];
+        constellationNodes.forEach((n, i) => { if (n.isWorkNode) workCI[n.workIdx] = i; });
+        const finalCI = workCI[finalStopWorkIdx] ?? constellationNodes.length - 1;
+        const lenToFinal = nodeLens[finalCI] || totalPathLength;
 
-        // Find constellation index for the final stop
-        const finalConstellationIdx = workConstellationIndices[finalStopWorkIdx] ?? constellationNodes.length - 1;
+        // --- DOM helpers (no React setState) ---
+        let highestReached = -1;
 
-        // Pre-calculate path lengths to each constellation node
-        const nodeLengths: number[] = nodeCumulativeLengths.current.length > 0
-            ? [...nodeCumulativeLengths.current]
-            : constellationNodes.map((_, i) => getLengthToConstellationNode(i));
-        const lengthToFinalStop = nodeLengths[finalConstellationIdx] || totalPathLength;
-
-        // ---- Reduced motion only: skip animation ----
-        if (prefersReducedMotion) {
-            setRevealedLength(lengthToFinalStop);
-            setPhase('done');
-            setRestingNodeIdx(finalConstellationIdx);
-            setReachedConstellationIdx(finalConstellationIdx);
-            const tgtNode = constellationNodes[finalConstellationIdx];
-            if (tgtNode) {
-                container.scrollTop = Math.max(0, tgtNode.y - container.clientHeight / 2 + 50);
+        function revealStarsUpTo(ci: number) {
+            for (let k = highestReached + 1; k <= ci; k++) {
+                const el = content!.querySelector(`[data-star="${k}"]`);
+                if (el) { el.classList.remove('is-dim'); el.classList.add('is-reached'); }
             }
-            jornada.forEach(item => {
-                if (item.progresso?.status === 'concluido') {
-                    const key = pessoaId ? `jornada_reveal_visto_${pessoaId}_${item.id}` : `jornada_reveal_visto_${item.id}`;
-                    try { localStorage.setItem(key, 'true'); } catch { /* */ }
-                }
-            });
+            if (ci > highestReached) highestReached = ci;
+        }
+
+        function setResting(ci: number) {
+            const el = content!.querySelector(`[data-star="${ci}"]`);
+            if (el) el.classList.add('is-resting');
+        }
+
+        function triggerSupernova(workIdx: number) {
+            const img = content!.querySelector(`[data-work-idx="${workIdx}"] .work-image`) as HTMLElement;
+            if (img) {
+                img.classList.add('supernova-flash');
+                setTimeout(() => img.classList.remove('supernova-flash'), 900);
+            }
+        }
+
+        function markSeen(workIdx: number) {
+            const item = jornada[workIdx];
+            if (!item) return;
+            const key = pessoaId
+                ? `jornada_reveal_visto_${pessoaId}_${item.id}`
+                : `jornada_reveal_visto_${item.id}`;
+            try { localStorage.setItem(key, 'true'); } catch { /* */ }
+        }
+
+        function updatePath(len: number) {
+            revealedPath!.setAttribute('stroke-dashoffset', String(totalPathLength - len));
+        }
+
+        function moveGuidingStar(len: number) {
+            const pt = svgPath!.getPointAtLength(Math.min(len, totalPathLength));
+            if (guidingStar) {
+                guidingStar.style.left = pt.x + 'px';
+                guidingStar.style.top = pt.y + 'px';
+            }
+        }
+
+        function scrollTo(y: number) {
+            container!.scrollTop = Math.max(0, y - container!.clientHeight / 2 + 50);
+        }
+
+        // === REDUCED MOTION: jump to final ===
+        if (prefersReducedMotion) {
+            updatePath(lenToFinal);
+            if (guidingStar) guidingStar.style.display = 'none';
+            revealStarsUpTo(finalCI);
+            setResting(finalCI);
+            scrollTo(constellationNodes[finalCI].y);
+            jornada.forEach((_, wi) => { if (jornada[wi].progresso?.status === 'concluido') markSeen(wi); });
+            setPhase('done');
+            setRestingNodeIdx(finalCI);
+            setFinalRevealedLen(lenToFinal);
+            setFinalReachedCI(finalCI);
             return;
         }
 
-        // ---- CINEMATIC ----
+        // === CINEMATIC ANIMATION ===
         setPhase('animating');
         container.scrollTop = 0;
+        if (guidingStar) guidingStar.style.display = 'block';
+        updatePath(0); // start with nothing revealed
 
-        // Build animation stops from constellation nodes (only work nodes up to finalStop)
-        interface AnimStop {
-            constellationIdx: number;
-            pathLength: number;
-            workIdx: number;
-            isConcluido: boolean;
-            pauseDuration: number;
-        }
-
-        const stops: AnimStop[] = [];
+        // Build stops at work nodes
+        interface Stop { ci: number; pathLen: number; workIdx: number; isConcl: boolean; pauseMs: number; }
+        const stops: Stop[] = [];
         for (let wi = 0; wi <= finalStopWorkIdx; wi++) {
-            const ci = workConstellationIndices[wi];
+            const ci = workCI[wi];
             if (ci === undefined) continue;
             const isConcl = jornada[wi]?.progresso?.status === 'concluido';
-            // On revisit (no new reveals), supernova is shorter
-            const supernovaDur = isConcl ? (hasNewReveals ? 800 : 400) : 0;
-            stops.push({
-                constellationIdx: ci,
-                pathLength: nodeLengths[ci],
-                workIdx: wi,
-                isConcluido: isConcl,
-                pauseDuration: supernovaDur,
-            });
+            stops.push({ ci, pathLen: nodeLens[ci], workIdx: wi, isConcl, pauseMs: isConcl ? 700 : 0 });
         }
 
-        // Build travel segments
-        const segments: Array<{
-            fromLength: number;
-            toLength: number;
-            fromConstellationIdx: number;
-            toConstellationIdx: number;
-            travelDuration: number;
-            stop: AnimStop;
-        }> = [];
-
+        // Build travel segments between consecutive stops
+        interface Segment { fromLen: number; toLen: number; toCI: number; dur: number; stop: Stop; }
+        const segs: Segment[] = [];
         for (let i = 0; i < stops.length; i++) {
-            const fromLen = i === 0 ? 0 : stops[i - 1].pathLength;
-            const fromCI = i === 0 ? 0 : stops[i - 1].constellationIdx;
-            const toLen = stops[i].pathLength;
+            const fromLen = i === 0 ? 0 : stops[i - 1].pathLen;
+            const toLen = stops[i].pathLen;
             const dist = toLen - fromLen;
-            // Faster on revisit
-            const speedMult = hasNewReveals ? 1.5 : 0.8;
-            const dur = Math.max(600, Math.min(2000, dist * speedMult));
-            segments.push({
-                fromLength: fromLen,
-                toLength: toLen,
-                fromConstellationIdx: fromCI,
-                toConstellationIdx: stops[i].constellationIdx,
-                travelDuration: dur,
-                stop: stops[i],
-            });
+            // If distance is zero (first node at path start), short duration
+            const dur = dist < 1 ? 200 : Math.max(800, Math.min(2200, dist * 1.2));
+            segs.push({ fromLen, toLen, toCI: stops[i].ci, dur, stop: stops[i] });
         }
 
-        let currentSegIdx = 0;
-        let segStartTime: number | null = null;
-        let pauseUntil: number | null = null;
+        let segIdx = 0;
+        let segStart: number | null = null;
+        let pauseEnd: number | null = null;
 
-        const animate = (timestamp: number) => {
-            if (currentSegIdx >= segments.length) {
-                setPhase('done');
-                setGuidingStarPos(null);
-                setRestingNodeIdx(finalConstellationIdx);
-                setRevealedLength(lengthToFinalStop);
-                setReachedConstellationIdx(finalConstellationIdx);
-                return;
+        function finishAnim() {
+            if (guidingStar) guidingStar.style.display = 'none';
+            updatePath(lenToFinal);
+            revealStarsUpTo(finalCI);
+            setResting(finalCI);
+            setPhase('done');
+            setRestingNodeIdx(finalCI);
+            setFinalRevealedLen(lenToFinal);
+            setFinalReachedCI(finalCI);
+        }
+
+        function frame(ts: number) {
+            if (segIdx >= segs.length) { finishAnim(); return; }
+
+            // Pausing at a stop?
+            if (pauseEnd !== null) {
+                if (ts < pauseEnd) { animRafRef.current = requestAnimationFrame(frame); return; }
+                pauseEnd = null;
+                segStart = null;
             }
 
-            // Pausing at a stop
-            if (pauseUntil !== null) {
-                if (timestamp < pauseUntil) {
-                    animRafRef.current = requestAnimationFrame(animate);
-                    return;
-                }
-                // Pause over — clear supernova
-                const prevStop = segments[currentSegIdx - 1]?.stop;
-                if (prevStop) {
-                    setSupernovaWorkIndices(prev => {
-                        const next = new Set(prev);
-                        next.delete(prevStop.workIdx);
-                        return next;
-                    });
-                }
-                pauseUntil = null;
-                segStartTime = null;
-            }
+            const seg = segs[segIdx];
+            if (segStart === null) segStart = ts;
 
-            const seg = segments[currentSegIdx];
-            if (segStartTime === null) segStartTime = timestamp;
-            const elapsed = timestamp - segStartTime;
-            const rawProgress = Math.min(elapsed / seg.travelDuration, 1);
-            // Ease in-out
-            const progress = rawProgress < 0.5
-                ? 4 * rawProgress * rawProgress * rawProgress
-                : 1 - Math.pow(-2 * rawProgress + 2, 3) / 2;
+            const elapsed = ts - segStart;
+            const rawP = Math.min(elapsed / seg.dur, 1);
+            // Cubic ease-in-out
+            const p = rawP < 0.5 ? 4 * rawP ** 3 : 1 - (-2 * rawP + 2) ** 3 / 2;
 
-            const currentLength = seg.fromLength + (seg.toLength - seg.fromLength) * progress;
-            setRevealedLength(currentLength);
+            const curLen = seg.fromLen + (seg.toLen - seg.fromLen) * p;
 
-            // Update guiding star position
-            const pt = path.getPointAtLength(currentLength);
-            setGuidingStarPos({ x: pt.x, y: pt.y });
+            // Update DOM directly (no setState)
+            updatePath(curLen);
+            moveGuidingStar(curLen);
 
-            // Update which constellation nodes have been reached
-            for (let ci = 0; ci <= seg.toConstellationIdx; ci++) {
-                if (nodeLengths[ci] <= currentLength + 5) {
-                    setReachedConstellationIdx(prev => Math.max(prev, ci));
-                }
+            // Reveal stars as the line passes them
+            for (let ci = 0; ci < constellationNodes.length; ci++) {
+                if (nodeLens[ci] <= curLen + 5) revealStarsUpTo(ci);
             }
 
             // Sync scroll
-            const scrollTarget = Math.max(0, pt.y - container.clientHeight / 2 + 50);
-            container.scrollTop = scrollTarget;
+            const pt = svgPath.getPointAtLength(Math.min(curLen, totalPathLength));
+            scrollTo(pt.y);
 
-            if (rawProgress >= 1) {
+            // Segment complete?
+            if (rawP >= 1) {
                 const stop = seg.stop;
-                if (stop.isConcluido && stop.pauseDuration > 0) {
-                    setSupernovaWorkIndices(prev => new Set(prev).add(stop.workIdx));
-                    const item = jornada[stop.workIdx];
-                    if (item) {
-                        const key = pessoaId ? `jornada_reveal_visto_${pessoaId}_${item.id}` : `jornada_reveal_visto_${item.id}`;
-                        try { localStorage.setItem(key, 'true'); } catch { /* */ }
-                    }
-                    pauseUntil = timestamp + stop.pauseDuration;
+                if (stop.isConcl && stop.pauseMs > 0) {
+                    triggerSupernova(stop.workIdx);
+                    markSeen(stop.workIdx);
+                    pauseEnd = ts + stop.pauseMs;
                 }
-                currentSegIdx++;
-                segStartTime = null;
+                segIdx++;
+                segStart = null;
             }
 
-            animRafRef.current = requestAnimationFrame(animate);
-        };
+            animRafRef.current = requestAnimationFrame(frame);
+        }
 
-        const startDelay = setTimeout(() => {
-            animRafRef.current = requestAnimationFrame(animate);
-        }, 1400);
+        // Start after modal fade-in completes
+        const startTimer = setTimeout(() => {
+            // If the first stop is at position 0, handle the initial reveal immediately
+            if (stops.length > 0 && stops[0].pathLen < 1) {
+                revealStarsUpTo(stops[0].ci);
+                moveGuidingStar(0);
+                if (stops[0].isConcl) {
+                    triggerSupernova(stops[0].workIdx);
+                    markSeen(stops[0].workIdx);
+                }
+                // Wait a beat for the first supernova, then animate the rest
+                setTimeout(() => {
+                    segIdx = 1;
+                    segStart = null;
+                    if (segIdx < segs.length) {
+                        animRafRef.current = requestAnimationFrame(frame);
+                    } else {
+                        finishAnim();
+                    }
+                }, 800);
+            } else {
+                animRafRef.current = requestAnimationFrame(frame);
+            }
+        }, 1300);
 
         return () => {
-            clearTimeout(startDelay);
+            clearTimeout(startTimer);
             if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
         };
-    }, [constellationNodes, totalPathLength, jornada, findFinalStop, hasUnseenReveals, getLengthToConstellationNode]);
+    }, [constellationNodes, totalPathLength, findFinalStop, jornada]);
+    // ^ jornada is now memoized so this dep array is STABLE across renders
 
-    // ---------- rendering ----------
+    // ===== RENDER =====
+
+    // Work status helper
+    const getWorkStatus = useCallback((idx: number): 'concluido' | 'bloqueado' | 'atual' => {
+        const item = jornada[idx];
+        if (item?.progresso?.status === 'concluido') return 'concluido';
+        if (idx > 0 && jornada[idx - 1]?.progresso?.status !== 'concluido') return 'bloqueado';
+        return 'atual';
+    }, [jornada]);
+
+    if (!itens || jornada.length === 0) {
+        // Early return only AFTER all hooks have been called
+        return (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-6">
+                <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={onClose} />
+                <div className="bg-[#020205] border border-white/10 rounded-[2.5rem] p-12 text-center z-10">
+                    <h3 className="text-2xl font-light text-gray-400 uppercase tracking-widest">O Firmamento está Vazio</h3>
+                    <p className="text-[10px] text-gray-600 uppercase tracking-widest mt-2">Aguarde a diretoria traçar o seu caminho nas estrelas.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-700">
-            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={handleClose}></div>
+            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={handleClose} />
 
             <div className={`journey-modal ${isOpen && !isClosing ? 'is-open' : ''} ${isClosing ? 'is-closing' : ''} bg-[#020205] border border-white/10 rounded-[2.5rem] w-full max-w-7xl h-full max-h-[92vh] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.9)] relative z-10 flex flex-col`}>
 
@@ -522,167 +493,157 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
 
                 {/* SCROLLABLE CONTENT */}
                 <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-12 md:p-24 relative z-10 scrollbar-hide">
-                    {jornada.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-                            <div className="w-32 h-32 rounded-full border border-yellow-500/10 flex items-center justify-center p-6 opacity-20 animate-slow-glow">
-                                <img src="https://www.portaldaordem.com.br/logo-gomb.png" alt="" className="w-full h-full object-contain grayscale invert" />
-                            </div>
-                            <div className="space-y-2">
-                                <h3 className="text-2xl font-light text-gray-400 uppercase tracking-widest">O Firmamento está Vazio</h3>
-                                <p className="text-[10px] text-gray-600 uppercase tracking-widest">Aguarde a diretoria traçar o seu caminho nas estrelas.</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div ref={contentRef} className="relative min-h-[500px]">
+                    <div ref={contentRef} className="relative min-h-[500px]">
 
-                            {/* SVG CONSTELLATION OVERLAY */}
-                            {pathD && contentHeight > 0 && (
-                                <svg className="absolute top-0 left-0 w-full pointer-events-none overflow-visible" style={{ height: contentHeight, zIndex: 5 }}>
-                                    <defs>
-                                        <filter id="glow-line">
-                                            <feGaussianBlur stdDeviation="4" result="blur" />
-                                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                                        </filter>
-                                        <filter id="glow-star">
-                                            <feGaussianBlur stdDeviation="6" result="blur" />
-                                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                                        </filter>
-                                    </defs>
+                        {/* SVG CONSTELLATION OVERLAY */}
+                        {pathD && contentHeight > 0 && (
+                            <svg className="absolute top-0 left-0 w-full pointer-events-none overflow-visible" style={{ height: contentHeight, zIndex: 5 }}>
+                                <defs>
+                                    <filter id="glow-line-soft">
+                                        <feGaussianBlur stdDeviation="6" result="blur" />
+                                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                                    </filter>
+                                </defs>
 
-                                    {/* Full path — dim future portion (thicker) */}
+                                {/* Full path — very subtle dim future line */}
+                                <path
+                                    ref={mainPathRef}
+                                    d={pathD}
+                                    fill="none"
+                                    stroke="rgba(150,180,220,0.08)"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+
+                                {/* Revealed portion — golden ethereal glow */}
+                                <path
+                                    ref={revealedPathRef}
+                                    d={pathD}
+                                    fill="none"
+                                    stroke="rgba(255,225,140,0.55)"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeDasharray={totalPathLength || 1}
+                                    strokeDashoffset={totalPathLength || 1}
+                                    filter="url(#glow-line-soft)"
+                                />
+
+                                {/* Done-state: show final revealed portion via React state */}
+                                {phase === 'done' && finalRevealedLen > 0 && (
                                     <path
-                                        ref={mainPathRef}
                                         d={pathD}
                                         fill="none"
-                                        stroke="rgba(185,205,240,0.18)"
-                                        strokeWidth="3"
+                                        stroke="rgba(255,225,140,0.55)"
+                                        strokeWidth="2.5"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
+                                        strokeDasharray={totalPathLength}
+                                        strokeDashoffset={totalPathLength - finalRevealedLen}
+                                        filter="url(#glow-line-soft)"
                                     />
+                                )}
+                            </svg>
+                        )}
 
-                                    {/* Revealed portion — bright golden (thicker) */}
-                                    {totalPathLength > 0 && (
-                                        <path
-                                            d={pathD}
-                                            fill="none"
-                                            stroke="rgba(255,225,140,0.95)"
-                                            strokeWidth="4"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeDasharray={totalPathLength}
-                                            strokeDashoffset={totalPathLength - revealedLength}
-                                            filter="url(#glow-line)"
-                                            style={{ transition: phase === 'done' ? 'stroke-dashoffset 0.5s ease' : 'none' }}
-                                        />
-                                    )}
-                                </svg>
-                            )}
+                        {/* GUIDING STAR — always in DOM, visibility controlled by animation */}
+                        <div ref={guidingStarRef} className="guiding-star" style={{ display: 'none' }} />
 
-                            {/* CONSTELLATION STAR NODES — at every vertex */}
-                            {constellationNodes.map((node, ci) => {
-                                const isReached = ci <= reachedConstellationIdx || phase === 'done';
-                                const isResting = restingNodeIdx === ci && phase === 'done';
-                                const isWork = node.isWorkNode;
+                        {/* CONSTELLATION STAR NODES — always rendered, toggled via classList */}
+                        {constellationNodes.map((node, ci) => {
+                            const isWork = node.isWorkNode;
+                            let workStatus = '';
+                            if (isWork && node.workIdx >= 0) {
+                                const s = getWorkStatus(node.workIdx);
+                                workStatus = s === 'concluido' ? 'work-completed' : s === 'bloqueado' ? 'work-locked' : 'work-active';
+                            }
+                            // In done state, use React state for final display
+                            const isReachedFinal = phase === 'done' && ci <= finalReachedCI;
+                            const isRestingFinal = phase === 'done' && restingNodeIdx === ci;
 
-                                // During animation, dim nodes not yet reached; during idle, show all dimmed
-                                const showDim = phase === 'idle' || (phase === 'animating' && !isReached);
+                            return (
+                                <div
+                                    key={`star-${ci}`}
+                                    data-star={ci}
+                                    className={`constellation-star ${isWork ? 'is-work' : 'is-waypoint'} ${isReachedFinal ? 'is-reached' : 'is-dim'} ${isRestingFinal ? 'is-resting' : ''} ${workStatus}`}
+                                    style={{ left: node.x, top: node.y }}
+                                >
+                                    <div className="cs-ray-h" />
+                                    <div className="cs-ray-v" />
+                                    <div className="cs-core" />
+                                </div>
+                            );
+                        })}
 
-                                // Determine status for work nodes
-                                let workStatus = '';
-                                if (isWork && node.workIdx >= 0) {
-                                    const s = jornada[node.workIdx]?.progresso?.status;
-                                    if (s === 'concluido') workStatus = 'completed';
-                                    else if (node.workIdx > 0 && jornada[node.workIdx - 1]?.progresso?.status !== 'concluido') workStatus = 'locked';
-                                    else workStatus = 'active';
-                                }
+                        {/* WORK CARDS */}
+                        <div className="flex flex-col gap-40 relative z-10">
+                            {jornada.map((item, idx) => {
+                                const status = getWorkStatus(idx);
+                                const isConcluido = status === 'concluido';
+                                const isBloqueado = status === 'bloqueado';
+                                const isAtual = status === 'atual';
+                                const imgUrl = getSymbolImage(item, isConcluido);
+                                const isLeft = idx % 2 === 0;
 
                                 return (
-                                    <div
-                                        key={`cn-${ci}`}
-                                        className={`constellation-star ${isWork ? 'is-work' : 'is-waypoint'} ${showDim ? 'is-dim' : 'is-reached'} ${isResting ? 'is-resting' : ''} ${workStatus ? `work-${workStatus}` : ''}`}
-                                        style={{ left: node.x, top: node.y }}
-                                    >
-                                        <div className="cs-ray-h" />
-                                        <div className="cs-ray-v" />
-                                        <div className="cs-core" />
+                                    <div key={item.id} data-jornada-row data-work-idx={idx}
+                                        className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative z-10`}>
+                                        <div className={`flex items-center gap-12 max-w-4xl relative ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
+                                            {/* IMAGE */}
+                                            <div className="relative">
+                                                {isConcluido && <div className="absolute -inset-12 rounded-full blur-[60px] bg-yellow-500/8 pointer-events-none" style={{ zIndex: -1 }} />}
+                                                <div className={`work-image-container relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-[1.5s] ease-out ${
+                                                    isConcluido ? 'drop-shadow-[0_0_40px_rgba(255,255,255,0.15)]'
+                                                        : isAtual ? 'drop-shadow-[0_0_60px_rgba(100,120,180,0.25)]'
+                                                            : 'drop-shadow-[0_0_40px_rgba(100,120,180,0.1)] opacity-80'
+                                                }`}>
+                                                    <div className="w-full h-full relative" style={{
+                                                        maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
+                                                        WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)'
+                                                    }}>
+                                                        <img src={imgUrl} alt={item.titulo} width={320} height={320}
+                                                            className={`work-image w-full h-full object-contain transition-all duration-[2s] ease-out ${
+                                                                isConcluido ? 'brightness-110 drop-shadow-[0_0_20px_rgba(255,220,150,0.2)] saturate-100'
+                                                                    : isAtual ? 'grayscale brightness-[0.7] opacity-60'
+                                                                        : 'grayscale brightness-[0.4] opacity-30'
+                                                            }`} />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* TEXT */}
+                                            <div className={`journey-work-text work-text w-80 md:w-[32.5rem] text-left relative -top-8 flex flex-col justify-center transition-opacity duration-1000 ${isBloqueado ? 'opacity-60 is-locked' : 'opacity-100 is-active'}`}>
+                                                <div className="space-y-1">
+                                                    <span className={`work-kicker block transition-all duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} pl-6`}>
+                                                        {GRAU_LABELS[item.grau]} • Nível {idx + 1}
+                                                    </span>
+                                                    <h3 className={`work-title text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} pl-6`}>
+                                                        {isBloqueado ? 'Oculto em Trevas' : item.titulo}
+                                                    </h3>
+                                                </div>
+                                                {!isBloqueado && (
+                                                    <div className="work-description-wrapper pl-6 animate-in fade-in duration-1000 mt-2">
+                                                        <div className="work-description">
+                                                            {(item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.')
+                                                                .split(/\r?\n\s*\r?\n/).filter(Boolean)
+                                                                .map((para, pIdx) => <p key={pIdx}>{para}</p>)}
+                                                        </div>
+                                                        {isConcluido && (
+                                                            <div className="flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 mt-6 pl-6">
+                                                                <span className="w-4 h-4 rounded-full border border-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
+                                                                Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 );
                             })}
-
-                            {/* GUIDING STAR (travels during animation) */}
-                            {guidingStarPos && phase === 'animating' && (
-                                <div className="guiding-star" style={{ left: guidingStarPos.x, top: guidingStarPos.y }} />
-                            )}
-
-                            {/* WORK CARDS */}
-                            <div className="flex flex-col gap-40 relative z-10">
-                                {jornada.map((item, idx) => {
-                                    const isConcluido = item.progresso?.status === 'concluido';
-                                    const isBloqueado = idx > 0 && jornada[idx - 1].progresso?.status !== 'concluido' && !isConcluido;
-                                    const isAtual = !isConcluido && !isBloqueado;
-                                    const imgUrl = getSymbolImage(item, isConcluido);
-                                    const isLeft = idx % 2 === 0;
-                                    const isSupernova = supernovaWorkIndices.has(idx);
-
-                                    return (
-                                        <div key={item.id} data-jornada-row data-idx={idx}
-                                            className={`flex items-center w-full ${isLeft ? 'justify-start' : 'justify-end'} relative transition-all duration-1000 ${isSupernova ? 'z-50' : 'z-10'}`}>
-                                            <div className={`flex items-center gap-12 max-w-4xl relative ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
-                                                {/* IMAGE */}
-                                                <div className="relative">
-                                                    {isConcluido && <div className="absolute -inset-12 rounded-full blur-[60px] bg-yellow-500/8 pointer-events-none" style={{ zIndex: -1 }} />}
-                                                    <div className={`work-image-container relative z-10 w-72 h-72 md:w-80 md:h-80 transition-all duration-[1.5s] ease-out ${
-                                                        isConcluido ? 'drop-shadow-[0_0_40px_rgba(255,255,255,0.15)]'
-                                                            : isAtual ? 'drop-shadow-[0_0_60px_rgba(100,120,180,0.25)]'
-                                                                : 'drop-shadow-[0_0_40px_rgba(100,120,180,0.1)] opacity-80'
-                                                    }`}>
-                                                        <div className="w-full h-full relative" style={{
-                                                            maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
-                                                            WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)'
-                                                        }}>
-                                                            <img src={imgUrl} alt={item.titulo} width={320} height={320}
-                                                                className={`work-image w-full h-full object-contain transition-all duration-[2s] ease-out ${
-                                                                    isConcluido ? `brightness-110 drop-shadow-[0_0_20px_rgba(255,220,150,0.2)] ${isSupernova ? 'supernova-flash' : 'saturate-100'}`
-                                                                        : isAtual ? 'grayscale brightness-[0.7] opacity-60'
-                                                                            : 'grayscale brightness-[0.4] opacity-30'
-                                                                }`} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* TEXT */}
-                                                <div className={`journey-work-text work-text w-80 md:w-[32.5rem] text-left relative -top-8 flex flex-col justify-center transition-opacity duration-1000 ${isBloqueado ? 'opacity-60 is-locked' : 'opacity-100 is-active'}`}>
-                                                    <div className="space-y-1">
-                                                        <span className={`work-kicker block transition-all duration-700 ${isConcluido ? '!text-yellow-500/80' : ''} pl-6`}>
-                                                            {GRAU_LABELS[item.grau]} • Nível {idx + 1}
-                                                        </span>
-                                                        <h3 className={`work-title text-2xl md:text-3xl font-light uppercase tracking-tighter leading-tight transition-all duration-700 ${isBloqueado ? 'text-gray-800' : 'text-white'} pl-6`}>
-                                                            {isBloqueado ? 'Oculto em Trevas' : item.titulo}
-                                                        </h3>
-                                                    </div>
-                                                    {!isBloqueado && (
-                                                        <div className="work-description-wrapper pl-6 animate-in fade-in duration-1000 mt-2">
-                                                            <div className="work-description">
-                                                                {(item.descricao_jornada || 'A sabedoria aguarda o buscador sincero para ser revelada.')
-                                                                    .split(/\r?\n\s*\r?\n/).filter(Boolean)
-                                                                    .map((para, pIdx) => <p key={pIdx}>{para}</p>)}
-                                                            </div>
-                                                            {isConcluido && (
-                                                                <div className="flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-emerald-500/70 mt-6 pl-6">
-                                                                    <span className="w-4 h-4 rounded-full border border-emerald-500/20 flex items-center justify-center text-[8px]">✓</span>
-                                                                    Revelado em {item.progresso?.data_conclusao ? new Date(item.progresso.data_conclusao).toLocaleDateString() : '---'}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
                         </div>
-                    )}
+                    </div>
                     <div className="h-40" />
                 </div>
             </div>
@@ -690,135 +651,33 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Libre+Baskerville:ital@0;1&family=Spectral:ital,wght@0,300;0,400;1,400&display=swap');
 
-                /* ======= SUPERNOVA ======= */
+                /* ======= SUPERNOVA FLASH ======= */
                 .supernova-flash {
                     filter: brightness(2.8) saturate(2) drop-shadow(0 0 70px rgba(255,255,255,0.9)) !important;
-                    transition: filter 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                    transition: filter 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
                 }
 
-                /* ======= GUIDING STAR ======= */
+                /* ======= GUIDING STAR (burning fuse tip) ======= */
                 .guiding-star {
                     position: absolute;
-                    width: 18px; height: 18px; border-radius: 50%;
-                    background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,240,200,0.9) 40%, transparent 70%);
-                    box-shadow: 0 0 16px 6px rgba(255,255,255,0.95), 0 0 40px 14px rgba(255,215,0,0.6), 0 0 80px 30px rgba(255,215,0,0.25);
+                    width: 24px; height: 24px; border-radius: 50%;
+                    background: radial-gradient(circle,
+                        rgba(255,255,255,1) 0%,
+                        rgba(255,240,180,0.95) 25%,
+                        rgba(255,200,50,0.5) 50%,
+                        transparent 70%);
+                    box-shadow:
+                        0 0 8px 4px rgba(255,255,255,1),
+                        0 0 24px 10px rgba(255,220,100,0.9),
+                        0 0 55px 22px rgba(255,180,0,0.45),
+                        0 0 100px 40px rgba(255,150,0,0.15);
                     transform: translate(-50%, -50%);
                     pointer-events: none; z-index: 200;
-                    animation: guidingPulse 0.6s ease-in-out infinite alternate;
+                    animation: guidingBurn 0.5s ease-in-out infinite alternate;
                 }
-                @keyframes guidingPulse {
-                    0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.85; }
-                    100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
-                }
-
-                /* ======= CONSTELLATION STARS (all vertices) ======= */
-                .constellation-star {
-                    position: absolute;
-                    transform: translate(-50%, -50%);
-                    pointer-events: none; z-index: 35;
-                }
-
-                /* Waypoint stars (intermediate vertices) — smaller */
-                .constellation-star.is-waypoint { width: 24px; height: 24px; }
-                .constellation-star.is-waypoint .cs-core {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 4px; height: 4px;
-                    transform: translate(-50%, -50%); border-radius: 50%;
-                    background: rgba(220,230,255,0.85);
-                    box-shadow: 0 0 6px rgba(220,230,255,0.7), 0 0 14px rgba(180,200,255,0.3);
-                }
-                .constellation-star.is-waypoint .cs-ray-h {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 18px; height: 1px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to right, transparent, rgba(220,230,255,0.7), transparent);
-                }
-                .constellation-star.is-waypoint .cs-ray-v {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 1px; height: 18px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to bottom, transparent, rgba(220,230,255,0.7), transparent);
-                }
-
-                /* Work stars — bigger and brighter */
-                .constellation-star.is-work { width: 48px; height: 48px; }
-                .constellation-star.is-work .cs-core {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 7px; height: 7px;
-                    transform: translate(-50%, -50%); border-radius: 50%;
-                    background: rgba(255,248,220,0.95);
-                    box-shadow: 0 0 8px rgba(255,248,220,0.9), 0 0 20px rgba(255,220,140,0.6), 0 0 40px rgba(255,180,70,0.3);
-                }
-                .constellation-star.is-work .cs-ray-h {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 40px; height: 1px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to right, transparent, rgba(255,245,210,0.9), transparent);
-                }
-                .constellation-star.is-work .cs-ray-v {
-                    position: absolute; left: 50%; top: 50%;
-                    width: 1px; height: 40px; transform: translate(-50%, -50%);
-                    background: linear-gradient(to bottom, transparent, rgba(255,245,210,0.9), transparent);
-                }
-
-                /* Completed work star — golden glow */
-                .constellation-star.work-completed .cs-core {
-                    background: rgba(255,250,200,1) !important;
-                    box-shadow: 0 0 12px rgba(255,245,200,1), 0 0 28px rgba(255,220,120,0.9), 0 0 55px rgba(255,170,50,0.4) !important;
-                    width: 8px !important; height: 8px !important;
-                }
-                .constellation-star.work-completed .cs-ray-h {
-                    width: 52px !important;
-                    background: linear-gradient(to right, transparent, rgba(255,240,180,1), transparent) !important;
-                }
-                .constellation-star.work-completed .cs-ray-v {
-                    height: 52px !important;
-                    background: linear-gradient(to bottom, transparent, rgba(255,240,180,1), transparent) !important;
-                }
-
-                /* Dim (not yet reached) */
-                .constellation-star.is-dim { opacity: 0.35; }
-                .constellation-star.is-dim .cs-core {
-                    background: rgba(180,200,230,0.4) !important;
-                    box-shadow: 0 0 4px rgba(180,200,230,0.2) !important;
-                }
-
-                /* Reached stars pulse */
-                .constellation-star.is-reached.is-work {
-                    animation: workStarPulse 2.5s ease-in-out infinite;
-                }
-                .constellation-star.is-reached.is-waypoint {
-                    animation: waypointPulse 3s ease-in-out infinite;
-                }
-
-                @keyframes workStarPulse {
-                    0%, 100% { transform: translate(-50%, -50%) scale(0.95); filter: brightness(0.92); }
-                    50% { transform: translate(-50%, -50%) scale(1.12); filter: brightness(1.3); }
-                }
-                @keyframes waypointPulse {
-                    0%, 100% { transform: translate(-50%, -50%) scale(0.92); filter: brightness(0.85); }
-                    50% { transform: translate(-50%, -50%) scale(1.08); filter: brightness(1.15); }
-                }
-
-                /* RESTING star — "you are here" — bigger, stronger pulse */
-                .constellation-star.is-resting {
-                    animation: restingPulse 1.8s ease-in-out infinite !important;
-                }
-                .constellation-star.is-resting .cs-core {
-                    width: 10px !important; height: 10px !important;
-                    background: rgba(255,250,210,1) !important;
-                    box-shadow: 0 0 15px rgba(255,250,210,1), 0 0 35px rgba(255,225,120,0.95), 0 0 70px rgba(255,180,50,0.5) !important;
-                }
-                .constellation-star.is-resting .cs-ray-h {
-                    width: 64px !important;
-                    background: linear-gradient(to right, transparent, rgba(255,245,200,1), transparent) !important;
-                }
-                .constellation-star.is-resting .cs-ray-v {
-                    height: 64px !important;
-                    background: linear-gradient(to bottom, transparent, rgba(255,245,200,1), transparent) !important;
-                }
-
-                @keyframes restingPulse {
-                    0% { transform: translate(-50%, -50%) scale(0.88); filter: brightness(0.85); }
-                    50% { transform: translate(-50%, -50%) scale(1.3); filter: brightness(1.6); }
-                    100% { transform: translate(-50%, -50%) scale(0.88); filter: brightness(0.85); }
+                @keyframes guidingBurn {
+                    0% { transform: translate(-50%, -50%) scale(0.82); filter: brightness(0.85); }
+                    100% { transform: translate(-50%, -50%) scale(1.2); filter: brightness(1.3); }
                 }
 
                 /* ======= BACKGROUND ======= */
@@ -829,15 +688,11 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                 }
                 .animate-galaxy-expand { animation: galaxy-expand 40s linear infinite; }
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
-                @keyframes slow-glow {
-                    0%, 100% { opacity: 0.3; transform: scale(1.02); }
-                    50% { opacity: 0.5; transform: scale(1.05); }
-                }
-                .animate-slow-glow { animation: slow-glow 15s ease-in-out infinite; }
+                .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
                 .journey-header-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
                 .journey-work-text { position: relative; z-index: 4; }
 
-                /* ======= MODAL OPEN/CLOSE ======= */
+                /* ======= MODAL OPEN / CLOSE ======= */
                 .journey-modal {
                     opacity: 0; transform: scale(0.965) translateY(18px); filter: blur(10px);
                     transition: opacity 0.9s ease, transform 1s cubic-bezier(0.16,1,0.3,1), filter 1s ease;
@@ -868,6 +723,125 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
                     transition: opacity 0.8s ease 0.25s, transform 0.8s ease 0.25s, filter 0.8s ease 0.25s;
                 }
                 .journey-modal.is-open .journey-header { opacity: 1; transform: translateY(0); filter: blur(0); }
+
+                /* ======= CONSTELLATION STARS ======= */
+                .constellation-star {
+                    position: absolute;
+                    transform: translate(-50%, -50%);
+                    pointer-events: none; z-index: 35;
+                }
+
+                /* --- Waypoint stars (vertices) --- */
+                .constellation-star.is-waypoint { width: 28px; height: 28px; }
+                .constellation-star.is-waypoint .cs-core {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 5px; height: 5px;
+                    transform: translate(-50%, -50%); border-radius: 50%;
+                    background: rgba(210,225,255,0.8);
+                    box-shadow: 0 0 6px rgba(210,225,255,0.6), 0 0 16px rgba(170,200,255,0.25);
+                    transition: all 0.6s ease;
+                }
+                .constellation-star.is-waypoint .cs-ray-h {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 22px; height: 1px; transform: translate(-50%, -50%);
+                    background: linear-gradient(to right, transparent, rgba(210,225,255,0.6), transparent);
+                    transition: all 0.6s ease;
+                }
+                .constellation-star.is-waypoint .cs-ray-v {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 1px; height: 22px; transform: translate(-50%, -50%);
+                    background: linear-gradient(to bottom, transparent, rgba(210,225,255,0.6), transparent);
+                    transition: all 0.6s ease;
+                }
+
+                /* --- Work stars (bigger) --- */
+                .constellation-star.is-work { width: 52px; height: 52px; }
+                .constellation-star.is-work .cs-core {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 8px; height: 8px;
+                    transform: translate(-50%, -50%); border-radius: 50%;
+                    background: rgba(255,248,220,0.9);
+                    box-shadow: 0 0 10px rgba(255,248,220,0.8), 0 0 24px rgba(255,220,140,0.5), 0 0 45px rgba(255,180,70,0.2);
+                    transition: all 0.6s ease;
+                }
+                .constellation-star.is-work .cs-ray-h {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 46px; height: 1px; transform: translate(-50%, -50%);
+                    background: linear-gradient(to right, transparent, rgba(255,245,210,0.85), transparent);
+                    transition: all 0.6s ease;
+                }
+                .constellation-star.is-work .cs-ray-v {
+                    position: absolute; left: 50%; top: 50%;
+                    width: 1px; height: 46px; transform: translate(-50%, -50%);
+                    background: linear-gradient(to bottom, transparent, rgba(255,245,210,0.85), transparent);
+                    transition: all 0.6s ease;
+                }
+
+                /* --- Completed work stars --- */
+                .constellation-star.work-completed .cs-core {
+                    background: rgba(255,250,200,1) !important;
+                    box-shadow: 0 0 12px rgba(255,245,200,1), 0 0 30px rgba(255,220,120,0.85), 0 0 60px rgba(255,170,50,0.35) !important;
+                    width: 9px !important; height: 9px !important;
+                }
+                .constellation-star.work-completed .cs-ray-h {
+                    width: 56px !important;
+                    background: linear-gradient(to right, transparent, rgba(255,240,180,1), transparent) !important;
+                }
+                .constellation-star.work-completed .cs-ray-v {
+                    height: 56px !important;
+                    background: linear-gradient(to bottom, transparent, rgba(255,240,180,1), transparent) !important;
+                }
+
+                /* --- DIM state (not yet reached) --- */
+                .constellation-star.is-dim { opacity: 0.30; }
+                .constellation-star.is-dim .cs-core {
+                    background: rgba(160,180,210,0.35) !important;
+                    box-shadow: 0 0 4px rgba(160,180,210,0.15) !important;
+                }
+                .constellation-star.is-dim .cs-ray-h,
+                .constellation-star.is-dim .cs-ray-v {
+                    opacity: 0.3;
+                }
+
+                /* --- REACHED state (star lights up) --- */
+                .constellation-star.is-reached { opacity: 1; }
+                .constellation-star.is-reached.is-work {
+                    animation: workStarPulse 2.5s ease-in-out infinite;
+                }
+                .constellation-star.is-reached.is-waypoint {
+                    animation: waypointPulse 3.2s ease-in-out infinite;
+                }
+                @keyframes workStarPulse {
+                    0%, 100% { transform: translate(-50%, -50%) scale(0.94); filter: brightness(0.9); }
+                    50% { transform: translate(-50%, -50%) scale(1.14); filter: brightness(1.35); }
+                }
+                @keyframes waypointPulse {
+                    0%, 100% { transform: translate(-50%, -50%) scale(0.92); filter: brightness(0.82); }
+                    50% { transform: translate(-50%, -50%) scale(1.1); filter: brightness(1.2); }
+                }
+
+                /* --- RESTING state (current position — strong pulse) --- */
+                .constellation-star.is-resting {
+                    animation: restingPulse 1.6s ease-in-out infinite !important;
+                }
+                .constellation-star.is-resting .cs-core {
+                    width: 12px !important; height: 12px !important;
+                    background: rgba(255,250,210,1) !important;
+                    box-shadow: 0 0 16px rgba(255,250,210,1), 0 0 40px rgba(255,225,120,0.95), 0 0 80px rgba(255,180,50,0.5) !important;
+                }
+                .constellation-star.is-resting .cs-ray-h {
+                    width: 70px !important;
+                    background: linear-gradient(to right, transparent, rgba(255,245,200,1), transparent) !important;
+                }
+                .constellation-star.is-resting .cs-ray-v {
+                    height: 70px !important;
+                    background: linear-gradient(to bottom, transparent, rgba(255,245,200,1), transparent) !important;
+                }
+                @keyframes restingPulse {
+                    0% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(0.8); }
+                    50% { transform: translate(-50%, -50%) scale(1.35); filter: brightness(1.6); }
+                    100% { transform: translate(-50%, -50%) scale(0.85); filter: brightness(0.8); }
+                }
 
                 /* ======= TYPOGRAPHY ======= */
                 .work-text { text-align: left; max-width: 520px; }
