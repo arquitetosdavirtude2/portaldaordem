@@ -29,7 +29,8 @@ const IMAGE_MAP: Record<string, string> = {
     'iniciação': 'https://www.portaldaordem.com.br/initiation_light.jpg?v=3',
     'aprendiz': 'https://www.portaldaordem.com.br/rough_stone.png',
     'companheiro': 'https://www.portaldaordem.com.br/polished_stone.png',
-    'mestre': 'https://www.portaldaordem.com.br/masonic_temple.png'
+    'mestre': 'https://www.portaldaordem.com.br/masonic_temple.png',
+    'avental': '/avental.jpg'
 };
 
 const getPessoaIdFromLocalStorage = (): string => {
@@ -96,6 +97,7 @@ export default function ModalJornada({ itens, tipo, onClose }: ModalJornadaProps
 
     const getSymbolImage = useCallback((item: JornadaItem, isConcluido?: boolean) => {
         const title = item.titulo.toLowerCase();
+        if (title.includes('avental')) return IMAGE_MAP['avental'];
         if (title.includes('iniciação')) return isConcluido ? IMAGE_MAP['iniciação'] : 'https://www.portaldaordem.com.br/initiation_dark.png';
         if (title.includes('dualidade') || title.includes('mosaico') || title.includes('piso')) {
             return isConcluido ? 'https://www.portaldaordem.com.br/fellowcraft_light.png' : 'https://www.portaldaordem.com.br/fellowcraft_dark.png';
