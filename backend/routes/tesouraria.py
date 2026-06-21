@@ -1401,48 +1401,166 @@ def remover_excecao(
 def relatorio_inadimplentes(
     loja_id: int,
     incluir_adormecidos: bool = False,
+    format: Optional[str] = 'csv',
     db_main: Session = Depends(get_db),
     db_treasury: Session = Depends(get_treasury_db)
 ):
-    """Gera um relatório CSV consolidado de irmãos inadimplentes."""
+    """Gera um relatório (CSV ou HTML) de irmãos inadimplentes."""
+    from fastapi.responses import HTMLResponse
+    # Obter dados da Loja
+    loja = db_main.execute(text("SELECT nome, numero FROM lojas WHERE id = :lid"), {"lid": loja_id}).fetchone()
+    l_nome = loja[0] if loja else "Portal da Ordem"
+    l_num = loja[1] if loja else ""
+    
     # Obter dados financeiros respeitando o filtro de adormecidos do usuário
     dados = _calcular_financeiro_irmaos_logic(loja_id, None, None, incluir_adormecidos, db_main, db_treasury)
     
     # Filtrar apenas inadimplentes (Atrasados ou Pendentes)
     inadimplentes = [d for d in dados if d['saude_financeira'] in ['ATRASADO', 'PENDENTE']]
     
-    output = io.StringIO()
-    # Usar BOM para o Excel abrir corretamente com acentos
-    output.write('\ufeff')
-    writer = csv.writer(output, delimiter=';')
-    
-    # Cabeçalho
-    writer.writerow(['Obreiro', 'WhatsApp', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
-    
-    for d in inadimplentes:
-        meses_aberto = ", ".join(d.get('meses_lista_aberto', []))
-        if meses_aberto:
-            meses_aberto = " " + meses_aberto
+    if format == 'html':
+        table_rows_html = ""
+        total_joia = 0
+        total_mens = 0
+        for d in inadimplentes:
+            total_joia += d['joia_pendente']
+            total_mens += d['mensalidade_pendente']
+            meses_aberto = ", ".join(d.get('meses_lista_aberto', []))
+            status_txt = "Ativo" if d['ativo'] == 1 else f"Adormecido"
+            saude_color = "#dc2626" if d['saude_financeira'] == 'ATRASADO' else "#ca8a04"
             
-        status_txt = "Ativo" if d['ativo'] == 1 else f"Adormecido ({d['data_adormecimento']})"
+            table_rows_html += f"""
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; font-size: 12px; font-weight: 500;">{d['nome']}<br/><span style="font-size: 9px; color: #666;">{status_txt} | {d['cargo']}</span></td>
+                    <td style="padding: 10px; font-size: 11px;">{d['telefone']}</td>
+                    <td style="padding: 10px; font-size: 11px;">{d['data_admissao']}</td>
+                    <td style="padding: 10px; font-size: 11px; text-align: right; color: #ca8a04;">R$ {d['joia_pendente']:,.2f}</td>
+                    <td style="padding: 10px; font-size: 11px; text-align: right; color: #dc2626;">R$ {d['mensalidade_pendente']:,.2f}</td>
+                    <td style="padding: 10px; font-size: 10px; color: #555;">{meses_aberto}</td>
+                    <td style="padding: 10px; font-size: 10px; font-weight: bold; color: {saude_color}; text-align: center;">{d['saude_financeira']}</td>
+                </tr>
+            """
+            
+        formatted_total_joia = f"{total_joia:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        formatted_total_mens = f"{total_mens:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         
-        writer.writerow([
-            d['nome'],
-            d['telefone'],
-            d['cargo'],
-            status_txt,
-            d['data_admissao'],
-            f"R$ {d['joia_pendente']:.2f}",
-            f"R$ {d['mensalidade_pendente']:.2f}",
-            meses_aberto,
-            d['saude_financeira']
-        ])
-    
-    output.seek(0)
-    headers = {
-        'Content-Disposition': f'attachment; filename="inadimplentes_loja_{loja_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
-    }
-    return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="pt-br">
+        <head>
+            <meta charset="UTF-8">
+            <title>Relatório de Inadimplência</title>
+            <style>
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 30px; position: relative; background-color: transparent; }}
+                .watermark {{
+                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    font-size: 120px; font-weight: bold; color: rgba(0, 0, 0, 0.03);
+                    z-index: -1; white-space: nowrap; pointer-events: none; text-transform: uppercase;
+                }}
+                .header {{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }}
+                .title {{ font-size: 24px; font-weight: 800; color: #111; margin: 0; text-transform: uppercase; letter-spacing: 1px; }}
+                .subtitle {{ font-size: 12px; color: #666; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
+                .date {{ font-size: 12px; color: #888; text-align: right; font-weight: 500; }}
+                .stats-container {{ display: flex; gap: 20px; margin-bottom: 30px; }}
+                .stat-box {{ background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 15px 20px; flex: 1; }}
+                .stat-label {{ font-size: 10px; text-transform: uppercase; color: #666; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px; }}
+                .stat-value {{ font-size: 20px; font-weight: bold; color: #111; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }}
+                th {{ padding: 12px 10px; text-align: left; background: #f8f9fa; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #555; border-bottom: 2px solid #ddd; }}
+                @media print {{
+                    body {{ margin: 0; padding: 15px; -webkit-print-color-adjust: exact; }}
+                    .watermark {{ display: none; }}
+                    .header {{ border-bottom: 1px solid #ddd; }}
+                }}
+            </style>
+        </head>
+        <body onload="window.print()">
+            <div class="watermark">{l_nome}</div>
+            
+            <div class="header">
+                <div>
+                    <h1 class="title">Relatório de Inadimplência</h1>
+                    <div class="subtitle">{l_nome} {f"Nº {l_num}" if l_num else ""}</div>
+                </div>
+                <div class="date">
+                    Emitido em:<br/>
+                    <strong style="color:#111;">{datetime.now().strftime("%d/%m/%Y às %H:%M")}</strong>
+                </div>
+            </div>
+            
+            <div class="stats-container">
+                <div class="stat-box">
+                    <div class="stat-label">Total Inadimplentes</div>
+                    <div class="stat-value">{len(inadimplentes)} Obreiros</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label" style="color: #ca8a04;">Total Joias Pendentes</div>
+                    <div class="stat-value" style="color: #ca8a04;">R$ {formatted_total_joia}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label" style="color: #dc2626;">Total Mensalidades Pendentes</div>
+                    <div class="stat-value" style="color: #dc2626;">R$ {formatted_total_mens}</div>
+                </div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Obreiro</th>
+                        <th>Contato</th>
+                        <th>Admissão</th>
+                        <th style="text-align: right;">Joia Pendente</th>
+                        <th style="text-align: right;">Mensalidade</th>
+                        <th>Meses em Aberto</th>
+                        <th style="text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_rows_html}
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 40px; font-size: 10px; color: #888; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+                Documento gerado automaticamente pelo sistema Portal da Ordem.<br/>
+                Para uso interno da tesouraria e diretoria.
+            </div>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html)
+    else:
+        output = io.StringIO()
+        # Usar BOM para o Excel abrir corretamente com acentos
+        output.write('\ufeff')
+        writer = csv.writer(output, delimiter=';')
+        
+        # Cabeçalho
+        writer.writerow(['Obreiro', 'WhatsApp', 'Cargo', 'Status', 'Iniciação', 'Joia Devida', 'Mensalidade Devida', 'Meses em Aberto', 'Saúde Financeira'])
+        
+        for d in inadimplentes:
+            meses_aberto = ", ".join(d.get('meses_lista_aberto', []))
+            if meses_aberto:
+                meses_aberto = " " + meses_aberto
+                
+            status_txt = "Ativo" if d['ativo'] == 1 else f"Adormecido ({d['data_adormecimento']})"
+            
+            writer.writerow([
+                d['nome'],
+                d['telefone'],
+                d['cargo'],
+                status_txt,
+                d['data_admissao'],
+                f"R$ {d['joia_pendente']:.2f}",
+                f"R$ {d['mensalidade_pendente']:.2f}",
+                meses_aberto,
+                d['saude_financeira']
+            ])
+        
+        output.seek(0)
+        headers = {
+            'Content-Disposition': f'attachment; filename="inadimplentes_loja_{loja_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
+        }
+        return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
 
 @router.get("/relatorio/financeiro")
 def relatorio_financeiro(
@@ -1478,10 +1596,22 @@ def relatorio_financeiro(
         query_base += " AND t.status = :status"
         params["status"] = status
     if mes and ano:
-        query_base += " AND ( (MONTH(t.data_vencimento) = :mes AND YEAR(t.data_vencimento) = :ano) OR (t.mes_referencia = :mes_ref) )"
-        params["mes"] = mes
-        params["ano"] = ano
-        params["mes_ref"] = f"{ano}-{mes:02d}"
+        if status == 'pendente':
+            import calendar
+            from datetime import date
+            _, last_day = calendar.monthrange(ano, mes)
+            data_limite = date(ano, mes, last_day).strftime("%Y-%m-%d")
+            query_base += " AND t.data_vencimento <= :data_limite"
+            params["data_limite"] = data_limite
+        else:
+            query_base += """ AND (
+                CASE 
+                    WHEN t.status = 'pago' AND (t.data_pagamento IS NOT NULL AND t.data_pagamento != '') 
+                    THEN t.data_pagamento 
+                    ELSE t.data_vencimento 
+                END
+            ) LIKE :ano_mes """
+            params["ano_mes"] = f"{ano}-{mes:02d}%"
     if caixa_id and int(caixa_id) > 0:
         query_base += " AND t.caixa_id = :cid"
         params["cid"] = caixa_id

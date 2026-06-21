@@ -315,9 +315,19 @@ export default function GestaoIrmaosFinanceiro({ acesso }: { acesso: any }) {
 
                 <button
                     type="button"
+                    onClick={() => {
+                        const url = `${apiUrl}/api/tesouraria/relatorio/inadimplentes/${acesso.loja_id}?incluir_adormecidos=${mostrarAdormecidos}&format=html`;
+                        window.open(url, '_blank');
+                    }}
+                    className="h-9 px-3 bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-500 rounded-lg text-[9px] font-medium uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0"
+                >
+                    📄 PDF
+                </button>
+                <button
+                    type="button"
                     onClick={handleDownloadRelatorio}
                     disabled={baixandoRelatorio}
-                    className="h-9 px-3 bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-500 rounded-lg text-[9px] font-medium uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-1.5 shrink-0"
+                    className="h-9 px-3 bg-white/5 border border-white/10 hover:bg-white/10 text-gray-300 rounded-lg text-[9px] font-medium uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-1.5 shrink-0"
                 >
                     {baixandoRelatorio ? '...' : 'CSV'}
                 </button>
