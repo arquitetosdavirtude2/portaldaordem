@@ -39,9 +39,10 @@ export default function MapaBrasil2D() {
         const isFederal = roleStr.includes('admin') || 
                           roleStr.includes('federal') || 
                           roleStr.includes('master') ||
-                          (roleStr.includes('grao') && roleStr.includes('federal'));
+                          roleStr.includes('grao_mestre') ||
+                          roleStr.includes('grao mestre');
                           
-        const hasAccess = isFederal || userEstados.some(allowed => allowed && allowed.trim().toUpperCase() === s);
+        const hasAccess = isFederal || userEstados.includes('*') || userEstados.some(allowed => allowed && allowed.trim().toUpperCase() === s);
 
         if (hasAccess) {
             setEstadoSelecionado(s);
@@ -121,9 +122,11 @@ export default function MapaBrasil2D() {
                             Selecione um Oriente no Mapa
                         </p>
                         {showPermissionWarning && (
-                            <p className="text-[10px] text-red-500 font-bold uppercase tracking-[0.2em] mt-2 animate-bounce">
-                                ⚠️ Acesso Restrito: Sem permissão para este Oriente
-                            </p>
+                            <div className="mt-4 px-6 py-2 bg-red-950/80 border border-red-500/50 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.3)] animate-in slide-in-from-bottom-4 fade-in duration-300">
+                                <p className="text-xs md:text-sm text-red-400 font-bold uppercase tracking-[0.2em] animate-pulse">
+                                    ⚠️ Acesso Restrito: Sem permissão para este Oriente
+                                </p>
+                            </div>
                         )}
                     </div>
                 )}
