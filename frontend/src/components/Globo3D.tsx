@@ -75,7 +75,7 @@ export default function Globo3D({ onEstadoClick, hoveredState, onHoverState }: G
 
     // Dynamic Style Logic
     const getPolygonLabel = (d: any) => `
-        <div style="background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; font-family: sans-serif;">
+        <div style="pointer-events: none; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; font-family: sans-serif;">
             <b>${d.properties.name || d.properties.nome}</b> (${d.properties.sigla})
         </div>
     `;
