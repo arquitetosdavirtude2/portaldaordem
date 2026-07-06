@@ -88,12 +88,12 @@ export default function MapaBrasil() {
             {/* 3D Globe Container */}
             <div 
                 className={`absolute inset-0 z-0 transition-all duration-700 ${estadoSelecionado ? 'translate-x-[-20%] scale-75 blur-sm opacity-50' : 'opacity-100'}`}
-                onPointerDown={(e) => {
+                onPointerDownCapture={(e) => {
                     // Record starting position for custom click detection
                     (e.currentTarget as any)._startX = e.clientX;
                     (e.currentTarget as any)._startY = e.clientY;
                 }}
-                onPointerUp={(e) => {
+                onPointerUpCapture={(e) => {
                     // Calculate distance moved
                     const startX = (e.currentTarget as any)._startX;
                     const startY = (e.currentTarget as any)._startY;
@@ -101,8 +101,8 @@ export default function MapaBrasil() {
                         const dx = e.clientX - startX;
                         const dy = e.clientY - startY;
                         const distance = Math.sqrt(dx * dx + dy * dy);
-                        // If moved less than 10 pixels, treat it as a click
-                        if (distance < 10 && estadoHover) {
+                        // If moved less than 15 pixels, treat it as a click
+                        if (distance < 15 && estadoHover) {
                             handleClickEstado(estadoHover);
                         }
                     }
